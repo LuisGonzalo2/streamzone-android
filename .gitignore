@@ -13,3 +13,33 @@
 .externalNativeBuild
 .cxx
 local.properties
+# APK y AAB files
+*.apk
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+release/
+
+# Log Files
+*.log
+
+# Keystore files (importante para seguridad)
+*.jks
+*.keystore
+
+# Google Services (Firebase, etc)
+google-services.json
+
+# Freeline
+freeline.py
+freeline/
+freeline_project_description.json

@@ -1,4 +1,4 @@
-package com.universidad.carpoolapp
+package com.universidad.streamzone
 
 import org.junit.Test
 

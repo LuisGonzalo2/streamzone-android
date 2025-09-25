@@ -1,6 +1,7 @@
-package com.universidad.carpoolapp
+package com.universidad.streamzone
 
 import android.os.Bundle
+import android.text.InputType
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
@@ -9,13 +10,16 @@ import com.google.android.material.textfield.TextInputLayout
 
 class LoginActivity : AppCompatActivity() {
 
-
+    // Declaración de vistas
     private lateinit var tilEmail: TextInputLayout
     private lateinit var tilPassword: TextInputLayout
     private lateinit var etEmail: TextInputEditText
     private lateinit var etPassword: TextInputEditText
     private lateinit var btnLogin: MaterialButton
     private lateinit var btnRegister: MaterialButton
+    private lateinit var btnTogglePassword: MaterialButton
+
+    private var isPasswordVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +42,7 @@ class LoginActivity : AppCompatActivity() {
         // Botones
         btnLogin = findViewById(R.id.btn_login)
         btnRegister = findViewById(R.id.btn_register)
+        btnTogglePassword = findViewById(R.id.btn_toggle_password)
     }
 
     private fun setupClickListeners() {
@@ -52,9 +57,19 @@ class LoginActivity : AppCompatActivity() {
             handleRegister()
         }
 
-        // me olvide la contra
+        // Botón toggle password (ojo)
+        btnTogglePassword.setOnClickListener {
+            togglePasswordVisibility()
+        }
+
+        // ¿Olvidaste contraseña?
         findViewById<android.widget.TextView>(R.id.tv_forgot_password).setOnClickListener {
             handleForgotPassword()
+        }
+
+        // Volver al inicio
+        findViewById<android.widget.TextView>(R.id.tv_back_home).setOnClickListener {
+            handleBackHome()
         }
     }
 
@@ -109,6 +124,32 @@ class LoginActivity : AppCompatActivity() {
             "🔐 Función de recuperar contraseña próximamente.",
             Toast.LENGTH_SHORT
         ).show()
+    }
+
+    private fun handleBackHome() {
+        Toast.makeText(
+            this,
+            "🏠 Volviendo al inicio...",
+            Toast.LENGTH_SHORT
+        ).show()
+        // Aquí podrías hacer finish() o navegar a otra actividad
+    }
+
+    private fun togglePasswordVisibility() {
+        if (isPasswordVisible) {
+            // Ocultar contraseña
+            etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            btnTogglePassword.setIconResource(R.drawable.ic_eye)
+            isPasswordVisible = false
+        } else {
+            // Mostrar contraseña
+            etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            btnTogglePassword.setIconResource(R.drawable.ic_eye_off)
+            isPasswordVisible = true
+        }
+
+        // Mantener cursor al final
+        etPassword.setSelection(etPassword.text?.length ?: 0)
     }
 
     private fun isValidEmail(email: String): Boolean {

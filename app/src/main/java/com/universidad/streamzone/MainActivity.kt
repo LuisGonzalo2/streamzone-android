@@ -1,4 +1,4 @@
-package com.universidad.carpoolapp
+package com.universidad.streamzone
 
 import android.content.Intent
 import android.os.Bundle

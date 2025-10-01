@@ -66,11 +66,6 @@ class LoginActivity : AppCompatActivity() {
         findViewById<android.widget.TextView>(R.id.tv_forgot_password).setOnClickListener {
             handleForgotPassword()
         }
-
-        // Volver al inicio
-        findViewById<android.widget.TextView>(R.id.tv_back_home).setOnClickListener {
-            handleBackHome()
-        }
     }
 
     private fun handleLogin() {

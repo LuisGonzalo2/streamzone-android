@@ -8,7 +8,7 @@
     <!-- Tarjeta principal centrada -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/main_card"
-        android:layout_width="0dp"
+        android:layout_width="10dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
         app:cardCornerRadius="24dp"

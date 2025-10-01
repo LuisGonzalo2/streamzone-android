@@ -1,7 +1,9 @@
 package com.universidad.streamzone
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
@@ -24,12 +26,34 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-
         // Inicializar vistas
         initViews()
 
         // Configurar listeners
         setupClickListeners()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Limpiar errores cuando la actividad se vuelve visible
+        clearErrorsOnStart()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // La actividad está lista para interactuar con el usuario
+    }
+
+    override fun onPause() {
+        super.onPause()
+    }
+
+    override fun onStop() {
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 
     private fun initViews() {
@@ -47,12 +71,12 @@ class LoginActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
 
-        // Botón Login - Mostrar mensaje de que no existe la cuenta
+        // Botón Login - Validar e intentar login
         btnLogin.setOnClickListener {
             handleLogin()
         }
 
-        // Botón Registro - Mostrar mensaje de que pronto estará disponible
+        // Botón Registro - Navegar a RegisterActivity
         btnRegister.setOnClickListener {
             handleRegister()
         }
@@ -66,11 +90,6 @@ class LoginActivity : AppCompatActivity() {
         findViewById<android.widget.TextView>(R.id.tv_forgot_password).setOnClickListener {
             handleForgotPassword()
         }
-
-        // Volver al inicio
-        findViewById<android.widget.TextView>(R.id.tv_back_home).setOnClickListener {
-            handleBackHome()
-        }
     }
 
     private fun handleLogin() {
@@ -81,28 +100,12 @@ class LoginActivity : AppCompatActivity() {
         tilEmail.error = null
         tilPassword.error = null
 
-        // Validaciones básicas
-        when {
-            email.isEmpty() -> {
-                tilEmail.error = "Ingresa tu correo electrónico"
-                etEmail.requestFocus()
-                return
-            }
+        // Validar email
+        if (!validateEmail(email)) return
 
-            password.isEmpty() -> {
-                tilPassword.error = "Ingresa tu contraseña"
-                etPassword.requestFocus()
-                return
-            }
+        // Validar password
+        if (!validatePassword(password)) return
 
-            !isValidEmail(email) -> {
-                tilEmail.error = "Ingresa un correo válido"
-                etEmail.requestFocus()
-                return
-            }
-        }
-
-        // Mostrar mensaje de que no existe la cuenta
         Toast.makeText(
             this,
             "❌ Esta cuenta no existe. Por favor regístrate primero.",
@@ -110,31 +113,80 @@ class LoginActivity : AppCompatActivity() {
         ).show()
     }
 
+    private fun validateEmail(email: String): Boolean {
+        return when {
+            email.isEmpty() -> {
+                tilEmail.error = "Ingresa tu correo electrónico"
+                etEmail.requestFocus()
+                false
+            }
+            !email.contains("@") -> {
+                tilEmail.error = "El correo debe contener @"
+                etEmail.requestFocus()
+                false
+            }
+            !email.contains(".") -> {
+                tilEmail.error = "Ingresa un correo válido"
+                etEmail.requestFocus()
+                false
+            }
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                tilEmail.error = "Formato de correo inválido"
+                etEmail.requestFocus()
+                false
+            }
+            else -> true
+        }
+    }
+
+    private fun validatePassword(password: String): Boolean {
+        return when {
+            password.isEmpty() -> {
+                tilPassword.error = "Ingresa tu contraseña"
+                etPassword.requestFocus()
+                false
+            }
+            password.length < 6 -> {
+                tilPassword.error = "La contraseña debe tener al menos 6 caracteres"
+                etPassword.requestFocus()
+                false
+            }
+            else -> true
+        }
+    }
+
     private fun handleRegister() {
-        Toast.makeText(
-            this,
-            "📝 La pantalla de registro estará disponible pronto.",
-            Toast.LENGTH_SHORT
-        ).show()
+        val intent = Intent(this, RegisterActivity::class.java)
+        startActivity(intent)
     }
 
     private fun handleForgotPassword() {
+        val email = etEmail.text.toString().trim()
+
+        if (email.isEmpty()) {
+            Toast.makeText(
+                this,
+                "💡 Ingresa tu correo para recuperar la contraseña",
+                Toast.LENGTH_SHORT
+            ).show()
+            etEmail.requestFocus()
+            return
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            tilEmail.error = "Ingresa un correo válido primero"
+            etEmail.requestFocus()
+            return
+        }
+
         Toast.makeText(
             this,
-            "🔐 Función de recuperar contraseña próximamente.",
-            Toast.LENGTH_SHORT
+            "🔐 Se envió un enlace de recuperación a $email",
+            Toast.LENGTH_LONG
         ).show()
-    }
 
-    private fun handleBackHome() {
-        Toast.makeText(
-            this,
-            "🏠 Volviendo al inicio...",
-            Toast.LENGTH_SHORT
-        ).show()
-        // Aquí podrías hacer finish() o navegar a otra actividad
+        Log.d("LoginActivity", "Solicitud de recuperación para: $email")
     }
-
     private fun togglePasswordVisibility() {
         if (isPasswordVisible) {
             // Ocultar contraseña
@@ -152,7 +204,8 @@ class LoginActivity : AppCompatActivity() {
         etPassword.setSelection(etPassword.text?.length ?: 0)
     }
 
-    private fun isValidEmail(email: String): Boolean {
-        return email.contains("@") && email.contains(".")
+    private fun clearErrorsOnStart() {
+        tilEmail.error = null
+        tilPassword.error = null
     }
 }

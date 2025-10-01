@@ -1,4 +1,4 @@
-package com.universidad.carpoolapp
+package com.universidad.streamzone
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

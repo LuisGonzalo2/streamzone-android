@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.universidad.carpoolapp"
+    namespace = "com.universidad.streamzone"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.universidad.carpoolapp"
+        applicationId = "com.universidad.streamzone"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

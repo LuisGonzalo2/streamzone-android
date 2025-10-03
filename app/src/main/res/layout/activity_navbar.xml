@@ -26,7 +26,9 @@
             android:textColor="#9B8FFE"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:fontFamily="sans-serif-medium" />
+            android:fontFamily="sans-serif-medium"
+            android:clickable="true"
+            android:focusable="true" />
 
         <TextView
             android:id="@+id/btn_home"

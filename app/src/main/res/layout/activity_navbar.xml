@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/dark_gradient_background">
 
+
     <!-- Barra superior con logo y botones -->
     <LinearLayout
         android:id="@+id/top_bar"

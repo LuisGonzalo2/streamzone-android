@@ -1,10 +1,16 @@
 package com.universidad.streamzone
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.text.InputType
-import android.util.Log
+import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
@@ -12,7 +18,6 @@ import com.google.android.material.textfield.TextInputLayout
 
 class LoginActivity : AppCompatActivity() {
 
-    // Declaración de vistas
     private lateinit var tilEmail: TextInputLayout
     private lateinit var tilPassword: TextInputLayout
     private lateinit var etEmail: TextInputEditText
@@ -23,71 +28,74 @@ class LoginActivity : AppCompatActivity() {
 
     private var isPasswordVisible = false
 
+    private lateinit var sharedPrefs: SharedPreferences
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var loginAttempts = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-        // Inicializar vistas
-        initViews()
 
-        // Configurar listeners
+        sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
+
+        initViews()
         setupClickListeners()
     }
 
     override fun onStart() {
         super.onStart()
-        // Limpiar errores cuando la actividad se vuelve visible
-        clearErrorsOnStart()
+
+        if (!isNetworkAvailable()) {
+            showNoInternetDialog()
+        }
+
+        restoreEmail()
     }
 
     override fun onResume() {
         super.onResume()
-        // La actividad está lista para interactuar con el usuario
+
+        registerNetworkCallback()
+        checkLoginAttempts()
     }
 
     override fun onPause() {
         super.onPause()
-    }
 
-    override fun onStop() {
-        super.onStop()
+        saveEmail()
+        unregisterNetworkCallback()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+
+        unregisterNetworkCallback()
     }
 
     private fun initViews() {
-        // Inputs
         tilEmail = findViewById(R.id.til_email)
         tilPassword = findViewById(R.id.til_password)
         etEmail = findViewById(R.id.et_email)
         etPassword = findViewById(R.id.et_password)
-
-        // Botones
         btnLogin = findViewById(R.id.btn_login)
         btnRegister = findViewById(R.id.btn_register)
         btnTogglePassword = findViewById(R.id.btn_toggle_password)
     }
 
     private fun setupClickListeners() {
-
-        // Botón Login - Validar e intentar login
         btnLogin.setOnClickListener {
             handleLogin()
         }
 
-        // Botón Registro - Navegar a RegisterActivity
         btnRegister.setOnClickListener {
             handleRegister()
         }
 
-        // Botón toggle password (ojo)
         btnTogglePassword.setOnClickListener {
             togglePasswordVisibility()
         }
 
-        // ¿Olvidaste contraseña?
-        findViewById<android.widget.TextView>(R.id.tv_forgot_password).setOnClickListener {
+        findViewById<TextView>(R.id.tv_forgot_password).setOnClickListener {
             handleForgotPassword()
         }
     }
@@ -96,19 +104,18 @@ class LoginActivity : AppCompatActivity() {
         val email = etEmail.text.toString().trim()
         val password = etPassword.text.toString().trim()
 
-        // Limpiar errores anteriores
         tilEmail.error = null
         tilPassword.error = null
 
-        // Validar email
         if (!validateEmail(email)) return
-
-        // Validar password
         if (!validatePassword(password)) return
+
+        loginAttempts = sharedPrefs.getInt("login_attempts", 0) + 1
+        sharedPrefs.edit().putInt("login_attempts", loginAttempts).apply()
 
         Toast.makeText(
             this,
-            "❌ Esta cuenta no existe. Por favor regístrate primero.",
+            "Esta cuenta no existe. Por favor regístrate primero.",
             Toast.LENGTH_LONG
         ).show()
     }
@@ -166,7 +173,7 @@ class LoginActivity : AppCompatActivity() {
         if (email.isEmpty()) {
             Toast.makeText(
                 this,
-                "💡 Ingresa tu correo para recuperar la contraseña",
+                "Ingresa tu correo para recuperar la contraseña",
                 Toast.LENGTH_SHORT
             ).show()
             etEmail.requestFocus()
@@ -181,31 +188,116 @@ class LoginActivity : AppCompatActivity() {
 
         Toast.makeText(
             this,
-            "🔐 Se envió un enlace de recuperación a $email",
+            "Se envió un enlace de recuperación a $email",
             Toast.LENGTH_LONG
         ).show()
-
-        Log.d("LoginActivity", "Solicitud de recuperación para: $email")
     }
+
+    private fun handleBackHome() {
+        finishAffinity()
+    }
+
     private fun togglePasswordVisibility() {
         if (isPasswordVisible) {
-            // Ocultar contraseña
             etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             btnTogglePassword.setIconResource(R.drawable.ic_eye)
             isPasswordVisible = false
         } else {
-            // Mostrar contraseña
             etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
             btnTogglePassword.setIconResource(R.drawable.ic_eye_off)
             isPasswordVisible = true
         }
-
-        // Mantener cursor al final
         etPassword.setSelection(etPassword.text?.length ?: 0)
     }
 
-    private fun clearErrorsOnStart() {
-        tilEmail.error = null
-        tilPassword.error = null
+    private fun saveEmail() {
+        val email = etEmail.text.toString().trim()
+        if (email.isNotEmpty()) {
+            sharedPrefs.edit().putString("last_email", email).apply()
+        }
+    }
+
+    private fun restoreEmail() {
+        val savedEmail = sharedPrefs.getString("last_email", "")
+        if (!savedEmail.isNullOrEmpty()) {
+            etEmail.setText(savedEmail)
+        }
+    }
+
+    private fun checkLoginAttempts() {
+        val attempts = sharedPrefs.getInt("login_attempts", 0)
+        if (attempts >= 3) {
+            AlertDialog.Builder(this)
+                .setTitle("Múltiples intentos fallidos")
+                .setMessage("Has intentado iniciar sesión $attempts veces sin éxito.\n\n¿Necesitas ayuda o prefieres crear una cuenta?")
+                .setPositiveButton("Crear Cuenta") { _, _ ->
+                    handleRegister()
+                }
+                .setNegativeButton("Reintentar") { dialog, _ ->
+                    sharedPrefs.edit().putInt("login_attempts", 0).apply()
+                    dialog.dismiss()
+                }
+                .show()
+        }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+
+        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+    }
+
+    private fun showNoInternetDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Sin Conexión a Internet")
+            .setMessage("Necesitas conexión a internet para iniciar sesión.")
+            .setPositiveButton("Continuar") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setNegativeButton("Salir") { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun registerNetworkCallback() {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                runOnUiThread {
+                    Toast.makeText(this@LoginActivity, "Conexión restaurada", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onLost(network: Network) {
+                runOnUiThread {
+                    Toast.makeText(this@LoginActivity, "Conexión perdida", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        try {
+            connectivityManager.registerDefaultNetworkCallback(networkCallback!!)
+        } catch (e: Exception) {
+            // Silencioso
+        }
+    }
+
+    private fun unregisterNetworkCallback() {
+        networkCallback?.let {
+            try {
+                val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                connectivityManager.unregisterNetworkCallback(it)
+            } catch (e: Exception) {
+                // Silencioso
+            }
+        }
+        networkCallback = null
     }
 }

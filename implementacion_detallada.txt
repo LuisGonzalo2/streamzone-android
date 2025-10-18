@@ -1,0 +1,307 @@
+Implementación detallada y pasos realizados
+Proyecto: streamzone-android
+Ruta: C:\Users\Jere Guale\AndroidStudioProjects\streamzone-android
+Fecha: 2025-10-18
+
+Objetivo
+Dejar documentado, dentro de la carpeta del proyecto, todo lo que se hizo en la sesión: comandos ejecutados, archivos añadidos manualmente (p. ej. google-services.json), y descripción completa de las implementaciones propuestas para:
+ - Guardar/mostrar usuarios en Room (local)
+ - Mostrar usuarios guardados en Firebase (Firestore/RTDB)
+ - Botones añadidos en la UI con los comentarios solicitados
+
+Estado actual (no se modificó código fuente en la sesión salvo añadir el archivo registro_actividad.txt):
+ - Se creó y se dejó el archivo `registro_actividad.txt` con el historial de comandos y errores.
+ - El usuario colocó manualmente `app/google-services.json` en el repositorio.
+ - No se añadieron archivos .kt ni layout XML al código fuente (esta documentación explica qué crear y cómo hacerlo; no se hicieron cambios automáticos sobre el código fuente).
+
+Checklist de lo que se documenta aquí
+- [x] Comandos git usados (stash, pull, branch)
+- [x] Ubicación de `google-services.json`
+- [x] Dependencias Firebase recomendadas (BoM) y Room
+- [x] Definición de colores faltantes (button_blue, button_gray)
+- [x] Código de ejemplo para Room (Entity, Dao, Database, Repository, ViewModel)
+- [x] XML de botones con comentarios requeridos
+- [x] Ejemplo de listeners en `RegisterActivity.kt` para: mostrar usuarios Firebase y mostrar usuarios Room
+- [x] Comandos útiles para compilar e instalar en Windows (PowerShell/cmd)
+
+1) Comandos git importantes usados
+- git stash push -m "WIP antes de actualizar develop"
+- git fetch origin
+- git checkout develop
+- git pull --rebase origin develop
+- git checkout -b develop_basededatos   (crear y cambiar a la nueva rama)
+- git branch --show-current
+
+2) Google Services
+- Archivo descargado desde Firebase Console: `google-services.json`.
+- Ubicación donde lo colocaste: `app\google-services.json`.
+- Asegúrate de que el `package_name` dentro del JSON coincide con el `applicationId` de tu app (en tu caso: com.universidad.streamzone).
+
+3) Dependencias recomendadas (añadir en `app/build.gradle.kts`) — Kotlin DSL
+- Firebase (usar BoM para versiones centralizadas):
+  implementation(platform("com.google.firebase:firebase-bom:32.2.0"))
+  implementation("com.google.firebase:firebase-auth-ktx")
+  implementation("com.google.firebase:firebase-firestore-ktx")
+  implementation("com.google.firebase:firebase-analytics-ktx")
+  implementation("com.google.firebase:firebase-storage-ktx")
+
+- Room (ejemplo con versión 2.5.2 — ajusta si tu proyecto usa otra):
+  implementation("androidx.room:room-ktx:2.5.2")
+  implementation("androidx.room:room-runtime:2.5.2")
+  kapt("androidx.room:room-compiler:2.5.2")
+
+- Coroutines (si no están ya):
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+- Plugins a revisar en `app/build.gradle.kts`:
+  - aplicar `kotlin("kapt")` si vas a usar kapt
+  - aplicar `id("com.google.gms.google-services")` si usas el plugin google-services (y agregar classpath en el buildscript raíz si no está)
+
+4) Colores faltantes (resolver error AAPT2)
+- Añadir en `app/src/main/res/values/colors.xml` si no existen:
+  <resources>
+    <color name="button_blue">#007BFF</color>
+    <color name="button_gray">#BDBDBD</color>
+  </resources>
+
+5) Estructura Room y snippets (archivos a crear bajo `app/src/main/java/<tu_paquete>/data/room/`)
+- `UserEntity.kt` (Entity)
+  package com.universidad.streamzone.data.room
+
+  import androidx.room.Entity
+  import androidx.room.PrimaryKey
+
+  @Entity(tableName = "users")
+  data class UserEntity(
+      @PrimaryKey(autoGenerate = true) val id: Long = 0,
+      val uidFirebase: String? = null,
+      val name: String,
+      val email: String,
+      val createdAt: Long = System.currentTimeMillis()
+  )
+
+- `UserDao.kt` (DAO)
+  package com.universidad.streamzone.data.room
+
+  import androidx.room.*
+  import kotlinx.coroutines.flow.Flow
+
+  @Dao
+  interface UserDao {
+      @Insert(onConflict = OnConflictStrategy.REPLACE)
+      suspend fun insert(user: UserEntity): Long
+
+      @Query("SELECT * FROM users ORDER BY createdAt DESC")
+      fun getAll(): Flow<List<UserEntity>>
+
+      @Query("SELECT * FROM users ORDER BY createdAt DESC")
+      suspend fun getAllOnce(): List<UserEntity>
+
+      @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
+      suspend fun getById(id: Long): UserEntity?
+
+      @Query("DELETE FROM users")
+      suspend fun clearAll()
+  }
+
+- `AppDatabase.kt` (RoomDatabase singleton)
+  package com.universidad.streamzone.data.room
+
+  import android.content.Context
+  import androidx.room.Database
+  import androidx.room.Room
+  import androidx.room.RoomDatabase
+
+  @Database(entities = [UserEntity::class], version = 1, exportSchema = false)
+  abstract class AppDatabase : RoomDatabase() {
+      abstract fun userDao(): UserDao
+
+      companion object {
+          @Volatile private var INSTANCE: AppDatabase? = null
+
+          fun getInstance(context: Context): AppDatabase =
+              INSTANCE ?: synchronized(this) {
+                  INSTANCE ?: Room.databaseBuilder(
+                      context.applicationContext,
+                      AppDatabase::class.java,
+                      "streamzone_db"
+                  )
+                  .fallbackToDestructiveMigration()
+                  .build().also { INSTANCE = it }
+              }
+      }
+  }
+
+- `UserRepository.kt` (opcional, capa de datos)
+  package com.universidad.streamzone.data
+
+  import com.universidad.streamzone.data.room.UserDao
+  import com.universidad.streamzone.data.room.UserEntity
+  import kotlinx.coroutines.flow.Flow
+
+  class UserRepository(private val dao: UserDao) {
+      fun getAllUsers(): Flow<List<UserEntity>> = dao.getAll()
+      suspend fun insertUser(user: UserEntity) = dao.insert(user)
+  }
+
+- `UserViewModel.kt` (ViewModel ejemplo)
+  package com.universidad.streamzone.ui
+
+  import android.app.Application
+  import androidx.lifecycle.AndroidViewModel
+  import androidx.lifecycle.asLiveData
+  import androidx.lifecycle.viewModelScope
+  import com.universidad.streamzone.data.UserRepository
+  import com.universidad.streamzone.data.room.UserEntity
+  import kotlinx.coroutines.launch
+
+  class UserViewModel(application: Application, private val repo: UserRepository) : AndroidViewModel(application) {
+      val users = repo.getAllUsers().asLiveData()
+
+      fun addUser(name: String, email: String, uidFirebase: String? = null) {
+          val entity = UserEntity(name = name, email = email, uidFirebase = uidFirebase)
+          viewModelScope.launch {
+              repo.insertUser(entity)
+          }
+      }
+  }
+
+Nota sobre inyección/creación de ViewModel: en producción crea un `ViewModelFactory` que inyecte `UserRepository` usando `AppDatabase.getInstance(context).userDao()`.
+
+6) Botones en layout (XML) — ejemplo `app/src/main/res/layout/activity_register.xml`
+Inserta estas vistas en el layout donde correspondan (respeta el tipo de Layout: ConstraintLayout, LinearLayout, etc.). Los comentarios solicitados están incluidos exactamente.
+
+  <!-- //botones añadidos boton para guardar en firebase y mostrar usuarios de Firebase -->
+  <Button
+      android:id="@+id/btn_show_firebase_users"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Mostrar usuarios (Firebase)" />
+
+  <!-- //botones añadidos boton para guardar localmente y mostrar usuarios en Room -->
+  <Button
+      android:id="@+id/btn_show_room_users"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Mostrar usuarios (Local - Room)" />
+
+7) `RegisterActivity.kt` — listeners y eventos (ejemplo de integración)
+- Este ejemplo no se aplicó automáticamente; es un snippet que puedes pegar en tu Activity correspondiente. Usa Firestore para el listado de Firebase; para Room usa `AppDatabase`.
+
+  import android.app.AlertDialog
+  import android.os.Bundle
+  import android.widget.Button
+  import androidx.appcompat.app.AppCompatActivity
+  import com.google.firebase.firestore.FirebaseFirestore
+  import kotlinx.coroutines.CoroutineScope
+  import kotlinx.coroutines.Dispatchers
+  import kotlinx.coroutines.launch
+
+  class RegisterActivity : AppCompatActivity() {
+
+      private val firestore = FirebaseFirestore.getInstance()
+
+      override fun onCreate(savedInstanceState: Bundle?) {
+          super.onCreate(savedInstanceState)
+          // ...existing setContentView and initialization...
+
+          val btnFirebase = findViewById<Button>(R.id.btn_show_firebase_users)
+          val btnRoom = findViewById<Button>(R.id.btn_show_room_users)
+
+          btnFirebase.setOnClickListener {
+              // Evento: mostrar usuarios guardados en Firebase (Firestore)
+              fetchFirebaseUsers()
+          }
+
+          btnRoom.setOnClickListener {
+              // Evento: mostrar usuarios guardados localmente en Room
+              showRoomUsers()
+          }
+      }
+
+      private fun fetchFirebaseUsers() {
+          firestore.collection("users")
+              .get()
+              .addOnSuccessListener { querySnapshot ->
+                  val list = querySnapshot.documents.mapNotNull { doc ->
+                      val name = doc.getString("name") ?: ""
+                      val email = doc.getString("email") ?: ""
+                      "$name <${email}>"
+                  }
+                  showListDialog("Usuarios Firebase", list)
+              }
+              .addOnFailureListener { ex ->
+                  showErrorDialog("Error al obtener usuarios de Firebase: ${'$'}{ex.message}")
+              }
+      }
+
+      private fun showRoomUsers() {
+          val dao = com.universidad.streamzone.data.room.AppDatabase.getInstance(applicationContext).userDao()
+          CoroutineScope(Dispatchers.IO).launch {
+              val users = dao.getAllOnce()
+              val textList = users.map { "${'$'}{it.name} <${'$'}{it.email}>" }
+              runOnUiThread {
+                  showListDialog("Usuarios locales", textList)
+              }
+          }
+      }
+
+      private fun showListDialog(title: String, items: List<String>) {
+          val message = if (items.isEmpty()) "No hay usuarios" else items.joinToString("\n")
+          AlertDialog.Builder(this)
+              .setTitle(title)
+              .setMessage(message)
+              .setPositiveButton("OK", null)
+              .show()
+      }
+
+      private fun showErrorDialog(msg: String) {
+          AlertDialog.Builder(this)
+              .setTitle("Error")
+              .setMessage(msg)
+              .setPositiveButton("OK", null)
+              .show()
+      }
+
+      private fun saveUserToRoom(name: String, email: String, uidFirebase: String? = null) {
+          val dao = com.universidad.streamzone.data.room.AppDatabase.getInstance(applicationContext).userDao()
+          CoroutineScope(Dispatchers.IO).launch {
+              val entity = com.universidad.streamzone.data.room.UserEntity(
+                  name = name,
+                  email = email,
+                  uidFirebase = uidFirebase
+              )
+              dao.insert(entity)
+          }
+      }
+
+  }
+
+Notas importantes sobre Firebase
+- Si quieres listar usuarios del Authentication (todos los usuarios registrados), desde el cliente no es posible enumerar todos los usuarios de Firebase Auth: esa funcionalidad es parte del Admin SDK (servidor). La práctica estándar es guardar un perfil en Firestore/RealtimeDB al registrarse y luego leer esa colección desde la app.
+- Asegúrate de que la colección (ej: `users`) exista y que las reglas permitan lectura desde la app (en desarrollo). De otro modo la consulta falla por permisos.
+
+8) Comandos útiles (PowerShell en Windows)
+- Compilar y mostrar errores:
+  .\gradlew.bat clean assembleDebug --refresh-dependencies --info --stacktrace
+- Instalar en dispositivo/emulador:
+  .\gradlew.bat installDebug
+- Ver dispositivos con adb (si adb está en PATH):
+  adb devices
+- Instalar apk manualmente con adb:
+  adb install -r app\build\outputs\apk\debug\app-debug.apk
+
+9) Notas finales y recomendaciones
+- Este archivo es solo documentación: no se aplicaron cambios al código fuente en esta operación. Si quieres que aplique los snippets y cree los archivos .kt y actualice Gradle, confirma y lo hago.
+- Antes de compilar después de aplicar los cambios:
+  1) Añade las dependencias y plugins en `app/build.gradle.kts`.
+  2) Añade `colors.xml` con `button_blue` y `button_gray` si no existen.
+  3) Añade los archivos Room y el ViewModel (o adapta a tu arquitectura existente).
+  4) Asegúrate de que `google-services.json` está en `app/` y que el plugin `com.google.gms.google-services` está aplicado si lo necesitas.
+
+10) Archivos entregados en esta carpeta
+- registro_actividad.txt (historial y resumen) — ya creado.
+- implementacion_detallada.txt (este archivo) — detalle paso a paso, snippets y comandos.
+
+Fin del documento.
+

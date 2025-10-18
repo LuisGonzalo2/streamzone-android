@@ -1,0 +1,114 @@
+Registro de actividad del proyecto streamzone-android
+Fecha: 2025-10-18
+
+Resumen corto:
+Este documento recoge las acciones realizadas en la sesión: operaciones git (stash, pull, ramas), integración del archivo google-services.json de Firebase, intentos de build, errores encontrados y comandos útiles para reproducir/continuar el trabajo.
+
+Checklist de lo hecho (estado):
+- git stash antes de actualizar develop: Hecho
+- Actualizar rama develop (pull --rebase): Hecho
+- Crear/switch a rama nueva para base de datos: Hecho (nombre que usaste: develop_basededatos / develop_base de datos según mensajes)
+- Añadir `google-services.json` al módulo `app/`: Hecho (ruta: app/google-services.json)
+- Intentar añadir dependencias de Firebase: Intentado (build falló por dependencias sin versión)
+- Ejecutar build/assemble/install: Ejecutado varias veces; build falló por recursos faltantes y dependencias; luego build exitoso en una ejecución posterior (ver logs)
+- Añadir botones en la UI para ver usuarios Firebase / usuarios Room: Solicitado por el usuario (no implementado en código en esta sesión)
+
+Cronología de comandos y acciones relevantes (copiar/pegar):
+1) Guardar cambios locales antes de actualizar:
+   git stash push -m "WIP antes de actualizar develop"
+
+2) Ver rama actual y estado:
+   git branch --show-current
+   git status -s
+
+3) Actualizar develop desde remoto (estando en PowerShell, usando comandos separados o con && no funciona en algunas shells):
+   git fetch origin
+   git checkout develop
+   git pull --rebase origin develop
+
+4) Crear / cambiar a rama para base de datos (ejemplo):
+   git checkout -b develop_basededatos
+   // o si ya creada: git checkout develop_basededatos
+
+5) Copias y archivos de Firebase:
+   - google-services.json descargado desde Firebase Console. Contenido clave:
+     package_name: com.universidad.streamzone
+     project_id: streamzone-1fdeb
+     api_key en google-services.json (presente)
+   - Ruta donde lo colocaste: app\google-services.json
+
+6) Intentos de build y comandos usados (PowerShell):
+   .\gradlew.bat clean assembleDebug --refresh-dependencies --info --stacktrace > gradle-log.txt
+   .\gradlew.bat installDebug
+   adb install -r app\build\outputs\apk\debug\app-debug.apk
+   // Nota: en PowerShell para ejecutar el gradlew en la carpeta del proyecto usar .\gradlew.bat (la sugerencia del sistema)
+
+Errores importantes observados (resumen y cómo identificarlos):
+- Problema: dependencias Firebase sin versión (ModuleVersionNotFoundException)
+  Mensaje: Could not find com.google.firebase:firebase-auth-ktx:.
+  Causa probable: en `app/build.gradle.kts` las dependencias Firebase fueron añadidas sin versión o falla en la importación del BOM (Firebase BoM). Solución: definir versiones o usar BoM correctamente.
+  Recomendación rápida: en `app/build.gradle.kts` usar algo como:
+    implementation platform("com.google.firebase:firebase-bom:32.2.0")
+    implementation "com.google.firebase:firebase-auth-ktx"
+    implementation "com.google.firebase:firebase-firestore-ktx"
+    implementation "com.google.firebase:firebase-analytics-ktx"
+    implementation "com.google.firebase:firebase-storage-ktx"
+  Ajusta la versión del BoM a la recomendada por Firebase actualmente.
+
+- Problema: recursos no encontrados al compilar (AAPT2 error)
+  Mensaje: resource color/button_blue not found / color/button_gray not found
+  Archivo: app/src/main/res/layout/activity_register.xml (líneas indicadas)
+  Causa probable: faltan definiciones de colores en `res/values/colors.xml` o fueron renombrados.
+  Solución: añadir entradas en `res/values/colors.xml`:
+    <color name="button_blue">#007BFF</color>
+    <color name="button_gray">#BDBDBD</color>
+
+- Problema: No connected devices al intentar instalar con installDebug
+  Mensaje: com.android.builder.testing.api.DeviceException: No connected devices!
+  Solución: conectar un dispositivo o iniciar un emulador. Alternativa: instalar manual con adb cuando adb esté en PATH.
+
+Estado final observado en sesión:
+- El último registro muestra un BUILD SUCCESSFUL (al final del log que compartiste) - indica que en una ejecución posterior se logró compilar.
+- `google-services.json` está en `app/` con package_name `com.universidad.streamzone`.
+- Aún quedan tareas para garantizar que Firebase esté completamente funcional (chequear dependencias Firebase en Gradle y asegurarse que el plugin de Google Services esté aplicado si es necesario).
+
+Archivos/modificaciones importantes (lo que hay que revisar):
+- app/google-services.json (ya agregado)
+- app/build.gradle.kts (verificar dependencias Firebase y plugin google-services)
+- app/src/main/res/values/colors.xml (añadir `button_blue` y `button_gray` si faltan)
+- app/src/main/res/layout/activity_register.xml (usa los colores anteriores)
+
+Comandos recomendados ahora (PowerShell, desde la raíz del proyecto):
+1) Si quieres volver a compilar y ver errores concretos:
+   .\gradlew.bat clean assembleDebug --refresh-dependencies --info --stacktrace
+2) Para instalar en un dispositivo conectado/emulador:
+   .\gradlew.bat installDebug
+   // Si usas adb manualmente (asegúrate que adb esté en PATH):
+   adb devices
+   adb install -r app\build\outputs\apk\debug\app-debug.apk
+3) Para comprobar ramas y confirmar en cuál estás:
+   git branch --show-current
+
+Próximos pasos sugeridos (priorizados):
+1) Revisar `app/build.gradle.kts` y asegurar que las dependencias Firebase están declaradas correctamente (usando Firebase BoM o versiones explícitas). Si quieres, lo hago por ti.
+2) Añadir los colores faltantes en `res/values/colors.xml` para resolver error AAPT2.
+3) Conectar dispositivo o iniciar emulador para `installDebug`.
+4) Implementar los dos botones solicitados en la UI (mostrar usuarios de Firebase y mostrar usuarios de Room). Puedo crear los cambios de código y comentarios si confirmas qué Activity/Fragment modificar (probablemente `RegisterActivity` o pantalla posterior al registro).
+
+Registro de comandos ejecutados en la sesión (extraído de tu terminal):
+- git stash push -m "WIP antes de actualizar develop"
+- git fetch origin && git checkout develop && git pull --rebase origin develop  (en PowerShell no usar && en la forma tradicional si da error)
+- git pull --rebase origin develop
+- git branch --show-current
+- git status -s
+- .\gradlew.bat --stop
+- .\gradlew.bat clean assembleDebug --refresh-dependencies --info --stacktrace > gradle-log.txt
+- .\gradlew.bat installDebug
+- adb install -r app\build\outputs\apk\debug\app-debug.apk
+
+Notas finales:
+- El archivo `google-services.json` está incluido y coincide con el package `com.universidad.streamzone`.
+- Puedo continuar y aplicar las correcciones concretas (1. arreglar dependencias Firebase en Gradle; 2. añadir colores; 3. implementar botones y su lógica) si me das permiso. Indica si quieres que haga esos cambios ahora y en qué archivos exactamente debo trabajar (por ejemplo: `RegisterActivity.kt`).
+
+--- Fin del registro ---
+

@@ -17,4 +17,8 @@
     <color name="text_hint">#64748B</color>
     <color name="input_background">#334155</color>
     <color name="green_accent">#10B981</color>
+
+    <!-- Colores añadidos para botones -->
+    <color name="button_blue">#2563EB</color>
+    <color name="button_gray">#6B7280</color>
 </resources>

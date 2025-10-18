@@ -357,6 +357,32 @@
                     app:cornerRadius="28dp"
                     android:textAllCaps="false" />
 
+                <!-- Botones añadidos -->
+                <!--botones añadidos boton para guardar en firebase y el otro que guarde localmente-->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_show_firebase_users"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="Mostrar usuarios (Firebase)"
+                    android:textSize="14sp"
+                    android:textAllCaps="false"
+                    app:backgroundTint="@color/button_blue"
+                    app:cornerRadius="20dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_show_local_users"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="Mostrar usuarios (local)"
+                    android:textSize="14sp"
+                    android:textAllCaps="false"
+                    app:backgroundTint="@color/button_gray"
+                    app:cornerRadius="20dp" />
+
                 <!-- Volver a login -->
                 <TextView
                     android:id="@+id/tv_back_to_login"

@@ -20,6 +20,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -38,6 +40,10 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var checkShowPassword: CheckBox
     private lateinit var btnRegister: MaterialButton
     private lateinit var tvBackToLogin: TextView
+
+    //botones añadidos boton para guardar en firebase y el otro que guarde localmente
+    private lateinit var btnShowFirebaseUsers: MaterialButton
+    private lateinit var btnShowLocalUsers: MaterialButton
 
     private var isPasswordVisible = false
     private var isConfirmPasswordVisible = false
@@ -104,6 +110,10 @@ class RegisterActivity : AppCompatActivity() {
         btnRegister = findViewById(R.id.btn_register)
         checkShowPassword = findViewById(R.id.check_show_password)
         tvBackToLogin = findViewById(R.id.tv_back_to_login)
+
+        //botones añadidos boton para guardar en firebase y el otro que guarde localmente
+        btnShowFirebaseUsers = findViewById(R.id.btn_show_firebase_users)
+        btnShowLocalUsers = findViewById(R.id.btn_show_local_users)
     }
 
     private fun setupSpinner() {
@@ -192,6 +202,16 @@ class RegisterActivity : AppCompatActivity() {
                 }
             }
         })
+
+        // Listar usuarios de Firebase
+        btnShowFirebaseUsers.setOnClickListener {
+            startActivity(Intent(this, FirebaseUsersActivity::class.java))
+        }
+
+        // Listar usuarios guardados en Room
+        btnShowLocalUsers.setOnClickListener {
+            startActivity(Intent(this, RoomUsersActivity::class.java))
+        }
     }
 
     private fun handleRegister() {
@@ -208,6 +228,53 @@ class RegisterActivity : AppCompatActivity() {
         if (!validatePhone(phone)) return
         if (!validatePassword(password)) return
         if (!validateConfirmPassword(password, confirmPassword)) return
+
+        // Guardar localmente en Room
+        try {
+            val user = UserEntity(fullName = fullName, email = email, phone = phone)
+            val db = AppDatabase.getInstance(this)
+            db.userDao().insert(user)
+            Toast.makeText(this, "Usuario guardado localmente", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            // no bloquear el flujo si falla el guardado local
+            e.printStackTrace()
+        }
+
+        // Intentar guardar en Firestore (si las reglas lo permiten)
+        try {
+            val auth = FirebaseAuth.getInstance()
+            val firestore = FirebaseFirestore.getInstance()
+            val writeToFirestore = {
+                val data = hashMapOf(
+                    "fullName" to fullName,
+                    "email" to email,
+                    "phone" to phone,
+                    "createdAt" to com.google.firebase.Timestamp.now()
+                )
+                firestore.collection("users").add(data)
+                    .addOnSuccessListener {
+                        Toast.makeText(this, "Usuario guardado en Firebase", Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener { e ->
+                        // No bloquear si falla
+                        Toast.makeText(this, "No se pudo guardar en Firebase: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+            }
+
+            if (auth.currentUser != null) {
+                writeToFirestore()
+            } else {
+                auth.signInAnonymously()
+                    .addOnSuccessListener {
+                        writeToFirestore()
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "No se pudo autenticar para Firebase: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         showSuccessAndNavigate(fullName, email)
     }

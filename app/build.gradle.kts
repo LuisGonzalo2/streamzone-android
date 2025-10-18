@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     // Agregado: plugin de Google Services para procesar google-services.json
     id("com.google.gms.google-services")
+    // Agregado: KAPT para Room (sintaxis kotlin DSL)
+    kotlin("kapt")
 }
 
 android {
@@ -48,8 +50,16 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // Firebase BOM y módulos (Firestore + Auth)
-    implementation(platform("com.google.firebase:firebase-bom:32.2.0"))
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
+    // Firebase (usar versiones explícitas para evitar problemas de resolución)
+    // implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+    implementation("com.google.firebase:firebase-auth-ktx:22.1.1")
+    implementation("com.google.firebase:firebase-firestore-ktx:24.7.1")
+    // Opcional: firebase-analytics fallaba en tu entorno (artifact no encontrado), comento temporalmente
+    // implementation("com.google.firebase:firebase-analytics-ktx:21.6.0")
+    implementation("com.google.firebase:firebase-storage-ktx:20.2.0")
+
+    // Room (local database)
+    implementation("androidx.room:room-runtime:2.5.2")
+    implementation("androidx.room:room-ktx:2.5.2")
+    kapt("androidx.room:room-compiler:2.5.2")
 }

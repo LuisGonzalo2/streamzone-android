@@ -144,7 +144,6 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         btnRegister.setOnClickListener {
-            // 1Primero validamos todos los campos
             val fullName = etFullName.text.toString().trim()
             val email = etEmail.text.toString().trim()
             val phone = etPhone.text.toString().trim()
@@ -159,29 +158,48 @@ class RegisterActivity : AppCompatActivity() {
             if (!validatePassword(password)) return@setOnClickListener
             if (!validateConfirmPassword(password, confirmPassword)) return@setOnClickListener
 
-            // Si todo está bien, creamos el usuario
-            val usuario = UsuarioEntity(
-                fullname = fullName,
-                email = email,
-                phone = phone,
-                password = password,
-                confirmPassword = confirmPassword
-            )
-
-            // Guardamos en Room y Firebase
             val dao = AppDatabase.getInstance(this).usuarioDao()
 
-            btnRegister.isEnabled = false//
             lifecycleScope.launch {
+                // vrificar si ya existe el correo o el teléfono
+                val usuarioExistentePorEmail = dao.buscarPorEmail(email)
+                val usuarioExistentePorTelefono = dao.buscarPorTelefono(phone)
+
+                if (usuarioExistentePorEmail != null) {
+                    runOnUiThread {
+                        etEmail.error = "Este correo ya está registrado"
+                    }
+                    return@launch
+                }
+
+                if (usuarioExistentePorTelefono != null) {
+                    runOnUiThread {
+                        etPhone.error = "Este número ya está registrado"
+                    }
+                    return@launch
+                }
+
+                //  Si no existen duplicados, guardar normalmente
+                val usuario = UsuarioEntity(
+                    fullname = fullName,
+                    email = email,
+                    phone = phone,
+                    password = password,
+                    confirmPassword = confirmPassword
+                )
+
                 dao.insertar(usuario)
                 FirebaseService.guardarUsuario(usuario)
+
                 runOnUiThread {
-                    Toast.makeText(this@RegisterActivity, "✅ Registro exitoso", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@RegisterActivity,
+                        "✅ Registro exitoso",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     navigateToLogin()
-                    btnRegister.isEnabled = true
                 }
             }
-
         }
 
 

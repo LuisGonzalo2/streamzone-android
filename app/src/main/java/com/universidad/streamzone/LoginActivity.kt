@@ -12,9 +12,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.universidad.streamzone.database.AppDatabase
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
@@ -35,6 +38,7 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+
 
         sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
 
@@ -110,15 +114,44 @@ class LoginActivity : AppCompatActivity() {
         if (!validateEmail(email)) return
         if (!validatePassword(password)) return
 
-        loginAttempts = sharedPrefs.getInt("login_attempts", 0) + 1
-        sharedPrefs.edit().putInt("login_attempts", loginAttempts).apply()
+        val dao = AppDatabase.getInstance(this).usuarioDao()
 
-        Toast.makeText(
-            this,
-            "Esta cuenta no existe. Por favor regístrate primero.",
-            Toast.LENGTH_LONG
-        ).show()
+        lifecycleScope.launch {
+            val usuario = dao.buscarPorEmail(email)
+
+            if (usuario == null) {
+                runOnUiThread {
+                    tilEmail.error = "Esta cuenta no existe. Por favor regístrate primero."
+                    etEmail.requestFocus()
+                }
+                return@launch
+            }
+
+            if (usuario.password != password) {
+                runOnUiThread {
+                    tilPassword.error = "Contraseña incorrecta"
+                    etPassword.requestFocus()
+                }
+                return@launch
+            }
+
+            // Login exitoso
+            runOnUiThread {
+                Toast.makeText(
+                    this@LoginActivity,
+                    "✅ Bienvenido ${usuario.fullname}",
+                    Toast.LENGTH_SHORT
+                ).show()
+                sharedPrefs.edit().putString("logged_in_user_email", email).apply()
+
+                val intent = Intent(this@LoginActivity, HomeActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                startActivity(intent)
+                finish()
+            }
+        }
     }
+
 
     private fun validateEmail(email: String): Boolean {
         return when {

@@ -20,6 +20,13 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.universidad.streamzone.model.UsuarioEntity
+import androidx.lifecycle.lifecycleScope
+import com.universidad.streamzone.cloud.FirebaseService
+import com.universidad.streamzone.database.AppDatabase
+import kotlinx.coroutines.launch
+
+
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -137,8 +144,66 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         btnRegister.setOnClickListener {
-            handleRegister()
+            val fullName = etFullName.text.toString().trim()
+            val email = etEmail.text.toString().trim()
+            val phone = etPhone.text.toString().trim()
+            val password = etPassword.text.toString()
+            val confirmPassword = etConfirmPassword.text.toString()
+
+            clearAllErrors()
+
+            if (!validateFullName(fullName)) return@setOnClickListener
+            if (!validateEmail(email)) return@setOnClickListener
+            if (!validatePhone(phone)) return@setOnClickListener
+            if (!validatePassword(password)) return@setOnClickListener
+            if (!validateConfirmPassword(password, confirmPassword)) return@setOnClickListener
+
+            val dao = AppDatabase.getInstance(this).usuarioDao()
+
+            lifecycleScope.launch {
+                // vrificar si ya existe el correo o el teléfono
+                val usuarioExistentePorEmail = dao.buscarPorEmail(email)
+                val usuarioExistentePorTelefono = dao.buscarPorTelefono(phone)
+
+                if (usuarioExistentePorEmail != null) {
+                    runOnUiThread {
+                        etEmail.error = "Este correo ya está registrado"
+                    }
+                    return@launch
+                }
+
+                if (usuarioExistentePorTelefono != null) {
+                    runOnUiThread {
+                        etPhone.error = "Este número ya está registrado"
+                    }
+                    return@launch
+                }
+
+                //  Si no existen duplicados, guardar normalmente
+                val usuario = UsuarioEntity(
+                    fullname = fullName,
+                    email = email,
+                    phone = phone,
+                    password = password,
+                    confirmPassword = confirmPassword
+                )
+
+                dao.insertar(usuario)
+                FirebaseService.guardarUsuario(usuario)
+
+                runOnUiThread {
+                    Toast.makeText(
+                        this@RegisterActivity,
+                        "✅ Registro exitoso",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    navigateToLogin()
+                }
+            }
         }
+
+
+
 
         tvBackToLogin.setOnClickListener {
             navigateToLogin()
@@ -210,6 +275,10 @@ class RegisterActivity : AppCompatActivity() {
         if (!validateConfirmPassword(password, confirmPassword)) return
 
         showSuccessAndNavigate(fullName, email)
+
+
+
+
     }
 
     private fun validateFullName(name: String): Boolean {
@@ -471,4 +540,6 @@ class RegisterActivity : AppCompatActivity() {
         }
         networkCallback = null
     }
+
+
 }

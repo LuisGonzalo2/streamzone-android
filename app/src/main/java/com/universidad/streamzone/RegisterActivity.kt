@@ -20,6 +20,13 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.universidad.streamzone.model.UsuarioEntity
+import androidx.lifecycle.lifecycleScope
+import com.universidad.streamzone.cloud.FirebaseService
+import com.universidad.streamzone.database.AppDatabase
+import kotlinx.coroutines.launch
+
+
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -138,7 +145,40 @@ class RegisterActivity : AppCompatActivity() {
     private fun setupListeners() {
         btnRegister.setOnClickListener {
             handleRegister()
+
+            val nombre = etFullName.text.toString()
+            val email = etEmail.text.toString()
+            val phone = etPhone.text.toString()
+            val password = etPassword.text.toString()
+            val confirmPassword = etConfirmPassword.text.toString()
+
+
+
+            val usuario= UsuarioEntity(
+                fullname =  nombre,
+                email = email,
+                phone = phone,
+                password = password,
+                confirmPassword = confirmPassword
+
+            )
+            val dao= AppDatabase.getInstance(this).usuarioDao()
+            lifecycleScope.launch {
+                dao.insertar(usuario)
+                FirebaseService.guardarUsuario(usuario)
+                runOnUiThread {
+                    Toast.makeText(this@RegisterActivity,"Registro exitoso",
+                        Toast.LENGTH_SHORT).show()
+
+
+                }
+
+            }
+
+
         }
+
+
 
         tvBackToLogin.setOnClickListener {
             navigateToLogin()
@@ -210,6 +250,10 @@ class RegisterActivity : AppCompatActivity() {
         if (!validateConfirmPassword(password, confirmPassword)) return
 
         showSuccessAndNavigate(fullName, email)
+
+
+
+
     }
 
     private fun validateFullName(name: String): Boolean {
@@ -352,7 +396,7 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun navigateToLogin() {
-        val intent = Intent(this, LoginActivity::class.java)
+        val intent = Intent(this, HomeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
         finish()
@@ -471,4 +515,6 @@ class RegisterActivity : AppCompatActivity() {
         }
         networkCallback = null
     }
+
+
 }

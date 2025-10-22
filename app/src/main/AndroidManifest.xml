@@ -14,34 +14,32 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CarpoolAppUniversidad">
-
-        <!-- Splash - Pantalla de inicio -->
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ListaUsuariosActivity"
+            android:exported="false" /> <!-- Splash - Pantalla de inicio -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- Login -->
+        </activity> <!-- Login -->
         <activity
             android:name=".LoginActivity"
-            android:exported="false" />
-
-        <!-- Registro -->
+            android:exported="false" /> <!-- Registro -->
         <activity
             android:name=".RegisterActivity"
             android:exported="false"
-            android:parentActivityName=".LoginActivity" />
-
-        <!-- MainActivity -->
+            android:parentActivityName=".LoginActivity" /> <!-- MainActivity -->
         <activity
             android:name=".MainActivity"
             android:exported="false" />
-
     </application>
 
 </manifest>

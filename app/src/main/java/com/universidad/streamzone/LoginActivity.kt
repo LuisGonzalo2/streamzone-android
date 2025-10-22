@@ -36,6 +36,7 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
+
         sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
 
         initViews()

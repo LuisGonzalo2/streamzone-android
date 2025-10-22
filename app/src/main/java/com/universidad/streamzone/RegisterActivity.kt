@@ -144,39 +144,46 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         btnRegister.setOnClickListener {
-            handleRegister()
-
-            val nombre = etFullName.text.toString()
-            val email = etEmail.text.toString()
-            val phone = etPhone.text.toString()
+            // 1Primero validamos todos los campos
+            val fullName = etFullName.text.toString().trim()
+            val email = etEmail.text.toString().trim()
+            val phone = etPhone.text.toString().trim()
             val password = etPassword.text.toString()
             val confirmPassword = etConfirmPassword.text.toString()
 
+            clearAllErrors()
 
+            if (!validateFullName(fullName)) return@setOnClickListener
+            if (!validateEmail(email)) return@setOnClickListener
+            if (!validatePhone(phone)) return@setOnClickListener
+            if (!validatePassword(password)) return@setOnClickListener
+            if (!validateConfirmPassword(password, confirmPassword)) return@setOnClickListener
 
-            val usuario= UsuarioEntity(
-                fullname =  nombre,
+            // Si todo está bien, creamos el usuario
+            val usuario = UsuarioEntity(
+                fullname = fullName,
                 email = email,
                 phone = phone,
                 password = password,
                 confirmPassword = confirmPassword
-
             )
-            val dao= AppDatabase.getInstance(this).usuarioDao()
+
+            // Guardamos en Room y Firebase
+            val dao = AppDatabase.getInstance(this).usuarioDao()
+
+            btnRegister.isEnabled = false
             lifecycleScope.launch {
                 dao.insertar(usuario)
                 FirebaseService.guardarUsuario(usuario)
                 runOnUiThread {
-                    Toast.makeText(this@RegisterActivity,"Registro exitoso",
-                        Toast.LENGTH_SHORT).show()
-
-
+                    Toast.makeText(this@RegisterActivity, "✅ Registro exitoso", Toast.LENGTH_SHORT).show()
+                    navigateToLogin()
+                    btnRegister.isEnabled = true
                 }
-
             }
 
-
         }
+
 
 
 

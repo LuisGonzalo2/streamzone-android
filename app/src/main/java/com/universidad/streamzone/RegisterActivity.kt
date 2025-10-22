@@ -171,7 +171,7 @@ class RegisterActivity : AppCompatActivity() {
             // Guardamos en Room y Firebase
             val dao = AppDatabase.getInstance(this).usuarioDao()
 
-            btnRegister.isEnabled = false
+            btnRegister.isEnabled = false//
             lifecycleScope.launch {
                 dao.insertar(usuario)
                 FirebaseService.guardarUsuario(usuario)

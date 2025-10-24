@@ -15,6 +15,10 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import androidx.lifecycle.lifecycleScope
+import com.universidad.streamzone.database.AppDatabase
+import kotlinx.coroutines.launch
+import androidx.core.content.edit
 
 class LoginActivity : AppCompatActivity() {
 
@@ -35,7 +39,6 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-
 
         sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
 
@@ -111,14 +114,49 @@ class LoginActivity : AppCompatActivity() {
         if (!validateEmail(email)) return
         if (!validatePassword(password)) return
 
-        loginAttempts = sharedPrefs.getInt("login_attempts", 0) + 1
-        sharedPrefs.edit().putInt("login_attempts", loginAttempts).apply()
+        // Buscar usuario en la base de datos y verificar contraseña
+        val dao = AppDatabase.getInstance(this).usuarioDao()
+        lifecycleScope.launch {
+            val usuario = dao.buscarPorEmail(email)
+            if (usuario == null) {
+                // No existe la cuenta
+                incrementLoginAttempts()
+                runOnUiThread {
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Esta cuenta no existe. Por favor regístrate primero.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                return@launch
+            }
 
-        Toast.makeText(
-            this,
-            "Esta cuenta no existe. Por favor regístrate primero.",
-            Toast.LENGTH_LONG
-        ).show()
+            // Comparar contraseña
+            if (usuario.password == password) {
+                // Login exitoso: resetear intentos y navegar a HomeActivity
+                sharedPrefs.edit { putInt("login_attempts", 0) }
+                runOnUiThread {
+                    Toast.makeText(this@LoginActivity, "Bienvenido ${usuario.fullname}", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this@LoginActivity, HomeActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                    intent.putExtra("USER_FULLNAME", usuario.fullname)
+                    startActivity(intent)
+                    finish()
+                }
+            } else {
+                // Contraseña incorrecta
+                incrementLoginAttempts()
+                runOnUiThread {
+                    tilPassword.error = "Contraseña incorrecta"
+                    etPassword.requestFocus()
+                }
+            }
+        }
+    }
+
+    private fun incrementLoginAttempts() {
+        loginAttempts = sharedPrefs.getInt("login_attempts", 0) + 1
+        sharedPrefs.edit { putInt("login_attempts", loginAttempts) }
     }
 
     private fun validateEmail(email: String): Boolean {
@@ -194,10 +232,6 @@ class LoginActivity : AppCompatActivity() {
         ).show()
     }
 
-    private fun handleBackHome() {
-        finishAffinity()
-    }
-
     private fun togglePasswordVisibility() {
         if (isPasswordVisible) {
             etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
@@ -214,7 +248,7 @@ class LoginActivity : AppCompatActivity() {
     private fun saveEmail() {
         val email = etEmail.text.toString().trim()
         if (email.isNotEmpty()) {
-            sharedPrefs.edit().putString("last_email", email).apply()
+            sharedPrefs.edit { putString("last_email", email) }
         }
     }
 
@@ -235,7 +269,7 @@ class LoginActivity : AppCompatActivity() {
                     handleRegister()
                 }
                 .setNegativeButton("Reintentar") { dialog, _ ->
-                    sharedPrefs.edit().putInt("login_attempts", 0).apply()
+                    sharedPrefs.edit { putInt("login_attempts", 0) }
                     dialog.dismiss()
                 }
                 .show()
@@ -285,7 +319,7 @@ class LoginActivity : AppCompatActivity() {
 
         try {
             connectivityManager.registerDefaultNetworkCallback(networkCallback!!)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Silencioso
         }
     }
@@ -295,7 +329,7 @@ class LoginActivity : AppCompatActivity() {
             try {
                 val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
                 connectivityManager.unregisterNetworkCallback(it)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Silencioso
             }
         }

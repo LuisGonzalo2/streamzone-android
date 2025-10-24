@@ -1,0 +1,72 @@
+Cambios realizados para integrar el Home web (2025-10-24):
+
+Resumen general:
+- Integré tu código web (Home React/JSX) como una página HTML local dentro de la app Android, y la cargo usando un WebView en `HomeActivity`.
+- Objetivo: que al iniciar sesión el usuario vea la UI exactamente como en tu página web (hero + catálogo + footer), sin migrar a React Native o rehacer el UI en nativo.
+
+Archivos añadidos / modificados:
+
+1) Archivos añadidos en `app/src/main/assets/www/` (web):
+   - `index.html`  -- Contiene tu Home en JSX + Tailwind vía CDN; transpila JSX en runtime con Babel (prototipo).
+     - Comentarios: dentro de `index.html` verás la marca `//jere` en varios lugares para indicar integraciones específicas con Android.
+     - Nota: para producción conviene compilar el JS fuera y eliminar Babel en runtime.
+
+2) Archivos nativos añadidos/modificados:
+   - `app/src/main/java/com/universidad/streamzone/HomeActivity.kt` (MODIFICADO)
+     - Ahora carga `file:///android_asset/www/index.html` en un WebView.
+     - Añade la interfaz JS `Android` (método `onReserve(serviceJson: String)`) para recibir eventos desde la web.
+     - Envía el nombre del usuario (extra `USER_FULLNAME`) como query param al cargar la página para que la web pueda saludar al usuario.
+     - Comentarios `//jere` añadidos donde se integran funciones clave.
+   - `app/src/main/res/layout/activity_home_webview.xml` (AÑADIDO)
+     - Layout simple que contiene el `WebView`.
+
+3) Archivos nativos adicionales creados previamente (para alternativa nativa):
+   - `app/src/main/java/com/universidad/streamzone/model/CatalogItem.kt` (AÑADIDO)
+   - `app/src/main/java/com/universidad/streamzone/CatalogAdapter.kt` (AÑADIDO)
+   - `app/src/main/res/layout/item_catalog_card.xml` (AÑADIDO)
+   - `app/src/main/res/layout/activity_home.xml` (MODIFICADO para diseño nativo alternativa)
+   - `app/src/main/java/com/universidad/streamzone/LoginActivity.kt` (MODIFICADO)
+     - Se añadió `intent.putExtra("USER_FULLNAME", usuario.fullname)` para pasar el nombre al Home.
+
+Qué implementé y por qué (detalles):
+- Enfoque: WebView local (archivo en `assets/www/index.html`) para mantener exactamente el look & feel de tu web sin reescribir todo en Android.
+- Comunicación web -> Android: `webView.addJavascriptInterface(AndroidBridge(), "Android")` expone `Android.onReserve(serviceJson)` para que al pulsar "Comprar Ahora" en la web la app reciba el JSON (actualmente registrado en logs).
+- Comunicación Android -> web: paso el nombre del usuario como query param `?user=...` al cargar el index.html; la web extrae `user` de `window.location.search` y lo usa para mostrar estado autenticado. (Ver `index.html` en assets).
+- Seguridad y notas:
+  - Para producción no uses `Babel` en runtime ni Tailwind CDN; bundle tu app (build) y sirve los archivos minificados.
+  - `addJavascriptInterface` puede ser peligroso si la WebView carga contenidos externos; como estamos cargando assets locales es aceptable.
+
+Cómo probar localmente (método rápido):
+1) Compila y ejecuta la app desde Android Studio.
+2) Registra un usuario en `RegisterActivity` y luego haz login.
+3) Al hacer login con éxito, `LoginActivity` abre `HomeActivity` y ahora cargará tu UI web desde `assets/www/index.html` en el WebView. El nombre del usuario se envía en la URL y la web lo mostrará (si existe).
+4) Desde la web, pulsar "Comprar Ahora" dispara `window.Android.onReserve(JSON.stringify(service))` — revisa Logcat para ver el mensaje: `Reserva recibida desde Web: ...`.
+
+Comentarios en el código (marcas //jere):
+- Dentro de `index.html` y `HomeActivity.kt` usé comentarios `//jere` para indicar puntos de integración realizados por el equipo.
+
+Siguientes pasos recomendados (opcional)
+- Compilar tu React/TSX con una herramienta (Vite/Webpack) y sustituir el index.html por la versión ya compilada para mejor rendimiento.
+- Implementar lógica nativa cuando llega `onReserve` (abrir pantalla de compra, integrar pagos, guardar pedidos en DB, etc.).
+- Añadir comunicación nativa -> web para notificar cambios (p. ej. estado de compra completada) usando `webView.evaluateJavascript(...)`.
+
+Si quieres que proceda ahora con:
+- A) Compilar tu código TypeScript/React en un bundle (bundle.js) aquí y reemplazar la versión con Babel en runtime.
+- B) Implementar la acción nativa completa para `onReserve` (por ejemplo abrir una pantalla de confirmación con detalles del servicio),
+hazmelo saber y lo implemento.
+
+
+Listado completo de rutas afectadas (resumen):
+- AÑADIDOS:
+  - app/src/main/assets/www/index.html
+  - app/src/main/res/layout/activity_home_webview.xml
+  - app/src/main/java/com/universidad/streamzone/model/CatalogItem.kt
+  - app/src/main/java/com/universidad/streamzone/CatalogAdapter.kt
+  - app/src/main/res/layout/item_catalog_card.xml
+- MODIFICADOS:
+  - app/src/main/java/com/universidad/streamzone/HomeActivity.kt
+  - app/src/main/res/layout/activity_home.xml
+  - app/src/main/java/com/universidad/streamzone/LoginActivity.kt
+
+Fin del log.
+

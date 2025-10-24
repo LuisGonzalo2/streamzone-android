@@ -1,0 +1,34 @@
+Cambios realizados el 2025-10-24:
+
+Archivos modificados:
+- app/src/main/java/com/universidad/streamzone/LoginActivity.kt
+
+Resumen de cambios:
+1) Implementación de verificación de credenciales usando Room (AppDatabase + UsuarioDao):
+   - Se añadió uso de AppDatabase.getInstance(this).usuarioDao() para buscar el usuario por correo.
+   - Ahora el login busca el usuario por email y compara la contraseña guardada en la entidad UsuarioEntity.
+
+2) Flujo de éxito/fallo:
+   - Si el usuario no existe: incrementa contador de intentos fallidos y muestra un Toast que indica que debe registrarse.
+   - Si la contraseña es incorrecta: incrementa contador, muestra error en el TextInputLayout de contraseña.
+   - Si el login es correcto: resetea el contador de intentos en SharedPreferences, muestra Toast de bienvenida y navega a HomeActivity (limpiando la pila).
+
+3) Uso de corutinas y lifecycleScope:
+   - La búsqueda en la base de datos se realiza dentro de lifecycleScope.launch { ... } para no bloquear el hilo UI.
+
+4) Mantenimiento del comportamiento previo:
+   - Validaciones de email y contraseña, guardado/recuperado de email, manejo de visibilidad de contraseña, manejo de estado de red y contador de intentos siguen funcionando.
+
+Motivo del cambio:
+- Antes, LoginActivity solo mostraba un Toast diciendo que la cuenta no existía sin verificar la base de datos. Con estos cambios, se compara con los registros creados por RegisterActivity y el login funciona correctamente si las credenciales coinciden.
+
+Pruebas recomendadas por el desarrollador:
+1) Registra un usuario con `RegisterActivity` (email y contraseña válidos).
+2) En `LoginActivity`, introduce las mismas credenciales y verifica que navega a HomeActivity.
+3) Introduce un email existente con contraseña equivocada y valida que aumenta el contador y muestra error de contraseña.
+4) Introduce un email no registrado y valida que muestra el mensaje para registrarse.
+
+Notas:
+- No se cambió el esquema de la base de datos ni la entidad UsuarioEntity; las contraseñas se comparan en texto plano tal como se guardan actualmente en la base de datos. Para producción, se recomienda encriptar/hash las contraseñas.
+- Archivo generado automáticamente: changes/changes_log.txt
+

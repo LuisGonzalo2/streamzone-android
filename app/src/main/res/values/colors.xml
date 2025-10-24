@@ -17,4 +17,6 @@
     <color name="text_hint">#64748B</color>
     <color name="input_background">#334155</color>
     <color name="green_accent">#10B981</color>
+    <!-- jere: color para overlays y placeholders en layouts -->
+    <color name="black_overlay">#1A000000</color>
 </resources>

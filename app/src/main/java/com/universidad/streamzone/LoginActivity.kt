@@ -16,7 +16,9 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.universidad.streamzone.cloud.FirebaseService
 import com.universidad.streamzone.database.AppDatabase
+import com.universidad.streamzone.sync.SyncService
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
@@ -33,12 +35,10 @@ class LoginActivity : AppCompatActivity() {
 
     private lateinit var sharedPrefs: SharedPreferences
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
-    private var loginAttempts = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-
 
         sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
 
@@ -48,31 +48,27 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-
-        if (!isNetworkAvailable()) {
-            showNoInternetDialog()
-        }
-
         restoreEmail()
     }
 
     override fun onResume() {
         super.onResume()
-
         registerNetworkCallback()
-        checkLoginAttempts()
+
+        // Intentar sincronizar datos pendientes si hay internet
+        if (isNetworkAvailable()) {
+            SyncService.sincronizarUsuariosPendientes(this)
+        }
     }
 
     override fun onPause() {
         super.onPause()
-
         saveEmail()
         unregisterNetworkCallback()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
         unregisterNetworkCallback()
     }
 
@@ -117,41 +113,78 @@ class LoginActivity : AppCompatActivity() {
         val dao = AppDatabase.getInstance(this).usuarioDao()
 
         lifecycleScope.launch {
-            val usuario = dao.buscarPorEmail(email)
+            // Primero buscar en Room (local)
+            val usuarioLocal = dao.buscarPorEmail(email)
 
-            if (usuario == null) {
-                runOnUiThread {
-                    tilEmail.error = "Esta cuenta no existe. Por favor regístrate primero."
-                    etEmail.requestFocus()
+            if (usuarioLocal != null) {
+                // Usuario encontrado localmente
+                if (usuarioLocal.password != password) {
+                    runOnUiThread {
+                        tilPassword.error = "Contraseña incorrecta"
+                        etPassword.requestFocus()
+                    }
+                    return@launch
                 }
-                return@launch
-            }
 
-            if (usuario.password != password) {
+                // Login exitoso
                 runOnUiThread {
-                    tilPassword.error = "Contraseña incorrecta"
-                    etPassword.requestFocus()
+                    loginExitoso(usuarioLocal.fullname, email)
                 }
-                return@launch
-            }
-
-            // Login exitoso
-            runOnUiThread {
-                Toast.makeText(
-                    this@LoginActivity,
-                    "✅ Bienvenido ${usuario.fullname}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                sharedPrefs.edit().putString("logged_in_user_email", email).apply()
-
-                val intent = Intent(this@LoginActivity, HomeActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-                startActivity(intent)
-                finish()
+            } else {
+                // No está en Room, buscar en Firebase si hay internet
+                if (isNetworkAvailable()) {
+                    FirebaseService.verificarUsuarioPorEmail(email) { usuarioFirebase ->
+                        if (usuarioFirebase == null) {
+                            runOnUiThread {
+                                tilEmail.error = "Esta cuenta no existe. Por favor regístrate primero."
+                                etEmail.requestFocus()
+                            }
+                        } else {
+                            if (usuarioFirebase.password != password) {
+                                runOnUiThread {
+                                    tilPassword.error = "Contraseña incorrecta"
+                                    etPassword.requestFocus()
+                                }
+                            } else {
+                                // Guardar en Room para uso offline
+                                lifecycleScope.launch {
+                                    dao.insertar(usuarioFirebase)
+                                    runOnUiThread {
+                                        loginExitoso(usuarioFirebase.fullname, email)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Sin internet y no está en Room
+                    runOnUiThread {
+                        AlertDialog.Builder(this@LoginActivity)
+                            .setTitle("Sin Conexión")
+                            .setMessage("No se encontró el usuario localmente y no hay conexión a internet para verificar en línea.")
+                            .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+                            .show()
+                    }
+                }
             }
         }
     }
 
+    private fun loginExitoso(nombreUsuario: String, email: String) {
+        Toast.makeText(
+            this@LoginActivity,
+            "✅ Bienvenido $nombreUsuario",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        sharedPrefs.edit().putString("logged_in_user_email", email).apply()
+        sharedPrefs.edit().putString("logged_in_user_name", nombreUsuario).apply()
+
+        val intent = Intent(this@LoginActivity, HomeActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        finish()
+    }
 
     private fun validateEmail(email: String): Boolean {
         return when {
@@ -226,10 +259,6 @@ class LoginActivity : AppCompatActivity() {
         ).show()
     }
 
-    private fun handleBackHome() {
-        finishAffinity()
-    }
-
     private fun togglePasswordVisibility() {
         if (isPasswordVisible) {
             etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
@@ -257,23 +286,6 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkLoginAttempts() {
-        val attempts = sharedPrefs.getInt("login_attempts", 0)
-        if (attempts >= 3) {
-            AlertDialog.Builder(this)
-                .setTitle("Múltiples intentos fallidos")
-                .setMessage("Has intentado iniciar sesión $attempts veces sin éxito.\n\n¿Necesitas ayuda o prefieres crear una cuenta?")
-                .setPositiveButton("Crear Cuenta") { _, _ ->
-                    handleRegister()
-                }
-                .setNegativeButton("Reintentar") { dialog, _ ->
-                    sharedPrefs.edit().putInt("login_attempts", 0).apply()
-                    dialog.dismiss()
-                }
-                .show()
-        }
-    }
-
     private fun isNetworkAvailable(): Boolean {
         val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
@@ -284,33 +296,21 @@ class LoginActivity : AppCompatActivity() {
                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
     }
 
-    private fun showNoInternetDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Sin Conexión a Internet")
-            .setMessage("Necesitas conexión a internet para iniciar sesión.")
-            .setPositiveButton("Continuar") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .setNegativeButton("Salir") { _, _ ->
-                finish()
-            }
-            .setCancelable(false)
-            .show()
-    }
-
     private fun registerNetworkCallback() {
         val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
         networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 runOnUiThread {
-                    Toast.makeText(this@LoginActivity, "Conexión restaurada", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@LoginActivity, "✅ Conexión restaurada", Toast.LENGTH_SHORT).show()
+                    // Intentar sincronizar cuando se recupera la conexión
+                    SyncService.sincronizarUsuariosPendientes(this@LoginActivity)
                 }
             }
 
             override fun onLost(network: Network) {
                 runOnUiThread {
-                    Toast.makeText(this@LoginActivity, "Conexión perdida", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@LoginActivity, "📴 Conexión perdida", Toast.LENGTH_SHORT).show()
                 }
             }
         }

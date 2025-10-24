@@ -26,8 +26,6 @@ import com.universidad.streamzone.cloud.FirebaseService
 import com.universidad.streamzone.database.AppDatabase
 import kotlinx.coroutines.launch
 
-
-
 class RegisterActivity : AppCompatActivity() {
 
     private lateinit var tilFullName: TextInputLayout
@@ -63,35 +61,23 @@ class RegisterActivity : AppCompatActivity() {
         setupListeners()
     }
 
-    override fun onStart() {
-        super.onStart()
-
-        if (!isNetworkAvailable()) {
-            showNoInternetDialog()
-        }
-    }
-
     override fun onResume() {
         super.onResume()
-
         restoreFormData()
         registerNetworkCallback()
     }
 
     override fun onPause() {
         super.onPause()
-
         saveFormData()
         unregisterNetworkCallback()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
         if (isFinishing) {
             clearTempData()
         }
-
         unregisterNetworkCallback()
     }
 
@@ -115,27 +101,9 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun setupSpinner() {
         val countryCodes = arrayOf(
-            "EC +593 🇪🇨",
-            "US +1 🇺🇸",
-            "CO +57 🇨🇴",
-            "PE +51 🇵🇪",
-            "AR +54 🇦🇷",
-            "MX +52 🇲🇽",
-            "VE +58 🇻🇪",
-            "CL +56 🇨🇱",
-            "BR +55 🇧🇷",
-            "ES +34 🇪🇸",
-            "BO +591 🇧🇴",
-            "PY +595 🇵🇾",
-            "UY +598 🇺🇾",
-            "CR +506 🇨🇷",
-            "PA +507 🇵🇦",
-            "GT +502 🇬🇹",
-            "DO +1-809 🇩🇴",
-            "CU +53 🇨🇺",
-            "HN +504 🇭🇳",
-            "NI +505 🇳🇮",
-            "SV +503 🇸🇻"
+            "EC +593 🇪🇨", "US +1 🇺🇸", "CO +57 🇨🇴", "PE +51 🇵🇪",
+            "AR +54 🇦🇷", "MX +52 🇲🇽", "VE +58 🇻🇪", "CL +56 🇨🇱",
+            "BR +55 🇧🇷", "ES +34 🇪🇸"
         )
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, countryCodes)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -144,66 +112,8 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         btnRegister.setOnClickListener {
-            val fullName = etFullName.text.toString().trim()
-            val email = etEmail.text.toString().trim()
-            val phone = etPhone.text.toString().trim()
-            val password = etPassword.text.toString()
-            val confirmPassword = etConfirmPassword.text.toString()
-
-            clearAllErrors()
-
-            if (!validateFullName(fullName)) return@setOnClickListener
-            if (!validateEmail(email)) return@setOnClickListener
-            if (!validatePhone(phone)) return@setOnClickListener
-            if (!validatePassword(password)) return@setOnClickListener
-            if (!validateConfirmPassword(password, confirmPassword)) return@setOnClickListener
-
-            val dao = AppDatabase.getInstance(this).usuarioDao()
-
-            lifecycleScope.launch {
-                // vrificar si ya existe el correo o el teléfono
-                val usuarioExistentePorEmail = dao.buscarPorEmail(email)
-                val usuarioExistentePorTelefono = dao.buscarPorTelefono(phone)
-
-                if (usuarioExistentePorEmail != null) {
-                    runOnUiThread {
-                        etEmail.error = "Este correo ya está registrado"
-                    }
-                    return@launch
-                }
-
-                if (usuarioExistentePorTelefono != null) {
-                    runOnUiThread {
-                        etPhone.error = "Este número ya está registrado"
-                    }
-                    return@launch
-                }
-
-                //  Si no existen duplicados, guardar normalmente
-                val usuario = UsuarioEntity(
-                    fullname = fullName,
-                    email = email,
-                    phone = phone,
-                    password = password,
-                    confirmPassword = confirmPassword
-                )
-
-                dao.insertar(usuario)
-                FirebaseService.guardarUsuario(usuario)
-
-                runOnUiThread {
-                    Toast.makeText(
-                        this@RegisterActivity,
-                        "✅ Registro exitoso",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    navigateToLogin()
-                }
-            }
+            handleRegister()
         }
-
-
-
 
         tvBackToLogin.setOnClickListener {
             navigateToLogin()
@@ -239,9 +149,7 @@ class RegisterActivity : AppCompatActivity() {
 
         etPhone.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
             override fun afterTextChanged(s: Editable?) {
                 if (s != null) {
                     if (s.isNotEmpty() && s[0] == '0') {
@@ -249,7 +157,6 @@ class RegisterActivity : AppCompatActivity() {
                         etPhone.setSelection(etPhone.text?.length ?: 0)
                         return
                     }
-
                     if (s.length > 10) {
                         etPhone.setText(s.substring(0, 10))
                         etPhone.setSelection(10)
@@ -274,11 +181,89 @@ class RegisterActivity : AppCompatActivity() {
         if (!validatePassword(password)) return
         if (!validateConfirmPassword(password, confirmPassword)) return
 
-        showSuccessAndNavigate(fullName, email)
+        val dao = AppDatabase.getInstance(this).usuarioDao()
 
+        lifecycleScope.launch {
+            // Verificar duplicados locales
+            val usuarioExistentePorEmail = dao.buscarPorEmail(email)
+            val usuarioExistentePorTelefono = dao.buscarPorTelefono(phone)
 
+            if (usuarioExistentePorEmail != null) {
+                runOnUiThread {
+                    tilEmail.error = "Este correo ya está registrado"
+                }
+                return@launch
+            }
 
+            if (usuarioExistentePorTelefono != null) {
+                runOnUiThread {
+                    etPhone.error = "Este número ya está registrado"
+                }
+                return@launch
+            }
 
+            // Crear usuario
+            val usuario = UsuarioEntity(
+                fullname = fullName,
+                email = email,
+                phone = phone,
+                password = password,
+                confirmPassword = confirmPassword,
+                sincronizado = false // Por defecto no sincronizado
+            )
+
+            // Intentar guardar según conectividad
+            if (isNetworkAvailable()) {
+                // HAY INTERNET: Intentar guardar en Firebase primero
+                FirebaseService.guardarUsuario(
+                    usuario = usuario,
+                    onSuccess = { firebaseId ->
+                        lifecycleScope.launch {
+                            // Guardar en Room con flag sincronizado
+                            val usuarioSincronizado = usuario.copy(
+                                sincronizado = true,
+                                firebaseId = firebaseId
+                            )
+                            dao.insertar(usuarioSincronizado)
+
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this@RegisterActivity,
+                                    "✅ Registro exitoso (sincronizado con la nube)",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                navigateToLogin()
+                            }
+                        }
+                    },
+                    onFailure = { e ->
+                        lifecycleScope.launch {
+                            // Si falla Firebase, guardar solo en Room
+                            dao.insertar(usuario)
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this@RegisterActivity,
+                                    "⚠️ Registro guardado localmente. Se sincronizará cuando haya conexión",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                navigateToLogin()
+                            }
+                        }
+                    }
+                )
+            } else {
+                // NO HAY INTERNET: Guardar solo en Room
+                dao.insertar(usuario)
+                runOnUiThread {
+                    Toast.makeText(
+                        this@RegisterActivity,
+                        "📴 Sin internet. Registro guardado localmente",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    navigateToLogin()
+                }
+            }
+        }
     }
 
     private fun validateFullName(name: String): Boolean {
@@ -408,18 +393,6 @@ class RegisterActivity : AppCompatActivity() {
         tilConfirmPassword.error = null
     }
 
-    private fun showSuccessAndNavigate(name: String, email: String) {
-        Toast.makeText(
-            this,
-            "✅ ¡Cuenta creada exitosamente!\nBienvenido $name",
-            Toast.LENGTH_LONG
-        ).show()
-
-        etFullName.postDelayed({
-            navigateToLogin()
-        }, 1500)
-    }
-
     private fun navigateToLogin() {
         val intent = Intent(this, LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
@@ -491,33 +464,19 @@ class RegisterActivity : AppCompatActivity() {
                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
     }
 
-    private fun showNoInternetDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Sin Conexión a Internet")
-            .setMessage("Necesitas conexión a internet para registrarte.")
-            .setPositiveButton("Continuar") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .setNegativeButton("Salir") { _, _ ->
-                finish()
-            }
-            .setCancelable(false)
-            .show()
-    }
-
     private fun registerNetworkCallback() {
         val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
         networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 runOnUiThread {
-                    Toast.makeText(this@RegisterActivity, "Conexión restaurada", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@RegisterActivity, "✅ Conexión restaurada", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onLost(network: Network) {
                 runOnUiThread {
-                    Toast.makeText(this@RegisterActivity, "Conexión perdida", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@RegisterActivity, "📴 Conexión perdida", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -540,6 +499,4 @@ class RegisterActivity : AppCompatActivity() {
         }
         networkCallback = null
     }
-
-
 }

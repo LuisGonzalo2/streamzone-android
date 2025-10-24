@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.universidad.streamzone.dao.UsuarioDao
 import com.universidad.streamzone.model.UsuarioEntity
 
-@Database(entities = [UsuarioEntity::class], version = 2, exportSchema = false)
+@Database(entities = [UsuarioEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase: RoomDatabase() {
     abstract fun usuarioDao(): UsuarioDao
 
@@ -26,6 +26,12 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        // Migración de versión 2 a 3 - Limpiar datos antiguos
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -33,8 +39,8 @@ abstract class AppDatabase: RoomDatabase() {
                     AppDatabase::class.java,
                     "appseptimoa.db"
                 )
-                    .addMigrations(MIGRATION_1_2)
-                    .fallbackToDestructiveMigration() // Solo para desarrollo
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .fallbackToDestructiveMigration() // IMPORTANTE: Elimina y recrea si hay problemas
                     .build()
                 INSTANCE = instance
                 instance

@@ -37,10 +37,10 @@ abstract class AppDatabase: RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "appseptimoa.db"
+                    "zonastream.db"
                 )
                     .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
-                    .fallbackToDestructiveMigration() // IMPORTANTE: Elimina y recrea si hay problemas
+                    .fallbackToDestructiveMigration() // Elimina y recrea si hay problemas
                     .build()
                 INSTANCE = instance
                 instance

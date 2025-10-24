@@ -43,18 +43,18 @@ object SyncService {
                 var errores = 0
 
                 usuariosNoSincronizados.forEach { usuario ->
-                    Log.d(TAG, "Sincronizando usuario: ${usuario.email}")
+                    Log.d(TAG, "Verificando si usuario ya existe en Firebase: ${usuario.email}")
 
-                    FirebaseService.guardarUsuario(
-                        usuario = usuario,
-                        onSuccess = { firebaseId ->
+                    // Verificar si ya existe en Firebase antes de sincronizar
+                    FirebaseService.verificarEmailExiste(usuario.email) { existe ->
+                        if (existe) {
+                            Log.d(TAG, "⚠️ Usuario ${usuario.email} ya existe en Firebase, marcando como sincronizado sin crear duplicado")
                             CoroutineScope(Dispatchers.IO).launch {
                                 try {
-                                    dao.marcarComoSincronizado(usuario.id, firebaseId)
+                                    // Marcar como sincronizado sin crear duplicado
+                                    dao.marcarComoSincronizado(usuario.id, "existing")
                                     sincronizados++
-                                    Log.d(TAG, "✅ Usuario ${usuario.email} sincronizado correctamente con ID: $firebaseId")
 
-                                    // Si terminamos con todos
                                     if (sincronizados + errores == usuariosNoSincronizados.size) {
                                         Log.d(TAG, "Sincronización completa: $sincronizados exitosos, $errores errores")
                                         isSyncing = false
@@ -69,19 +69,47 @@ object SyncService {
                                     }
                                 }
                             }
-                        },
-                        onFailure = { e ->
-                            errores++
-                            Log.e(TAG, "❌ Error al sincronizar usuario ${usuario.email}", e)
+                        } else {
+                            // No existe, proceder a sincronizar
+                            Log.d(TAG, "Sincronizando usuario: ${usuario.email}")
 
-                            // Si terminamos con todos
-                            if (sincronizados + errores == usuariosNoSincronizados.size) {
-                                Log.d(TAG, "Sincronización completa: $sincronizados exitosos, $errores errores")
-                                isSyncing = false
-                                onComplete?.invoke()
-                            }
+                            FirebaseService.guardarUsuario(
+                                usuario = usuario,
+                                onSuccess = { firebaseId ->
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        try {
+                                            dao.marcarComoSincronizado(usuario.id, firebaseId)
+                                            sincronizados++
+                                            Log.d(TAG, "✅ Usuario ${usuario.email} sincronizado correctamente con ID: $firebaseId")
+
+                                            if (sincronizados + errores == usuariosNoSincronizados.size) {
+                                                Log.d(TAG, "Sincronización completa: $sincronizados exitosos, $errores errores")
+                                                isSyncing = false
+                                                onComplete?.invoke()
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "Error al marcar como sincronizado", e)
+                                            errores++
+                                            if (sincronizados + errores == usuariosNoSincronizados.size) {
+                                                isSyncing = false
+                                                onComplete?.invoke()
+                                            }
+                                        }
+                                    }
+                                },
+                                onFailure = { e ->
+                                    errores++
+                                    Log.e(TAG, "❌ Error al sincronizar usuario ${usuario.email}", e)
+
+                                    if (sincronizados + errores == usuariosNoSincronizados.size) {
+                                        Log.d(TAG, "Sincronización completa: $sincronizados exitosos, $errores errores")
+                                        isSyncing = false
+                                        onComplete?.invoke()
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error general en sincronización", e)

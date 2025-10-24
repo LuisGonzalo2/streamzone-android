@@ -8,6 +8,42 @@ object FirebaseService {
     private val db = FirebaseFirestore.getInstance()
     private const val TAG = "FirebaseService"
 
+    // Verificar si un email ya existe en Firebase
+    fun verificarEmailExiste(email: String, callback: (Boolean) -> Unit) {
+        Log.d(TAG, "Verificando si email existe: $email")
+
+        db.collection("usuarios")
+            .whereEqualTo("email", email)
+            .get()
+            .addOnSuccessListener { documents ->
+                val existe = !documents.isEmpty
+                Log.d(TAG, "Email $email existe: $existe")
+                callback(existe)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error al verificar email", e)
+                callback(false) // En caso de error, asumimos que no existe
+            }
+    }
+
+    // Verificar si un teléfono ya existe en Firebase
+    fun verificarTelefonoExiste(phone: String, callback: (Boolean) -> Unit) {
+        Log.d(TAG, "Verificando si teléfono existe: $phone")
+
+        db.collection("usuarios")
+            .whereEqualTo("phone", phone)
+            .get()
+            .addOnSuccessListener { documents ->
+                val existe = !documents.isEmpty
+                Log.d(TAG, "Teléfono $phone existe: $existe")
+                callback(existe)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error al verificar teléfono", e)
+                callback(false) // En caso de error, asumimos que no existe
+            }
+    }
+
     // Guardar usuario con callback de éxito/error
     fun guardarUsuario(usuario: UsuarioEntity, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
         try {
@@ -54,14 +90,22 @@ object FirebaseService {
 
     // Verificar si un usuario existe en Firebase por email
     fun verificarUsuarioPorEmail(email: String, callback: (UsuarioEntity?) -> Unit) {
+        Log.d(TAG, "Verificando usuario por email: $email")
+
         db.collection("usuarios")
             .whereEqualTo("email", email)
             .get()
             .addOnSuccessListener { documents ->
+                Log.d(TAG, "Documentos encontrados: ${documents.size()}")
+
                 if (documents.isEmpty) {
+                    Log.d(TAG, "No se encontró usuario con email: $email")
                     callback(null)
                 } else {
                     val doc = documents.documents[0]
+                    Log.d(TAG, "Documento encontrado: ${doc.id}")
+                    Log.d(TAG, "Datos: ${doc.data}")
+
                     val usuario = UsuarioEntity(
                         id = 0,
                         fullname = doc.getString("nombre") ?: "",
@@ -72,6 +116,8 @@ object FirebaseService {
                         sincronizado = true,
                         firebaseId = doc.id
                     )
+
+                    Log.d(TAG, "Usuario creado desde Firebase: $usuario")
                     callback(usuario)
                 }
             }

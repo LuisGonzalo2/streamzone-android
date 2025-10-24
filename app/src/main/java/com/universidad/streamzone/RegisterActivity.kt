@@ -184,7 +184,7 @@ class RegisterActivity : AppCompatActivity() {
         // Mostrar que está procesando
         runOnUiThread {
             btnRegister.isEnabled = false
-            btnRegister.text = "⏳ Registrando..."
+            btnRegister.text = "⏳ Verificando..."
         }
 
         val dao = AppDatabase.getInstance(this).usuarioDao()
@@ -193,16 +193,16 @@ class RegisterActivity : AppCompatActivity() {
             try {
                 android.util.Log.d("RegisterActivity", "Iniciando registro para: $email")
 
-                // Verificar duplicados locales
+                // PASO 1: Verificar duplicados locales (Room)
                 val usuarioExistentePorEmail = dao.buscarPorEmail(email)
                 val usuarioExistentePorTelefono = dao.buscarPorTelefono(phone)
 
-                android.util.Log.d("RegisterActivity", "Usuario por email: $usuarioExistentePorEmail")
-                android.util.Log.d("RegisterActivity", "Usuario por teléfono: $usuarioExistentePorTelefono")
+                android.util.Log.d("RegisterActivity", "Usuario por email en Room: $usuarioExistentePorEmail")
+                android.util.Log.d("RegisterActivity", "Usuario por teléfono en Room: $usuarioExistentePorTelefono")
 
                 if (usuarioExistentePorEmail != null) {
                     runOnUiThread {
-                        tilEmail.error = "Este correo ya está registrado"
+                        tilEmail.error = "Este correo ya está registrado localmente"
                         btnRegister.isEnabled = true
                         btnRegister.text = "🚀 Crear cuenta"
                     }
@@ -211,13 +211,75 @@ class RegisterActivity : AppCompatActivity() {
 
                 if (usuarioExistentePorTelefono != null) {
                     runOnUiThread {
-                        etPhone.error = "Este número ya está registrado"
+                        etPhone.error = "Este número ya está registrado localmente"
                         btnRegister.isEnabled = true
                         btnRegister.text = "🚀 Crear cuenta"
                     }
                     return@launch
                 }
 
+                // PASO 2: Si hay internet, verificar duplicados en Firebase
+                val hayInternet = isNetworkAvailable()
+                android.util.Log.d("RegisterActivity", "Hay internet: $hayInternet")
+
+                if (hayInternet) {
+                    // Verificar email en Firebase
+                    FirebaseService.verificarEmailExiste(email) { emailExiste ->
+                        if (emailExiste) {
+                            runOnUiThread {
+                                tilEmail.error = "Este correo ya está registrado en la nube"
+                                btnRegister.isEnabled = true
+                                btnRegister.text = "🚀 Crear cuenta"
+                            }
+                            return@verificarEmailExiste
+                        }
+
+                        // Verificar teléfono en Firebase
+                        FirebaseService.verificarTelefonoExiste(phone) { telefonoExiste ->
+                            if (telefonoExiste) {
+                                runOnUiThread {
+                                    etPhone.error = "Este número ya está registrado en la nube"
+                                    btnRegister.isEnabled = true
+                                    btnRegister.text = "🚀 Crear cuenta"
+                                }
+                                return@verificarTelefonoExiste
+                            }
+
+                            // PASO 3: No hay duplicados, proceder a guardar
+                            guardarUsuario(fullName, email, phone, password, confirmPassword, dao, hayInternet)
+                        }
+                    }
+                } else {
+                    // Sin internet, solo guardar localmente
+                    guardarUsuario(fullName, email, phone, password, confirmPassword, dao, hayInternet)
+                }
+
+            } catch (e: Exception) {
+                android.util.Log.e("RegisterActivity", "Error general en handleRegister", e)
+                runOnUiThread {
+                    btnRegister.isEnabled = true
+                    btnRegister.text = "🚀 Crear cuenta"
+                    Toast.makeText(
+                        this@RegisterActivity,
+                        "Error inesperado: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun guardarUsuario(
+        fullName: String,
+        email: String,
+        phone: String,
+        password: String,
+        confirmPassword: String,
+        dao: com.universidad.streamzone.dao.UsuarioDao,
+        hayInternet: Boolean
+    ) {
+        lifecycleScope.launch {
+            try {
                 // Crear usuario
                 val usuario = UsuarioEntity(
                     fullname = fullName,
@@ -225,17 +287,17 @@ class RegisterActivity : AppCompatActivity() {
                     phone = phone,
                     password = password,
                     confirmPassword = confirmPassword,
-                    sincronizado = false // Por defecto no sincronizado
+                    sincronizado = false
                 )
 
                 android.util.Log.d("RegisterActivity", "Usuario creado: $usuario")
 
-                // Intentar guardar según conectividad
-                val hayInternet = isNetworkAvailable()
-                android.util.Log.d("RegisterActivity", "Hay internet: $hayInternet")
-
                 if (hayInternet) {
-                    android.util.Log.d("RegisterActivity", "Intentando guardar en Firebase...")
+                    android.util.Log.d("RegisterActivity", "Guardando en Firebase...")
+                    runOnUiThread {
+                        btnRegister.text = "⏳ Guardando en la nube..."
+                    }
+
                     // HAY INTERNET: Intentar guardar en Firebase primero
                     FirebaseService.guardarUsuario(
                         usuario = usuario,
@@ -309,6 +371,10 @@ class RegisterActivity : AppCompatActivity() {
                     )
                 } else {
                     android.util.Log.d("RegisterActivity", "Sin internet, guardando solo en Room...")
+                    runOnUiThread {
+                        btnRegister.text = "⏳ Guardando localmente..."
+                    }
+
                     try {
                         // NO HAY INTERNET: Guardar solo en Room
                         dao.insertar(usuario)
@@ -337,13 +403,13 @@ class RegisterActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("RegisterActivity", "Error general en handleRegister", e)
+                android.util.Log.e("RegisterActivity", "Error en guardarUsuario", e)
                 runOnUiThread {
                     btnRegister.isEnabled = true
                     btnRegister.text = "🚀 Crear cuenta"
                     Toast.makeText(
                         this@RegisterActivity,
-                        "Error inesperado: ${e.message}",
+                        "Error: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
                 }

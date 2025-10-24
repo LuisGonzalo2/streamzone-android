@@ -181,86 +181,171 @@ class RegisterActivity : AppCompatActivity() {
         if (!validatePassword(password)) return
         if (!validateConfirmPassword(password, confirmPassword)) return
 
+        // Mostrar que está procesando
+        runOnUiThread {
+            btnRegister.isEnabled = false
+            btnRegister.text = "⏳ Registrando..."
+        }
+
         val dao = AppDatabase.getInstance(this).usuarioDao()
 
         lifecycleScope.launch {
-            // Verificar duplicados locales
-            val usuarioExistentePorEmail = dao.buscarPorEmail(email)
-            val usuarioExistentePorTelefono = dao.buscarPorTelefono(phone)
+            try {
+                android.util.Log.d("RegisterActivity", "Iniciando registro para: $email")
 
-            if (usuarioExistentePorEmail != null) {
-                runOnUiThread {
-                    tilEmail.error = "Este correo ya está registrado"
+                // Verificar duplicados locales
+                val usuarioExistentePorEmail = dao.buscarPorEmail(email)
+                val usuarioExistentePorTelefono = dao.buscarPorTelefono(phone)
+
+                android.util.Log.d("RegisterActivity", "Usuario por email: $usuarioExistentePorEmail")
+                android.util.Log.d("RegisterActivity", "Usuario por teléfono: $usuarioExistentePorTelefono")
+
+                if (usuarioExistentePorEmail != null) {
+                    runOnUiThread {
+                        tilEmail.error = "Este correo ya está registrado"
+                        btnRegister.isEnabled = true
+                        btnRegister.text = "🚀 Crear cuenta"
+                    }
+                    return@launch
                 }
-                return@launch
-            }
 
-            if (usuarioExistentePorTelefono != null) {
-                runOnUiThread {
-                    etPhone.error = "Este número ya está registrado"
+                if (usuarioExistentePorTelefono != null) {
+                    runOnUiThread {
+                        etPhone.error = "Este número ya está registrado"
+                        btnRegister.isEnabled = true
+                        btnRegister.text = "🚀 Crear cuenta"
+                    }
+                    return@launch
                 }
-                return@launch
-            }
 
-            // Crear usuario
-            val usuario = UsuarioEntity(
-                fullname = fullName,
-                email = email,
-                phone = phone,
-                password = password,
-                confirmPassword = confirmPassword,
-                sincronizado = false // Por defecto no sincronizado
-            )
+                // Crear usuario
+                val usuario = UsuarioEntity(
+                    fullname = fullName,
+                    email = email,
+                    phone = phone,
+                    password = password,
+                    confirmPassword = confirmPassword,
+                    sincronizado = false // Por defecto no sincronizado
+                )
 
-            // Intentar guardar según conectividad
-            if (isNetworkAvailable()) {
-                // HAY INTERNET: Intentar guardar en Firebase primero
-                FirebaseService.guardarUsuario(
-                    usuario = usuario,
-                    onSuccess = { firebaseId ->
-                        lifecycleScope.launch {
-                            // Guardar en Room con flag sincronizado
-                            val usuarioSincronizado = usuario.copy(
-                                sincronizado = true,
-                                firebaseId = firebaseId
-                            )
-                            dao.insertar(usuarioSincronizado)
+                android.util.Log.d("RegisterActivity", "Usuario creado: $usuario")
 
-                            runOnUiThread {
-                                Toast.makeText(
-                                    this@RegisterActivity,
-                                    "✅ Registro exitoso (sincronizado con la nube)",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                navigateToLogin()
+                // Intentar guardar según conectividad
+                val hayInternet = isNetworkAvailable()
+                android.util.Log.d("RegisterActivity", "Hay internet: $hayInternet")
+
+                if (hayInternet) {
+                    android.util.Log.d("RegisterActivity", "Intentando guardar en Firebase...")
+                    // HAY INTERNET: Intentar guardar en Firebase primero
+                    FirebaseService.guardarUsuario(
+                        usuario = usuario,
+                        onSuccess = { firebaseId ->
+                            android.util.Log.d("RegisterActivity", "Guardado en Firebase con ID: $firebaseId")
+                            lifecycleScope.launch {
+                                try {
+                                    // Guardar en Room con flag sincronizado
+                                    val usuarioSincronizado = usuario.copy(
+                                        sincronizado = true,
+                                        firebaseId = firebaseId
+                                    )
+                                    dao.insertar(usuarioSincronizado)
+                                    android.util.Log.d("RegisterActivity", "Guardado en Room")
+
+                                    runOnUiThread {
+                                        btnRegister.isEnabled = true
+                                        btnRegister.text = "🚀 Crear cuenta"
+                                        Toast.makeText(
+                                            this@RegisterActivity,
+                                            "✅ Registro exitoso (sincronizado con la nube)",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        navigateToLogin()
+                                    }
+                                } catch (e: Exception) {
+                                    android.util.Log.e("RegisterActivity", "Error al guardar en Room", e)
+                                    runOnUiThread {
+                                        btnRegister.isEnabled = true
+                                        btnRegister.text = "🚀 Crear cuenta"
+                                        Toast.makeText(
+                                            this@RegisterActivity,
+                                            "Error: ${e.message}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                            }
+                        },
+                        onFailure = { e ->
+                            android.util.Log.e("RegisterActivity", "Error en Firebase", e)
+                            lifecycleScope.launch {
+                                try {
+                                    // Si falla Firebase, guardar solo en Room
+                                    dao.insertar(usuario)
+                                    android.util.Log.d("RegisterActivity", "Guardado solo en Room")
+                                    runOnUiThread {
+                                        btnRegister.isEnabled = true
+                                        btnRegister.text = "🚀 Crear cuenta"
+                                        Toast.makeText(
+                                            this@RegisterActivity,
+                                            "⚠️ Registro guardado localmente. Se sincronizará cuando haya conexión",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        navigateToLogin()
+                                    }
+                                } catch (ex: Exception) {
+                                    android.util.Log.e("RegisterActivity", "Error al guardar en Room", ex)
+                                    runOnUiThread {
+                                        btnRegister.isEnabled = true
+                                        btnRegister.text = "🚀 Crear cuenta"
+                                        Toast.makeText(
+                                            this@RegisterActivity,
+                                            "Error: ${ex.message}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
                             }
                         }
-                    },
-                    onFailure = { e ->
-                        lifecycleScope.launch {
-                            // Si falla Firebase, guardar solo en Room
-                            dao.insertar(usuario)
-                            runOnUiThread {
-                                Toast.makeText(
-                                    this@RegisterActivity,
-                                    "⚠️ Registro guardado localmente. Se sincronizará cuando haya conexión",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                                navigateToLogin()
-                            }
+                    )
+                } else {
+                    android.util.Log.d("RegisterActivity", "Sin internet, guardando solo en Room...")
+                    try {
+                        // NO HAY INTERNET: Guardar solo en Room
+                        dao.insertar(usuario)
+                        android.util.Log.d("RegisterActivity", "Guardado en Room exitosamente")
+                        runOnUiThread {
+                            btnRegister.isEnabled = true
+                            btnRegister.text = "🚀 Crear cuenta"
+                            Toast.makeText(
+                                this@RegisterActivity,
+                                "📴 Sin internet. Registro guardado localmente",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            navigateToLogin()
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("RegisterActivity", "Error al guardar en Room", e)
+                        runOnUiThread {
+                            btnRegister.isEnabled = true
+                            btnRegister.text = "🚀 Crear cuenta"
+                            Toast.makeText(
+                                this@RegisterActivity,
+                                "Error al registrar: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     }
-                )
-            } else {
-                // NO HAY INTERNET: Guardar solo en Room
-                dao.insertar(usuario)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("RegisterActivity", "Error general en handleRegister", e)
                 runOnUiThread {
+                    btnRegister.isEnabled = true
+                    btnRegister.text = "🚀 Crear cuenta"
                     Toast.makeText(
                         this@RegisterActivity,
-                        "📴 Sin internet. Registro guardado localmente",
+                        "Error inesperado: ${e.message}",
                         Toast.LENGTH_LONG
                     ).show()
-                    navigateToLogin()
                 }
             }
         }

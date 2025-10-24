@@ -90,10 +90,17 @@ class HomeActivity : AppCompatActivity() {
             return
         }
 
+        // Deshabilitar el botón mientras sincroniza
+        val btnSincronizar = findViewById<Button>(R.id.btnSincronizar)
+        btnSincronizar.isEnabled = false
+        btnSincronizar.text = "⏳ Sincronizando..."
+
         Toast.makeText(this, "🔄 Sincronizando...", Toast.LENGTH_SHORT).show()
 
         SyncService.sincronizarUsuariosPendientes(this) {
             runOnUiThread {
+                btnSincronizar.isEnabled = true
+                btnSincronizar.text = "🔄 Sincronizar datos"
                 Toast.makeText(
                     this,
                     "✅ Sincronización completada",

@@ -1,4 +1,4 @@
-package com.universidad.streamzone
+package com.universidad.streamzone.ui.reserve
 
 import android.os.Bundle
 import android.util.Log

@@ -1,7 +1,9 @@
-package com.universidad.streamzone.cloud
+package com.universidad.streamzone.data.remote
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import com.universidad.streamzone.model.UsuarioEntity
+import com.universidad.streamzone.data.model.UsuarioEntity
 import com.google.firebase.firestore.FirebaseFirestore
 
 object FirebaseService {
@@ -58,7 +60,7 @@ object FirebaseService {
             )
 
             // Timeout de 10 segundos
-            val timeoutHandler = android.os.Handler(android.os.Looper.getMainLooper())
+            val timeoutHandler = Handler(Looper.getMainLooper())
             var completed = false
 
             timeoutHandler.postDelayed({

@@ -1,4 +1,4 @@
-package com.universidad.streamzone
+package com.universidad.streamzone.ui.home.adapter
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,6 +6,8 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.universidad.streamzone.R
+import com.universidad.streamzone.data.model.Service
 
 class ServiceAdapter(
     private val items: List<Service>,

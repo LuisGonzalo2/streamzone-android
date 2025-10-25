@@ -1,10 +1,10 @@
-package com.universidad.streamzone.dao
+package com.universidad.streamzone.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import com.universidad.streamzone.model.UsuarioEntity
+import com.universidad.streamzone.data.model.UsuarioEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

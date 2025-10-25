@@ -1,4 +1,4 @@
-package com.universidad.streamzone.database
+package com.universidad.streamzone.data.local.database
 
 import android.content.Context
 import androidx.room.Database
@@ -6,8 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.universidad.streamzone.dao.UsuarioDao
-import com.universidad.streamzone.model.UsuarioEntity
+import com.universidad.streamzone.data.local.dao.UsuarioDao
+import com.universidad.streamzone.data.model.UsuarioEntity
 
 @Database(entities = [UsuarioEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase: RoomDatabase() {

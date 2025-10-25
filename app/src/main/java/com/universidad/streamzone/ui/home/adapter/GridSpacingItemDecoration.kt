@@ -1,9 +1,8 @@
-package com.universidad.streamzone
+package com.universidad.streamzone.ui.home.adapter
 
 import android.graphics.Rect
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-
 
 class GridSpacingItemDecoration(
     private val spanCount: Int,

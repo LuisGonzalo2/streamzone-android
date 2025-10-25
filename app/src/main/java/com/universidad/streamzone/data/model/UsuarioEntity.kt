@@ -1,4 +1,4 @@
-package com.universidad.streamzone.model
+package com.universidad.streamzone.data.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 

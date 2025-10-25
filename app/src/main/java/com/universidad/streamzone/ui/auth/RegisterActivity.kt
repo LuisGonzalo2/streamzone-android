@@ -1,6 +1,5 @@
-package com.universidad.streamzone
+package com.universidad.streamzone.ui.auth
 
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
@@ -10,26 +9,29 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
+import android.util.Log
+import android.util.Patterns
 import android.widget.ArrayAdapter
 import android.widget.CheckBox
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import com.universidad.streamzone.model.UsuarioEntity
-import androidx.lifecycle.lifecycleScope
-import com.universidad.streamzone.cloud.FirebaseService
-import com.universidad.streamzone.database.AppDatabase
+import com.universidad.streamzone.R
+import com.universidad.streamzone.data.remote.FirebaseService
+import com.universidad.streamzone.data.local.dao.UsuarioDao
+import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.model.UsuarioEntity
 import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
 
     private fun registerNetworkCallback() {
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
 
         networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
@@ -202,18 +204,18 @@ class RegisterActivity : AppCompatActivity() {
             btnRegister.text = "Creando cuenta..."
         }
 
-        val dao = AppDatabase.getInstance(this).usuarioDao()
+        val dao = AppDatabase.Companion.getInstance(this).usuarioDao()
 
         lifecycleScope.launch {
             try {
-                android.util.Log.d("RegisterActivity", "Iniciando registro para: $email")
+                Log.d("RegisterActivity", "Iniciando registro para: $email")
 
                 // PASO 1: Verificar duplicados locales (Room)
                 val usuarioExistentePorEmail = dao.buscarPorEmail(email)
                 val usuarioExistentePorTelefono = dao.buscarPorTelefono(phone)
 
-                android.util.Log.d("RegisterActivity", "Usuario por email en Room: $usuarioExistentePorEmail")
-                android.util.Log.d("RegisterActivity", "Usuario por teléfono en Room: $usuarioExistentePorTelefono")
+                Log.d("RegisterActivity", "Usuario por email en Room: $usuarioExistentePorEmail")
+                Log.d("RegisterActivity", "Usuario por teléfono en Room: $usuarioExistentePorTelefono")
 
                 if (usuarioExistentePorEmail != null) {
                     runOnUiThread {
@@ -235,7 +237,7 @@ class RegisterActivity : AppCompatActivity() {
 
                 // PASO 2: Si hay internet, verificar duplicados en Firebase
                 val hayInternet = isNetworkAvailable()
-                android.util.Log.d("RegisterActivity", "Hay internet: $hayInternet")
+                Log.d("RegisterActivity", "Hay internet: $hayInternet")
 
                 if (hayInternet) {
                     // Verificar email en Firebase
@@ -270,7 +272,7 @@ class RegisterActivity : AppCompatActivity() {
                 }
 
             } catch (e: Exception) {
-                android.util.Log.e("RegisterActivity", "Error general en handleRegister", e)
+                Log.e("RegisterActivity", "Error general en handleRegister", e)
                 runOnUiThread {
                     btnRegister.isEnabled = true
                     btnRegister.text = "Crear cuenta"
@@ -290,7 +292,7 @@ class RegisterActivity : AppCompatActivity() {
         phone: String,
         password: String,
         confirmPassword: String,
-        dao: com.universidad.streamzone.dao.UsuarioDao,
+        dao: UsuarioDao,
         hayInternet: Boolean
     ) {
         lifecycleScope.launch {
@@ -305,10 +307,10 @@ class RegisterActivity : AppCompatActivity() {
                     sincronizado = false
                 )
 
-                android.util.Log.d("RegisterActivity", "Usuario creado: $usuario")
+                Log.d("RegisterActivity", "Usuario creado: $usuario")
 
                 if (hayInternet) {
-                    android.util.Log.d("RegisterActivity", "Guardando en Firebase...")
+                    Log.d("RegisterActivity", "Guardando en Firebase...")
                     runOnUiThread {
                         btnRegister.text = "Creando cuenta..."
                     }
@@ -317,7 +319,7 @@ class RegisterActivity : AppCompatActivity() {
                     FirebaseService.guardarUsuario(
                         usuario = usuario,
                         onSuccess = { firebaseId ->
-                            android.util.Log.d("RegisterActivity", "Guardado en Firebase con ID: $firebaseId")
+                            Log.d("RegisterActivity", "Guardado en Firebase con ID: $firebaseId")
                             lifecycleScope.launch {
                                 try {
                                     // Guardar en Room con flag sincronizado
@@ -326,7 +328,7 @@ class RegisterActivity : AppCompatActivity() {
                                         firebaseId = firebaseId
                                     )
                                     dao.insertar(usuarioSincronizado)
-                                    android.util.Log.d("RegisterActivity", "Guardado en Room")
+                                    Log.d("RegisterActivity", "Guardado en Room")
 
                                     runOnUiThread {
                                         btnRegister.isEnabled = true
@@ -339,7 +341,7 @@ class RegisterActivity : AppCompatActivity() {
                                         navigateToLogin()
                                     }
                                 } catch (e: Exception) {
-                                    android.util.Log.e("RegisterActivity", "Error al guardar en Room", e)
+                                    Log.e("RegisterActivity", "Error al guardar en Room", e)
                                     runOnUiThread {
                                         btnRegister.isEnabled = true
                                         btnRegister.text = "Crear cuenta"
@@ -353,12 +355,12 @@ class RegisterActivity : AppCompatActivity() {
                             }
                         },
                         onFailure = { e ->
-                            android.util.Log.e("RegisterActivity", "Error en Firebase", e)
+                            Log.e("RegisterActivity", "Error en Firebase", e)
                             lifecycleScope.launch {
                                 try {
                                     // Si falla Firebase, guardar solo en Room
                                     dao.insertar(usuario)
-                                    android.util.Log.d("RegisterActivity", "Guardado solo en Room")
+                                    Log.d("RegisterActivity", "Guardado solo en Room")
                                     runOnUiThread {
                                         btnRegister.isEnabled = true
                                         btnRegister.text = "Crear cuenta"
@@ -370,7 +372,7 @@ class RegisterActivity : AppCompatActivity() {
                                         navigateToLogin()
                                     }
                                 } catch (ex: Exception) {
-                                    android.util.Log.e("RegisterActivity", "Error al guardar en Room", ex)
+                                    Log.e("RegisterActivity", "Error al guardar en Room", ex)
                                     runOnUiThread {
                                         btnRegister.isEnabled = true
                                         btnRegister.text = "Crear cuenta"
@@ -385,7 +387,7 @@ class RegisterActivity : AppCompatActivity() {
                         }
                     )
                 } else {
-                    android.util.Log.d("RegisterActivity", "Sin internet, guardando solo en Room...")
+                    Log.d("RegisterActivity", "Sin internet, guardando solo en Room...")
                     runOnUiThread {
                         btnRegister.text = "Creando cuenta..."
                     }
@@ -393,7 +395,7 @@ class RegisterActivity : AppCompatActivity() {
                     try {
                         // NO HAY INTERNET: Guardar solo en Room
                         dao.insertar(usuario)
-                        android.util.Log.d("RegisterActivity", "Guardado en Room exitosamente")
+                        Log.d("RegisterActivity", "Guardado en Room exitosamente")
                         runOnUiThread {
                             btnRegister.isEnabled = true
                             btnRegister.text = "Crear cuenta"
@@ -405,7 +407,7 @@ class RegisterActivity : AppCompatActivity() {
                             navigateToLogin()
                         }
                     } catch (e: Exception) {
-                        android.util.Log.e("RegisterActivity", "Error al guardar en Room", e)
+                        Log.e("RegisterActivity", "Error al guardar en Room", e)
                         runOnUiThread {
                             btnRegister.isEnabled = true
                             btnRegister.text = "Crear cuenta"
@@ -418,7 +420,7 @@ class RegisterActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("RegisterActivity", "Error en guardarUsuario", e)
+                Log.e("RegisterActivity", "Error en guardarUsuario", e)
                 runOnUiThread {
                     btnRegister.isEnabled = true
                     btnRegister.text = "Crear cuenta"
@@ -475,7 +477,7 @@ class RegisterActivity : AppCompatActivity() {
                 etEmail.requestFocus()
                 false
             }
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                 tilEmail.error = "Formato de correo inválido"
                 etEmail.requestFocus()
                 false
@@ -623,7 +625,7 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun isNetworkAvailable(): Boolean {
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
 

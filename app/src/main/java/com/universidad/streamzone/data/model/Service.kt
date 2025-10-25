@@ -1,4 +1,4 @@
-package com.universidad.streamzone
+package com.universidad.streamzone.data.model
 
 data class Service(
     val id: String,

@@ -1,4 +1,4 @@
-package com.universidad.streamzone
+package com.universidad.streamzone.ui.splash
 
 import android.content.Intent
 import android.content.SharedPreferences
@@ -9,6 +9,9 @@ import android.view.animation.AnimationUtils
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.universidad.streamzone.ui.home.HomeNativeActivity
+import com.universidad.streamzone.ui.auth.LoginActivity
+import com.universidad.streamzone.R
 
 class SplashActivity : AppCompatActivity() {
 

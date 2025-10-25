@@ -1,9 +1,9 @@
-package com.universidad.streamzone.sync
+package com.universidad.streamzone.utils.sync
 
 import android.content.Context
 import android.util.Log
-import com.universidad.streamzone.cloud.FirebaseService
-import com.universidad.streamzone.database.AppDatabase
+import com.universidad.streamzone.data.remote.FirebaseService
+import com.universidad.streamzone.data.local.database.AppDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

@@ -1,6 +1,5 @@
-package com.universidad.streamzone
+package com.universidad.streamzone.ui.auth
 
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
@@ -8,6 +7,9 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.text.InputType
+import android.util.Log
+import android.util.Patterns
+import android.widget.CheckBox
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -16,11 +18,12 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import com.universidad.streamzone.cloud.FirebaseService
-import com.universidad.streamzone.database.AppDatabase
-import com.universidad.streamzone.sync.SyncService
+import com.universidad.streamzone.ui.home.HomeNativeActivity
+import com.universidad.streamzone.R
+import com.universidad.streamzone.data.remote.FirebaseService
+import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.utils.sync.SyncService
 import kotlinx.coroutines.launch
-import android.widget.CheckBox
 
 class LoginActivity : AppCompatActivity() {
 
@@ -121,9 +124,9 @@ class LoginActivity : AppCompatActivity() {
         val email = etEmail.text.toString().trim()
         val password = etPassword.text.toString().trim()
 
-        android.util.Log.d("LoginActivity", "=== INICIO LOGIN ===")
-        android.util.Log.d("LoginActivity", "Email: $email")
-        android.util.Log.d("LoginActivity", "Password length: ${password.length}")
+        Log.d("LoginActivity", "=== INICIO LOGIN ===")
+        Log.d("LoginActivity", "Email: $email")
+        Log.d("LoginActivity", "Password length: ${password.length}")
 
         tilEmail.error = null
         tilPassword.error = null
@@ -131,19 +134,19 @@ class LoginActivity : AppCompatActivity() {
         if (!validateEmail(email)) return
         if (!validatePassword(password)) return
 
-        val dao = AppDatabase.getInstance(this).usuarioDao()
+        val dao = AppDatabase.Companion.getInstance(this).usuarioDao()
 
         lifecycleScope.launch {
             // Primero buscar en Room (local)
             val usuarioLocal = dao.buscarPorEmail(email)
 
-            android.util.Log.d("LoginActivity", "Usuario en Room: $usuarioLocal")
+            Log.d("LoginActivity", "Usuario en Room: $usuarioLocal")
 
             if (usuarioLocal != null) {
                 // Usuario encontrado localmente
-                android.util.Log.d("LoginActivity", "Password en Room: ${usuarioLocal.password}")
-                android.util.Log.d("LoginActivity", "Password ingresada: $password")
-                android.util.Log.d("LoginActivity", "¿Coinciden?: ${usuarioLocal.password == password}")
+                Log.d("LoginActivity", "Password en Room: ${usuarioLocal.password}")
+                Log.d("LoginActivity", "Password ingresada: $password")
+                Log.d("LoginActivity", "¿Coinciden?: ${usuarioLocal.password == password}")
 
                 if (usuarioLocal.password != password) {
                     runOnUiThread {
@@ -159,13 +162,13 @@ class LoginActivity : AppCompatActivity() {
                 }
             } else {
                 // No está en Room, buscar en Firebase si hay internet
-                android.util.Log.d("LoginActivity", "Usuario NO encontrado en Room")
+                Log.d("LoginActivity", "Usuario NO encontrado en Room")
 
                 if (isNetworkAvailable()) {
-                    android.util.Log.d("LoginActivity", "Buscando en Firebase...")
+                    Log.d("LoginActivity", "Buscando en Firebase...")
 
                     FirebaseService.verificarUsuarioPorEmail(email) { usuarioFirebase ->
-                        android.util.Log.d("LoginActivity", "Usuario en Firebase: $usuarioFirebase")
+                        Log.d("LoginActivity", "Usuario en Firebase: $usuarioFirebase")
 
                         if (usuarioFirebase == null) {
                             runOnUiThread {
@@ -173,9 +176,9 @@ class LoginActivity : AppCompatActivity() {
                                 etEmail.requestFocus()
                             }
                         } else {
-                            android.util.Log.d("LoginActivity", "Password en Firebase: ${usuarioFirebase.password}")
-                            android.util.Log.d("LoginActivity", "Password ingresada: $password")
-                            android.util.Log.d("LoginActivity", "¿Coinciden?: ${usuarioFirebase.password == password}")
+                            Log.d("LoginActivity", "Password en Firebase: ${usuarioFirebase.password}")
+                            Log.d("LoginActivity", "Password ingresada: $password")
+                            Log.d("LoginActivity", "¿Coinciden?: ${usuarioFirebase.password == password}")
 
                             if (usuarioFirebase.password != password) {
                                 runOnUiThread {
@@ -186,7 +189,7 @@ class LoginActivity : AppCompatActivity() {
                                 // Guardar en Room para uso offline
                                 lifecycleScope.launch {
                                     dao.insertar(usuarioFirebase)
-                                    android.util.Log.d("LoginActivity", "Usuario guardado en Room desde Firebase")
+                                    Log.d("LoginActivity", "Usuario guardado en Room desde Firebase")
                                     runOnUiThread {
                                         loginExitoso(usuarioFirebase.fullname, email)
                                     }
@@ -196,7 +199,7 @@ class LoginActivity : AppCompatActivity() {
                     }
                 } else {
                     // Sin internet y no está en Room
-                    android.util.Log.d("LoginActivity", "Sin internet y usuario no en Room")
+                    Log.d("LoginActivity", "Sin internet y usuario no en Room")
                     runOnUiThread {
                         AlertDialog.Builder(this@LoginActivity)
                             .setTitle("Sin conexión")
@@ -286,7 +289,7 @@ class LoginActivity : AppCompatActivity() {
                 etEmail.requestFocus()
                 false
             }
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                 tilEmail.error = "Formato de correo inválido"
                 etEmail.requestFocus()
                 false
@@ -329,7 +332,7 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             tilEmail.error = "Ingresa un correo válido primero"
             etEmail.requestFocus()
             return
@@ -370,7 +373,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun isNetworkAvailable(): Boolean {
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
 
@@ -380,7 +383,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun registerNetworkCallback() {
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
 
         networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
@@ -405,7 +408,7 @@ class LoginActivity : AppCompatActivity() {
     private fun unregisterNetworkCallback() {
         networkCallback?.let {
             try {
-                val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
                 connectivityManager.unregisterNetworkCallback(it)
             } catch (e: Exception) {
                 // Silencioso

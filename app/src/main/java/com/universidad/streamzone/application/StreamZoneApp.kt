@@ -1,4 +1,4 @@
-package com.universidad.streamzone
+package com.universidad.streamzone.application
 
 import android.app.Application
 import android.util.Log

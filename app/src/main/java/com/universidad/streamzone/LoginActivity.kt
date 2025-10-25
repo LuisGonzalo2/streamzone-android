@@ -93,6 +93,10 @@ class LoginActivity : AppCompatActivity() {
         btnLogin = findViewById(R.id.btn_login)
         btnRegister = findViewById(R.id.btn_register)
         btnTogglePassword = findViewById(R.id.btn_toggle_password)
+        checkKeepLoggedIn = findViewById(R.id.check_keep_logged_in)
+
+        // Restaurar estado del checkbox
+        checkKeepLoggedIn.isChecked = sharedPrefs.getBoolean("keep_logged_in_preference", false)
     }
 
     private fun setupClickListeners() {
@@ -212,13 +216,61 @@ class LoginActivity : AppCompatActivity() {
             Toast.LENGTH_SHORT
         ).show()
 
-        sharedPrefs.edit().putString("logged_in_user_email", email).apply()
-        sharedPrefs.edit().putString("logged_in_user_name", nombreUsuario).apply()
+        // Guardar sesión
+        val keepLoggedIn = checkKeepLoggedIn.isChecked
+        sharedPrefs.edit().apply {
+            putString("logged_in_user_email", email)
+            putString("logged_in_user_name", nombreUsuario)
+            putBoolean("keep_logged_in_preference", keepLoggedIn)
 
+            if (keepLoggedIn) {
+                // Guardar timestamp de inicio de sesión
+                putLong("session_start_time", System.currentTimeMillis())
+            } else {
+                remove("session_start_time")
+            }
+            apply()
+        }
+
+        navigateToHome()
+    }
+
+    private fun navigateToHome() {
         val intent = Intent(this@LoginActivity, HomeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
         finish()
+    }
+
+    private fun checkActiveSession(): Boolean {
+        val keepLoggedIn = sharedPrefs.getBoolean("keep_logged_in_preference", false)
+
+        if (!keepLoggedIn) {
+            return false
+        }
+
+        val sessionStartTime = sharedPrefs.getLong("session_start_time", 0)
+        val currentTime = System.currentTimeMillis()
+        val elapsedTime = currentTime - sessionStartTime
+
+        // Si la sesión tiene menos de 4 horas
+        if (sessionStartTime > 0 && elapsedTime < SESSION_DURATION_MS) {
+            val userEmail = sharedPrefs.getString("logged_in_user_email", null)
+            return !userEmail.isNullOrEmpty()
+        } else {
+            // Sesión expirada, limpiar
+            clearSession()
+            return false
+        }
+    }
+
+    private fun clearSession() {
+        sharedPrefs.edit().apply {
+            remove("logged_in_user_email")
+            remove("logged_in_user_name")
+            remove("session_start_time")
+            apply()
+        }
     }
 
     private fun validateEmail(email: String): Boolean {

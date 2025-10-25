@@ -121,7 +121,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="16dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
@@ -169,6 +169,18 @@
                     app:iconPadding="0dp" />
 
             </LinearLayout>
+
+            <!-- Checkbox Mantener sesión -->
+            <CheckBox
+                android:id="@+id/check_keep_logged_in"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mantener sesión iniciada"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:layout_gravity="start"
+                android:layout_marginBottom="24dp"
+                android:buttonTint="@color/purple_accent" />
 
             <!-- Botón Iniciar Sesión -->
             <com.google.android.material.button.MaterialButton

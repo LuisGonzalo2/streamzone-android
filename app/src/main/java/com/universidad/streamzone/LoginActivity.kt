@@ -236,7 +236,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun navigateToHome() {
-        val intent = Intent(this@LoginActivity, HomeActivity::class.java)
+        val intent = Intent(this@LoginActivity, HomeNativeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
         finish()

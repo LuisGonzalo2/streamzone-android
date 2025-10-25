@@ -20,6 +20,7 @@ import com.universidad.streamzone.cloud.FirebaseService
 import com.universidad.streamzone.database.AppDatabase
 import com.universidad.streamzone.sync.SyncService
 import kotlinx.coroutines.launch
+import android.widget.CheckBox
 
 class LoginActivity : AppCompatActivity() {
 
@@ -30,11 +31,16 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var btnLogin: MaterialButton
     private lateinit var btnRegister: MaterialButton
     private lateinit var btnTogglePassword: MaterialButton
+    private lateinit var checkKeepLoggedIn: CheckBox
 
     private var isPasswordVisible = false
 
     private lateinit var sharedPrefs: SharedPreferences
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+
+    companion object {
+        private const val SESSION_DURATION_MS = 4 * 60 * 60 * 1000L // 4 horas en milisegundos
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,10 +55,18 @@ class LoginActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         restoreEmail()
+
+        // Si viene desde registro, usar ese email
+        val registeredEmail = intent.getStringExtra("registered_email")
+        if (!registeredEmail.isNullOrEmpty()) {
+            etEmail.setText(registeredEmail)
+            etPassword.requestFocus()
+        }
     }
 
     override fun onResume() {
         super.onResume()
+        registerNetworkCallback()
 
         // Intentar sincronizar datos pendientes si hay internet (silenciosamente)
         if (isNetworkAvailable()) {
@@ -63,10 +77,12 @@ class LoginActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         saveEmail()
+        unregisterNetworkCallback()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        unregisterNetworkCallback()
     }
 
     private fun initViews() {
@@ -313,5 +329,40 @@ class LoginActivity : AppCompatActivity() {
         return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+    }
+
+    private fun registerNetworkCallback() {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                runOnUiThread {
+                    // Sincronizar silenciosamente sin mostrar mensaje
+                    SyncService.sincronizarUsuariosPendientes(this@LoginActivity)
+                }
+            }
+
+            override fun onLost(network: Network) {
+                // Silencioso - sin mensajes
+            }
+        }
+
+        try {
+            connectivityManager.registerDefaultNetworkCallback(networkCallback!!)
+        } catch (e: Exception) {
+            // Silencioso
+        }
+    }
+
+    private fun unregisterNetworkCallback() {
+        networkCallback?.let {
+            try {
+                val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                connectivityManager.unregisterNetworkCallback(it)
+            } catch (e: Exception) {
+                // Silencioso
+            }
+        }
+        networkCallback = null
     }
 }

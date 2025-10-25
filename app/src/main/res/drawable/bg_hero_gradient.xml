@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Capa 1: Base oscura (zinc gradient) -->
+    <item>
+        <shape>
+            <gradient
+                android:angle="90"
+                android:startColor="@color/zinc_900"
+                android:centerColor="@color/zinc_800"
+                android:endColor="@color/zinc_700"
+                android:type="linear" />
+        </shape>
+    </item>
+
+    <!-- Capa 2: Overlay de color sutil (blue/purple/pink) -->
+    <item>
+        <shape>
+            <gradient
+                android:angle="0"
+                android:startColor="@color/hero_gradient_blue"
+                android:centerColor="@color/hero_gradient_purple"
+                android:endColor="@color/hero_gradient_pink"
+                android:type="linear" />
+        </shape>
+    </item>
+
+    <!-- Capa 3: Overlay negro con transparencia -->
+    <item>
+        <shape>
+            <gradient
+                android:angle="270"
+                android:startColor="@color/hero_overlay_1"
+                android:centerColor="@color/hero_overlay_2"
+                android:endColor="#00000000"
+                android:type="linear" />
+        </shape>
+    </item>
+
+</layer-list>

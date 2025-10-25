@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Fondo con gradiente -->
+    <item>
+        <shape>
+            <gradient
+                android:angle="0"
+                android:startColor="@color/badge_premium_bg_start"
+                android:endColor="@color/badge_premium_bg_end"
+                android:type="linear" />
+            <corners android:radius="@dimen/badge_premium_corner_radius" />
+        </shape>
+    </item>
+
+    <!-- Borde -->
+    <item>
+        <shape>
+            <stroke
+                android:width="1dp"
+                android:color="@color/badge_premium_border" />
+            <corners android:radius="@dimen/badge_premium_corner_radius" />
+        </shape>
+    </item>
+
+</layer-list>

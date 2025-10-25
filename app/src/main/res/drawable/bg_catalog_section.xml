@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Base oscura -->
+    <item>
+        <shape>
+            <gradient
+                android:angle="0"
+                android:startColor="@color/zinc_900"
+                android:endColor="@color/zinc_800"
+                android:type="linear" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+
+    <!-- Overlay de color (50% opacidad) -->
+    <item>
+        <shape>
+            <gradient
+                android:angle="0"
+                android:startColor="#8037A3EB"
+                android:centerColor="#809333EA"
+                android:endColor="#80DB2777"
+                android:type="linear" />
+            <corners android:radius="16dp" />
+        </shape>
+    </item>
+
+</layer-list>

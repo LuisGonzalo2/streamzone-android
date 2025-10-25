@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:angle="270"
+        android:startColor="@color/emerald_500"
+        android:endColor="@color/emerald_600"
+        android:type="linear" />
+    <size
+        android:width="@dimen/badge_check_size"
+        android:height="@dimen/badge_check_size" />
+</shape>

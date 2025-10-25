@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/dark_gradient_background">
+
+    <!-- 🔝 Barra superior MEJORADA con más botones -->
+    <LinearLayout
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:background="@drawable/navbar_gradient_background"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- 🟪 Logo -->
+        <ImageView
+            android:id="@+id/img_logo"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_streamzone_logo"
+            android:contentDescription="Logo StreamZone"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- 📝 Nombre de la app -->
+        <TextView
+            android:id="@+id/tv_app_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="StreamZone"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- 🔔 Notificaciones -->
+        <TextView
+            android:id="@+id/btn_notifications"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="🔔"
+            android:textSize="20sp"
+            android:background="@drawable/navbar_button_bg"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Notificaciones" />
+
+        <!-- ❤️ Favoritos -->
+        <TextView
+            android:id="@+id/btn_favorites"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="❤️"
+            android:textSize="20sp"
+            android:background="@drawable/navbar_button_bg"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Favoritos" />
+
+        <!-- 🔍 Buscar -->
+        <TextView
+            android:id="@+id/btn_search"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="🔍"
+            android:textSize="20sp"
+            android:background="@drawable/navbar_button_bg"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Buscar" />
+
+        <!-- 👤 Perfil -->
+        <TextView
+            android:id="@+id/btn_profile"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="👤"
+            android:textSize="20sp"
+            android:background="@drawable/navbar_button_bg"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Perfil" />
+
+        <!-- 🏠 Inicio -->
+        <TextView
+            android:id="@+id/btn_home"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="🏠"
+            android:textSize="20sp"
+            android:background="@drawable/navbar_button_bg"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Inicio" />
+
+        <!-- 🎁 Regalos -->
+        <TextView
+            android:id="@+id/btn_gift"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="🎁"
+            android:textSize="20sp"
+            android:background="@drawable/navbar_button_bg"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Regalos" />
+
+        <!-- 🔐 Seguridad -->
+        <TextView
+            android:id="@+id/btn_lock"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="🔐"
+            android:textSize="20sp"
+            android:background="@drawable/navbar_button_bg"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Seguridad" />
+
+        <!-- ⚙️ Configuración -->
+        <TextView
+            android:id="@+id/btn_settings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="⚙️"
+            android:textSize="20sp"
+            android:background="@drawable/navbar_button_bg"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Configuración" />
+
+        <!-- 💬 Chat -->
+        <TextView
+            android:id="@+id/btn_chat"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="💬"
+            android:textSize="20sp"
+            android:background="@drawable/navbar_button_bg"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Chat" />
+
+        <!-- ℹ️ Info -->
+        <TextView
+            android:id="@+id/btn_info"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:text="ℹ️"
+            android:textSize="20sp"
+            android:background="@drawable/navbar_button_bg"
+            android:layout_marginStart="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Información" />
+    </LinearLayout>
+
+    <!-- 📱 Contenido principal -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:padding="16dp"
+        app:layout_constraintTop_toBottomOf="@+id/top_bar"
+        app:layout_constraintBottom_toTopOf="@+id/btn_help"
+        app:layout_constraintVertical_bias="0">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 🎯 Título principal -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Seguridad Garantizada"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <!-- 👤 Sección Mi Perfil -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Mi Perfil"
+                android:textColor="#4FC3F7"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gestiona tu cuenta y compras activas"
+                android:textColor="#B3E5FC"
+                android:textSize="14sp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- 📍 Indicador Inicio -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Inicio"
+                android:textColor="#80DEEA"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:drawablePadding="8dp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- 💼 Información Personal -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="#2C3E50"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Información Personal"
+                        android:textColor="#4FC3F7"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- 👤 Nombre -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="👤 Nombre"
+                            android:textColor="#B3E5FC"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_user_name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textColor="#FFFFFF" />
+                    </LinearLayout>
+
+                    <!-- 📱 WhatsApp -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="📱 WhatsApp"
+                            android:textColor="#B3E5FC"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_user_phone"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textColor="#FFFFFF" />
+                    </LinearLayout>
+
+                    <!-- 📧 Email -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="16dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="📧 Email"
+                            android:textColor="#B3E5FC"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_user_email"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textColor="#FFFFFF" />
+                    </LinearLayout>
+
+                    <!-- 📅 Miembro desde -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#34495E"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="📅 Miembro desde"
+                            android:textColor="#B3E5FC"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_member_since"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textColor="#FFFFFF" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 🛍️ Mis Compras Activas -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="#2C3E50"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="🛍️ Mis Compras Activas"
+                        android:textColor="#4FC3F7"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- 🔄 Botón Actualizar -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_update"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="🔄 Actualizar"
+                        android:textAllCaps="false"
+                        android:background="@drawable/button_gradient_blue"
+                        android:layout_marginBottom="16dp"
+                        app:cornerRadius="8dp" />
+
+                    <!-- ❌ Sin compras -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="32dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="❌ No tienes compras activas"
+                            android:textColor="#E0E0E0"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="8dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Explora nuestro catálogo y encuentra el servicio perfecto para ti"
+                            android:textColor="#B0BEC5"
+                            android:textSize="14sp"
+                            android:gravity="center"
+                            android:lineSpacingExtra="4dp" />
+                    </LinearLayout>
+
+                    <!-- 📂 Botón Ver Catálogo -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_catalog"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="📂 Ver Catálogo"
+                        android:textAllCaps="false"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:textColor="#4FC3F7"
+                        app:strokeColor="#4FC3F7"
+                        app:cornerRadius="8dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ☀️ Botón tema -->
+    <TextView
+        android:id="@+id/btn_theme"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:text="☀️"
+        android:textSize="24sp"
+        android:background="@android:color/transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="Cambiar tema"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="24dp" />
+
+    <!-- 💬 Botón ayuda -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_help"
+        android:layout_width="wrap_content"
+        android:layout_height="56dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/button_gradient_blue"
+        android:text="💬 ¿Necesitas ayuda? Chat en vivo"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        app:backgroundTint="@null"
+        app:cornerRadius="28dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.886"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

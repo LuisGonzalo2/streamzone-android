@@ -113,11 +113,73 @@ class LoginActivity : AppCompatActivity() {
         loginAttempts = sharedPrefs.getInt("login_attempts", 0) + 1
         sharedPrefs.edit().putInt("login_attempts", loginAttempts).apply()
 
+        // VERIFICAR SI EL USUARIO EXISTE EN LA BASE DE DATOS
+        checkUserInDatabase(email, password)
+    }
+
+    private fun checkUserInDatabase(email: String, password: String) {
+        try {
+            val db = AppDatabase.getInstance(this)
+
+            // Buscar usuario por email
+            Thread {
+                val users = db.userDao().getAll()
+                val user = users.find { it.email.equals(email, ignoreCase = true) }
+
+                runOnUiThread {
+                    if (user != null) {
+                        // USUARIO ENCONTRADO - INICIAR SESIÓN EXITOSA
+                        loginSuccess(user)
+                    } else {
+                        // USUARIO NO ENCONTRADO
+                        loginFailed()
+                    }
+                }
+            }.start()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(
+                this,
+                "Error al verificar usuario: ${e.message}",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun loginSuccess(user: UserEntity) {
+        // Guardar datos del usuario en SharedPreferences
+        sharedPrefs.edit().apply {
+            putString("user_name", user.fullName)
+            putString("user_email", user.email)
+            putString("user_phone", user.phone)
+            putInt("login_attempts", 0) // Resetear intentos
+            apply()
+        }
+
         Toast.makeText(
             this,
-            "Esta cuenta no existe. Por favor regístrate primero.",
+            "✅ ¡Bienvenido ${user.fullName}!",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        // Navegar al panel de usuario
+        val intent = Intent(this, UserPanelActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    private fun loginFailed() {
+        Toast.makeText(
+            this,
+            "❌ Esta cuenta no existe. Por favor regístrate primero.",
             Toast.LENGTH_LONG
         ).show()
+
+        // Limpiar campos
+        etPassword.text?.clear()
+        etPassword.requestFocus()
     }
 
     private fun validateEmail(email: String): Boolean {
@@ -188,13 +250,9 @@ class LoginActivity : AppCompatActivity() {
 
         Toast.makeText(
             this,
-            "Se envió un enlace de recuperación a $email",
+            "📧 Se envió un enlace de recuperación a $email",
             Toast.LENGTH_LONG
         ).show()
-    }
-
-    private fun handleBackHome() {
-        finishAffinity()
     }
 
     private fun togglePasswordVisibility() {

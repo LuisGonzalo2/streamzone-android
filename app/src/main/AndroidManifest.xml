@@ -42,7 +42,13 @@
             android:name=".MainActivity"
             android:exported="false" />
 
-        <!-- Actividades añadidas para listar usuarios -->
+        <!-- UserPanelActivity - Panel principal después del login -->
+        <activity
+            android:name=".UserPanelActivity"
+            android:exported="false"
+            android:label="StreamZone - Panel de Usuario" />
+
+        <!-- Actividades para listar usuarios -->
         <activity
             android:name=".FirebaseUsersActivity"
             android:exported="false" />
@@ -50,6 +56,17 @@
         <activity
             android:name=".RoomUsersActivity"
             android:exported="false" />
+
+        <!-- QUITAR estas líneas ya que no existen esas actividades -->
+        <!--
+        <activity
+            android:name=".CatalogActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+        -->
 
     </application>
 

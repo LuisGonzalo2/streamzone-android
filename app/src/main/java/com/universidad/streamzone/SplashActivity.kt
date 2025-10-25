@@ -72,7 +72,9 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun navigateToHome() {
-        val intent = Intent(this, HomeActivity::class.java)
+        val userName = sharedPrefs.getString("logged_in_user_name", "")
+        val intent = Intent(this, HomeNativeActivity::class.java)
+        intent.putExtra("USER_FULLNAME", userName)
         startActivity(intent)
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()

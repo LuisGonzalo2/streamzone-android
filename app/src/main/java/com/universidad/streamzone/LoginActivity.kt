@@ -224,7 +224,6 @@ class LoginActivity : AppCompatActivity() {
             putBoolean("keep_logged_in_preference", keepLoggedIn)
 
             if (keepLoggedIn) {
-                // Guardar timestamp de inicio de sesión
                 putLong("session_start_time", System.currentTimeMillis())
             } else {
                 remove("session_start_time")
@@ -232,11 +231,8 @@ class LoginActivity : AppCompatActivity() {
             apply()
         }
 
-        navigateToHome()
-    }
-
-    private fun navigateToHome() {
         val intent = Intent(this@LoginActivity, HomeNativeActivity::class.java)
+        intent.putExtra("USER_FULLNAME", nombreUsuario)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
         finish()

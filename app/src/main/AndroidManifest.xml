@@ -20,6 +20,13 @@
         <activity
             android:name=".HomeActivity"
             android:exported="false" />
+        <activity
+            android:name=".HomeNativeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ReserveActivity"
+            android:exported="false" />
 
         <!-- Splash - Pantalla de inicio -->
         <activity

@@ -133,11 +133,11 @@ class LoginActivity : AppCompatActivity() {
 
             // Comparar contraseña
             if (usuario.password == password) {
-                // Login exitoso: resetear intentos y navegar a HomeActivity
+                // Login exitoso: resetear intentos y navegar a Home nativo
                 sharedPrefs.edit { putInt("login_attempts", 0) }
                 runOnUiThread {
                     Toast.makeText(this@LoginActivity, "Bienvenido ${usuario.fullname}", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this@LoginActivity, HomeActivity::class.java)
+                    val intent = Intent(this@LoginActivity, HomeNativeActivity::class.java) //jere: abrir Home nativo en vez de WebView
                     intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
                     intent.putExtra("USER_FULLNAME", usuario.fullname)
                     startActivity(intent)

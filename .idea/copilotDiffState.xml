@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/commit_home_streamzone.bat">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/commit_home_streamzone.bat" />
+              <option name="originalContent" value="@echo off&#10;REM Script para crear/actualizar la rama home-streamzone, commitear cambios y hacer push al remoto&#10;cd /d &quot;%~dp0&quot;&#10;echo Switching/creating branch home-streamzone...&#10;git fetch --all&#10;ngit checkout -B home-streamzone&#10;echo Adding all changes...&#10;ngit add -A&#10;echo Checking for staged changes...&#10;ngit diff --cached --quiet&#10;if %errorlevel% equ 0 (&#10;  echo No hay cambios para commitear.&#10;) else (&#10;  echo Committing changes...&#10;  git commit -m &quot;feat(home): remove web emulation; keep native Home; cleanup logo placeholders; backup web assets&quot;&#10;)&#10;echo Pushing branch home-streamzone to origin...&#10;ngit push -u origin home-streamzone&#10;echo Done. Use 'git status' and 'git log -1' to verify.&#10;pause&#10;&#10;" />
+              <option name="updatedContent" value="@echo off&#10;REM Script para crear/actualizar la rama home-streamzone, commitear cambios y hacer push al remoto&#10;REM Ejecutar desde cmd.exe (no desde PowerShell) para evitar diferencias en operadores como || y en comentarios.&#10;cd /d &quot;%~dp0&quot;&#10;echo Switching/creating branch home-streamzone...&#10;git fetch --all&#10;git checkout -B home-streamzone&#10;echo Adding all changes...&#10;git add -A&#10;echo Checking for staged changes...&#10;git diff --cached --quiet&#10;if %errorlevel% equ 0 (&#10;  echo No hay cambios para commitear.&#10;) else (&#10;  echo Committing changes...&#10;  git commit -m &quot;feat(home): remove web emulation; keep native Home; cleanup logo placeholders; backup web assets&quot;&#10;)&#10;echo Pushing branch home-streamzone to origin...&#10;git push -u origin home-streamzone&#10;echo Done. Use 'git status' and 'git log -1' to verify.&#10;pause" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

@@ -45,4 +45,3 @@ class CatalogAdapter(
 
     override fun getItemCount(): Int = items.size
 }
-

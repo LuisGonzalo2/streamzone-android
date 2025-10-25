@@ -10,7 +10,7 @@
 
     <!-- Colores del diseño oscuro -->
     <color name="dark_background">#0D1B2A</color>
-    <color name="dark_card_background">#1B263B</color>
+    <color name="dark_card_background">#0f1720</color>
     <color name="purple_accent">#A855F7</color>
     <color name="text_primary">#FFFFFF</color>
     <color name="text_secondary">#94A3B8</color>
@@ -19,4 +19,11 @@
     <color name="green_accent">#10B981</color>
     <!-- jere: color para overlays y placeholders en layouts -->
     <color name="black_overlay">#1A000000</color>
+
+    <!-- Colores de marca añadidos (// jere) -->
+    <color name="brand_blue">#2563EB</color>
+    <color name="brand_blue_light">#3B82F6</color>
+    <color name="brand_purple">#9333EA</color>
+    <color name="brand_pink">#EC4899</color>
+    <color name="card_border">#223047</color>
 </resources>

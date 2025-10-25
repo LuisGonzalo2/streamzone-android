@@ -1,0 +1,69 @@
+Cambios completos realizados en el proyecto (resumen) - Autor: // jere
+
+Fecha: 2025-10-24
+
+Descripción general:
+Este documento resume de forma concisa todos los cambios que se hicieron para integrar la pantalla Home, primero como WebView y luego como implementación nativa, incluyendo archivos añadidos, modificados y notas técnicas. Cada entrada incluye: ruta del archivo, descripción corta del cambio y la marca del autor: // jere
+
+1) app/src/main/assets/www/index.html
+   - Descripción: Página HTML/React (prototipo) que representa la versión web del Home (hero + catálogo + footer). Usada por `HomeActivity` como contenido local de WebView.
+   - Autor: // jere
+
+2) app/src/main/java/com/universidad/streamzone/HomeActivity.kt
+   - Descripción: Activity que carga la página web (`assets/www/index.html`) en un `WebView`. Añade la interfaz JS `Android` con `onReserve(serviceJson)` para comunicación web → Android. Se dejó como fallback durante la migración a nativo.
+   - Autor: // jere
+
+3) app/src/main/res/layout/activity_home_webview.xml
+   - Descripción: Layout que contiene el `WebView` para `HomeActivity`.
+   - Autor: // jere
+
+4) app/src/main/java/com/universidad/streamzone/HomeNativeActivity.kt
+   - Descripción: Nueva Activity nativa que reemplaza la UI crítica del Home. Muestra un saludo (tvGreeting) y una lista de servicios en un RecyclerView. Método `onReserve` actualmente muestra un Toast (placeholder para flujo de compra nativo).
+   - Autor: // jere
+
+5) app/src/main/java/com/universidad/streamzone/Service.kt
+   - Descripción: Data class `Service` que modela id/título/precio/desc del servicio usado por la versión nativa.
+   - Autor: // jere
+
+6) app/src/main/java/com/universidad/streamzone/ServiceAdapter.kt
+   - Descripción: RecyclerView adapter que infla `item_service_card.xml` y maneja el click en `btnReserve` vía una lambda `onReserve`.
+   - Autor: // jere
+
+7) app/src/main/res/layout/activity_home_native.xml
+   - Descripción: Layout nativo para `HomeNativeActivity` con `tvGreeting` y `rvServices`.
+   - Autor: // jere
+
+8) app/src/main/res/layout/item_service_card.xml
+   - Descripción: Layout de tarjeta de servicio (CardView) con título, precio, descripción y botón de reservar; usa strings desde `strings.xml`.
+   - Autor: // jere
+
+9) app/src/main/res/values/strings.xml
+   - Descripción: Añadidos recursos de texto (`service_title`, `service_price`, `service_desc`, `btn_buy`) para evitar cadenas hardcoded y facilitar i18n.
+   - Autor: // jere
+
+10) app/src/main/java/com/universidad/streamzone/LoginActivity.kt
+    - Descripción: Modificado para navegar a `HomeNativeActivity` tras login exitoso (antes abría `HomeActivity` con WebView). Pasa el extra `USER_FULLNAME`.
+    - Autor: // jere
+
+11) app/src/main/java/com/universidad/streamzone/RegisterActivity.kt
+    - Descripción: Modificado para que, tras registro exitoso, abra `HomeNativeActivity` y pase `USER_FULLNAME`. Se ajustó la navegación "Volver al login" para apuntar correctamente a `LoginActivity`.
+    - Autor: // jere
+
+12) app/src/main/AndroidManifest.xml
+    - Descripción: Registrada la nueva `HomeNativeActivity` en el manifiesto. `HomeActivity` (WebView) se conservó temporalmente.
+    - Autor: // jere
+
+Notas técnicas y acciones adicionales realizadas:
+- Correcciones de sintaxis en `HomeNativeActivity.kt` (caracteres extra al inicio).
+- Uso de referencias completas a `com.universidad.streamzone.R.*` en `ServiceAdapter.kt` para evitar problemas del analizador estático.
+- Eliminación de strings hardcoded en `item_service_card.xml` y movido a `strings.xml`.
+- Documentación del cambio y estado en `changes/home/changes_home_log.txt` (archivo actualizado con descripciones y autor).
+
+Siguientes pasos (opciones):
+- Probar la app en el emulador y confirmar que todo funciona (login, registro, Home nativo, botón reservar).
+- Si confirmas, procedo a eliminar la WebView y la carpeta `assets/www` y registraré la eliminación en los archivos de cambios.
+
+Ruta del archivo resumen: changes/home/changes_full_summary.txt
+
+-- Fin del resumen --
+

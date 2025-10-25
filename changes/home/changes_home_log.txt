@@ -1,72 +1,68 @@
 Cambios realizados para integrar el Home web (2025-10-24):
 
 Resumen general:
-- Integré tu código web (Home React/JSX) como una página HTML local dentro de la app Android, y la cargo usando un WebView en `HomeActivity`.
-- Objetivo: que al iniciar sesión el usuario vea la UI exactamente como en tu página web (hero + catálogo + footer), sin migrar a React Native o rehacer el UI en nativo.
+- Integré tu código web (Home React/JSX) como una página HTML local dentro de la app Android (WebView) y posteriormente migré la pantalla Home a una versión nativa mínima. A continuación detallo cada archivo modificado/añadido, su descripción y el autor de la modificación.
 
-Archivos añadidos / modificados:
+Detalles por archivo (descripción + autor // jere):
 
-1) Archivos añadidos en `app/src/main/assets/www/` (web):
-   - `index.html`  -- Contiene tu Home en JSX + Tailwind vía CDN; transpila JSX en runtime con Babel (prototipo).
-     - Comentarios: dentro de `index.html` verás la marca `//jere` en varios lugares para indicar integraciones específicas con Android.
-     - Nota: para producción conviene compilar el JS fuera y eliminar Babel en runtime.
+1) app/src/main/assets/www/index.html
+   - Descripción: Página HTML/JS que contiene la versión web del `Home` (React + Tailwind en runtime para prototipo). Incluye componente `ServiceCard` y lista de `SERVICES`. Usada por `HomeActivity` en WebView como fallback.
+   - Autor: // jere
 
-2) Archivos nativos añadidos/modificados:
-   - `app/src/main/java/com/universidad/streamzone/HomeActivity.kt` (MODIFICADO)
-     - Ahora carga `file:///android_asset/www/index.html` en un WebView.
-     - Añade la interfaz JS `Android` (método `onReserve(serviceJson: String)`) para recibir eventos desde la web.
-     - Envía el nombre del usuario (extra `USER_FULLNAME`) como query param al cargar la página para que la web pueda saludar al usuario.
-     - Comentarios `//jere` añadidos donde se integran funciones clave.
-   - `app/src/main/res/layout/activity_home_webview.xml` (AÑADIDO)
-     - Layout simple que contiene el `WebView`.
+2) app/src/main/java/com/universidad/streamzone/HomeActivity.kt
+   - Descripción: Activity que carga `assets/www/index.html` en un `WebView`, añade la interfaz JavaScript `Android` (método `onReserve(serviceJson)`) para comunicación web → Android, y pasa `USER_FULLNAME` como query param. Mantuvimos esta clase como fallback antes de eliminar la WebView.
+   - Autor: // jere
 
-3) Archivos nativos adicionales creados previamente (para alternativa nativa):
-   - `app/src/main/java/com/universidad/streamzone/model/CatalogItem.kt` (AÑADIDO)
-   - `app/src/main/java/com/universidad/streamzone/CatalogAdapter.kt` (AÑADIDO)
-   - `app/src/main/res/layout/item_catalog_card.xml` (AÑADIDO)
-   - `app/src/main/res/layout/activity_home.xml` (MODIFICADO para diseño nativo alternativa)
-   - `app/src/main/java/com/universidad/streamzone/LoginActivity.kt` (MODIFICADO)
-     - Se añadió `intent.putExtra("USER_FULLNAME", usuario.fullname)` para pasar el nombre al Home.
+3) app/src/main/res/layout/activity_home_webview.xml
+   - Descripción: Layout sencillo que contiene un `WebView` empleado por `HomeActivity` para mostrar la versión web del Home.
+   - Autor: // jere
 
-Qué implementé y por qué (detalles):
-- Enfoque: WebView local (archivo en `assets/www/index.html`) para mantener exactamente el look & feel de tu web sin reescribir todo en Android.
-- Comunicación web -> Android: `webView.addJavascriptInterface(AndroidBridge(), "Android")` expone `Android.onReserve(serviceJson)` para que al pulsar "Comprar Ahora" en la web la app reciba el JSON (actualmente registrado en logs).
-- Comunicación Android -> web: paso el nombre del usuario como query param `?user=...` al cargar el index.html; la web extrae `user` de `window.location.search` y lo usa para mostrar estado autenticado. (Ver `index.html` en assets).
-- Seguridad y notas:
-  - Para producción no uses `Babel` en runtime ni Tailwind CDN; bundle tu app (build) y sirve los archivos minificados.
-  - `addJavascriptInterface` puede ser peligroso si la WebView carga contenidos externos; como estamos cargando assets locales es aceptable.
+4) app/src/main/java/com/universidad/streamzone/HomeNativeActivity.kt
+   - Descripción: Nueva Activity nativa para `Home` (Kotlin). Muestra un saludo (TextView `tvGreeting`) y un `RecyclerView` con tarjetas de servicios (`ServiceAdapter`). Acción `onReserve` muestra un `Toast` como placeholder para la acción de compra.
+   - Autor: // jere
 
-Cómo probar localmente (método rápido):
-1) Compila y ejecuta la app desde Android Studio.
-2) Registra un usuario en `RegisterActivity` y luego haz login.
-3) Al hacer login con éxito, `LoginActivity` abre `HomeActivity` y ahora cargará tu UI web desde `assets/www/index.html` en el WebView. El nombre del usuario se envía en la URL y la web lo mostrará (si existe).
-4) Desde la web, pulsar "Comprar Ahora" dispara `window.Android.onReserve(JSON.stringify(service))` — revisa Logcat para ver el mensaje: `Reserva recibida desde Web: ...`.
+5) app/src/main/java/com/universidad/streamzone/Service.kt
+   - Descripción: Modelo de datos `Service` (data class) que representa id, título, precio y descripción de cada servicio usado por la versión nativa.
+   - Autor: // jere
 
-Comentarios en el código (marcas //jere):
-- Dentro de `index.html` y `HomeActivity.kt` usé comentarios `//jere` para indicar puntos de integración realizados por el equipo.
+6) app/src/main/java/com/universidad/streamzone/ServiceAdapter.kt
+   - Descripción: Adaptador `RecyclerView` que infla `item_service_card.xml` y maneja el click del botón `btnReserve`, invocando la lambda `onReserve(service)` pasada desde la Activity.
+   - Autor: // jere
 
-Siguientes pasos recomendados (opcional)
-- Compilar tu React/TSX con una herramienta (Vite/Webpack) y sustituir el index.html por la versión ya compilada para mejor rendimiento.
-- Implementar lógica nativa cuando llega `onReserve` (abrir pantalla de compra, integrar pagos, guardar pedidos en DB, etc.).
-- Añadir comunicación nativa -> web para notificar cambios (p. ej. estado de compra completada) usando `webView.evaluateJavascript(...)`.
+7) app/src/main/res/layout/activity_home_native.xml
+   - Descripción: Layout nativo del Home (`HomeNativeActivity`) con `TextView` `tvGreeting` y `RecyclerView` `rvServices`.
+   - Autor: // jere
 
-Si quieres que proceda ahora con:
-- A) Compilar tu código TypeScript/React en un bundle (bundle.js) aquí y reemplazar la versión con Babel en runtime.
-- B) Implementar la acción nativa completa para `onReserve` (por ejemplo abrir una pantalla de confirmación con detalles del servicio),
-hazmelo saber y lo implemento.
+8) app/src/main/res/layout/item_service_card.xml
+   - Descripción: Layout de cada tarjeta de servicio (CardView) con `tvServiceTitle`, `tvServicePrice`, `tvServiceDesc` y `btnReserve`. Textos referenciados desde `strings.xml`.
+   - Autor: // jere
 
+9) app/src/main/res/values/strings.xml
+   - Descripción: Se añadieron entradas nuevas para los textos de las tarjetas (`service_title`, `service_price`, `service_desc`, `btn_buy`) para evitar strings hardcoded y facilitar i18n.
+   - Autor: // jere
 
-Listado completo de rutas afectadas (resumen):
-- AÑADIDOS:
-  - app/src/main/assets/www/index.html
-  - app/src/main/res/layout/activity_home_webview.xml
-  - app/src/main/java/com/universidad/streamzone/model/CatalogItem.kt
-  - app/src/main/java/com/universidad/streamzone/CatalogAdapter.kt
-  - app/src/main/res/layout/item_catalog_card.xml
-- MODIFICADOS:
-  - app/src/main/java/com/universidad/streamzone/HomeActivity.kt
-  - app/src/main/res/layout/activity_home.xml
-  - app/src/main/java/com/universidad/streamzone/LoginActivity.kt
+10) app/src/main/java/com/universidad/streamzone/LoginActivity.kt
+    - Descripción: Modificado para que, tras login exitoso, abra `HomeNativeActivity` en vez de `HomeActivity` (WebView). Pasa el extra `USER_FULLNAME` hacia la Activity destino.
+    - Autor: // jere
 
-Fin del log.
+11) app/src/main/java/com/universidad/streamzone/RegisterActivity.kt
+    - Descripción: Modificado para que, tras registro exitoso, abra `HomeNativeActivity` y pase `USER_FULLNAME`. También se corrigió la navegación del enlace "Volver al login" para apuntar a `LoginActivity`.
+    - Autor: // jere
 
+12) app/src/main/AndroidManifest.xml
+    - Descripción: Se registró la nueva `HomeNativeActivity` en el manifiesto. `HomeActivity` (WebView) se conservó como backup (no eliminada aún).
+    - Autor: // jere
+
+Registro de acciones y notas técnicas (adicional):
+- Se corrigió un fallo de sintaxis accidental en `HomeNativeActivity.kt` (caracteres extra al inicio) durante la creación de la Activity nativa.
+  - Autor: // jere
+- Se actualizaron referencias a `R.layout` y `R.id` en `ServiceAdapter.kt` para usar la referencia completa (`com.universidad.streamzone.R.*`) y evitar problemas con el analizador estático.
+  - Autor: // jere
+- Se añadieron recursos de texto en `strings.xml` y se eliminó el uso de cadenas hardcoded en `item_service_card.xml`.
+  - Autor: // jere
+
+Estado actual y próximos pasos:
+- Estado: La aplicación compila y la versión nativa del Home está integrada y activa tras login/registro. La WebView sigue en el proyecto como fallback; el usuario (tú) puede probar en el emulador antes de eliminarla.
+- Próximo paso recomendado: Confirmación del funcionamiento en el emulador. Si confirmas, procedo a eliminar la carpeta `assets/www`, `HomeActivity` y el layout `activity_home_webview.xml`, y añadiré un registro de eliminación en este archivo.
+
+-- Fin del log actualizado (2025-10-24) --

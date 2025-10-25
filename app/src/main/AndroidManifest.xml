@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CarpoolAppUniversidad">
         <activity
-            android:name=".HomeActivity"
+            android:name=".HomeNativeActivity"
             android:exported="false" />
         <activity
             android:name=".ListaUsuariosActivity"
@@ -36,7 +36,11 @@
         <activity
             android:name=".RegisterActivity"
             android:exported="false"
-            android:parentActivityName=".LoginActivity" /> <!-- MainActivity -->
+            android:parentActivityName=".LoginActivity" /> <!-- ReserveActivity (nueva) -->
+        <activity
+            android:name=".ReserveActivity"
+            android:exported="false" />
+        <!-- MainActivity -->
         <activity
             android:name=".MainActivity"
             android:exported="false" />

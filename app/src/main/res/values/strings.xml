@@ -1,3 +1,47 @@
 <resources>
     <string name="app_name">StreamZone</string>
+    <string name="service_title">Service Title</string>
+    <string name="service_price">US$ 0.00</string>
+    <string name="service_desc">Descripción</string>
+    <string name="btn_buy">🚀 Comprar Ahora ✨</string>
+
+    <!-- Añadidas para evitar warnings de texto literal en actividades -->
+    <string name="welcome">Bienvenido</string>
+    <string name="welcome_user">Bienvenido, %1$s</string>
+
+    <!-- Strings para item_service_card -->
+    <string name="badge_check">✓</string>
+    <string name="quick_access">⚡ Acceso inmediato</string>
+    <string name="service_title_example">Netflix</string>
+    <string name="service_price_example">US$ 4,00 /mes</string>
+    <string name="service_icon">N</string>
+
+    <!-- Nuevos strings para activity_home_native -->
+    <string name="logo_short">SZ</string>
+    <string name="brand_name">StreamZone</string>
+    <string name="btn_inicio">Inicio</string>
+    <string name="btn_login">Login</string>
+    <string name="hero_subtitle">Tus plataformas favoritas, al mejor precio</string>
+    <string name="hero_desc">Reserva por WhatsApp, recibe acceso con soporte inmediato y renueva sin complicaciones.</string>
+    <string name="btn_view_catalog">✨ Ver Catálogo</string>
+    <string name="btn_view_combos">📦 Ver Combos</string>
+
+    <!-- Stats -->
+    <string name="stat_customers">500+</string>
+    <string name="stat_customers_label">Clientes felices</string>
+    <string name="stat_support">24/7</string>
+    <string name="stat_support_label">Soporte</string>
+    <string name="stat_guarantee">100%</string>
+    <string name="stat_guarantee_label">Garantía</string>
+
+    <string name="sparkle">✨</string>
+    <string name="services_title">Nuestros Servicios</string>
+
+    <!-- Métodos de pago -->
+    <string name="payment_methods">💳 Métodos de Pago</string>
+    <string name="payment_banks">🏦 Bancos</string>
+    <string name="payment_paypal">💚 PayPal</string>
+    <string name="payment_mobile">📱 Pago Móvil</string>
+
+    <string name="copyright">© 2025 StreamZone. Todos los derechos reservados.</string>
 </resources>

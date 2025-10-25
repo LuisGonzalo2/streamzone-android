@@ -416,12 +416,18 @@ class RegisterActivity : AppCompatActivity() {
         ).show()
 
         etFullName.postDelayed({
-            navigateToLogin()
+            //jere: navegar directamente al Home nativo después de registro y pasar el nombre
+            val intent = Intent(this@RegisterActivity, HomeNativeActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            intent.putExtra("USER_FULLNAME", name)
+            startActivity(intent)
+            finish()
         }, 1500)
     }
 
     private fun navigateToLogin() {
-        val intent = Intent(this, HomeActivity::class.java)
+        //jere: corregido para llevar al usuario a la pantalla de Login
+        val intent = Intent(this, LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
         finish()

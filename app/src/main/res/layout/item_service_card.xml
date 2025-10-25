@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/card_margin"
+    app:cardCornerRadius="@dimen/card_corner_radius"
+    app:cardElevation="@dimen/card_elevation"
+    app:cardBackgroundColor="@android:color/transparent">
+
+    <!-- FrameLayout para el badge check posicionado absolutamente -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Contenido principal de la tarjeta -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_service_card"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding"
+            android:gravity="center_horizontal">
+
+            <!-- Spacer para el badge check -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="20dp" />
+
+            <!-- Ícono del servicio (TextView con gradiente programático) -->
+            <FrameLayout
+                android:id="@+id/frameServiceIcon"
+                android:layout_width="@dimen/service_icon_size"
+                android:layout_height="@dimen/service_icon_size"
+                android:layout_gravity="center_horizontal">
+
+                <TextView
+                    android:id="@+id/txtServiceIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="@dimen/service_icon_text_size"
+                    android:textColor="@color/white"
+                    android:fontFamily="sans-serif-medium"
+                    tools:text="N" />
+
+            </FrameLayout>
+
+            <!-- Título del servicio -->
+            <TextView
+                android:id="@+id/txtServiceTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/service_title_margin_top"
+                android:textSize="@dimen/service_title_size"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                tools:text="Netflix" />
+
+            <!-- Precio (pill) -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/price_pill_margin_top"
+                android:background="@drawable/bg_price_pill"
+                android:paddingStart="@dimen/price_pill_padding_horizontal"
+                android:paddingEnd="@dimen/price_pill_padding_horizontal"
+                android:paddingTop="@dimen/price_pill_padding_vertical"
+                android:paddingBottom="@dimen/price_pill_padding_vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/txtServicePrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/price_pill_text_size"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-black"
+                    tools:text="US$ 4,00 /mes" />
+
+            </LinearLayout>
+
+            <!-- Badge "Acceso inmediato" -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/access_badge_margin_top"
+                android:background="@drawable/bg_access_badge"
+                android:paddingStart="@dimen/access_badge_padding_horizontal"
+                android:paddingEnd="@dimen/access_badge_padding_horizontal"
+                android:paddingTop="@dimen/access_badge_padding_vertical"
+                android:paddingBottom="@dimen/access_badge_padding_vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/txtServiceDescription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/access_badge_text_size"
+                    android:textColor="@color/access_badge_text"
+                    android:fontFamily="sans-serif-medium"
+                    tools:text="Acceso inmediato" />
+
+            </LinearLayout>
+
+            <!-- Botón "Comprar Ahora" -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBuyService"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/buy_button_margin_top"
+                android:text="@string/btn_buy_now"
+                android:textSize="@dimen/buy_button_text_size"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:paddingTop="@dimen/buy_button_padding_vertical"
+                android:paddingBottom="@dimen/buy_button_padding_vertical"
+                app:backgroundTint="@null"
+                android:background="@drawable/bg_button_buy"
+                app:cornerRadius="@dimen/buy_button_corner_radius"
+                android:textAllCaps="false"
+                android:fontFamily="sans-serif-medium" />
+
+        </LinearLayout>
+
+        <!-- Badge Check (✓) - Posicionado absolutamente en esquina superior derecha -->
+        <FrameLayout
+            android:layout_width="@dimen/badge_check_size"
+            android:layout_height="@dimen/badge_check_size"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="@dimen/badge_check_margin"
+            android:layout_marginEnd="@dimen/badge_check_margin"
+            android:background="@drawable/bg_badge_check"
+            android:elevation="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/badge_check"
+                android:textSize="@dimen/badge_check_text_size"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+        </FrameLayout>
+
+    </FrameLayout>
+
+</com.google.android.material.card.MaterialCardView>

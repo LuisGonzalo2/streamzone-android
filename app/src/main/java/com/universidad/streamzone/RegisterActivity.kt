@@ -146,15 +146,15 @@ class RegisterActivity : AppCompatActivity() {
             if (isChecked) {
                 etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
                 etConfirmPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                btnTogglePassword.setIconResource(R.drawable.ic_eye_off)
-                btnToggleConfirmPassword.setIconResource(R.drawable.ic_eye_off)
+                btnTogglePassword.setIconResource(R.drawable.ic_visibility_off)
+                btnToggleConfirmPassword.setIconResource(R.drawable.ic_visibility_off)
                 isPasswordVisible = true
                 isConfirmPasswordVisible = true
             } else {
                 etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
                 etConfirmPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                btnTogglePassword.setIconResource(R.drawable.ic_eye)
-                btnToggleConfirmPassword.setIconResource(R.drawable.ic_eye)
+                btnTogglePassword.setIconResource(R.drawable.ic_visibility)
+                btnToggleConfirmPassword.setIconResource(R.drawable.ic_visibility)
                 isPasswordVisible = false
                 isConfirmPasswordVisible = false
             }
@@ -576,11 +576,11 @@ class RegisterActivity : AppCompatActivity() {
     ) {
         if (getter()) {
             editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            button.setIconResource(R.drawable.ic_eye)
+            button.setIconResource(R.drawable.ic_visibility)
             setter(false)
         } else {
             editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-            button.setIconResource(R.drawable.ic_eye_off)
+            button.setIconResource(R.drawable.ic_visibility_off)
             setter(true)
         }
         editText.setSelection(editText.text?.length ?: 0)

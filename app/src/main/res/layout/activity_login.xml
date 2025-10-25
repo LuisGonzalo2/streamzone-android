@@ -159,7 +159,7 @@
                     android:id="@+id/btn_toggle_password"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    app:icon="@drawable/ic_eye"
+                    app:icon="@drawable/ic_visibility"
                     app:iconTint="@color/text_secondary"
                     app:backgroundTint="@color/input_background"
                     app:cornerRadius="12dp"

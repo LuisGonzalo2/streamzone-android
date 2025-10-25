@@ -349,11 +349,11 @@ class LoginActivity : AppCompatActivity() {
     private fun togglePasswordVisibility() {
         if (isPasswordVisible) {
             etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            btnTogglePassword.setIconResource(R.drawable.ic_eye)
+            btnTogglePassword.setIconResource(R.drawable.ic_visibility)
             isPasswordVisible = false
         } else {
             etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-            btnTogglePassword.setIconResource(R.drawable.ic_eye_off)
+            btnTogglePassword.setIconResource(R.drawable.ic_visibility_off)
             isPasswordVisible = true
         }
         etPassword.setSelection(etPassword.text?.length ?: 0)

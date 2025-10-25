@@ -3,10 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("org.jetbrains.kotlin.kapt")
     id("com.google.gms.google-services")
-
-
-
-
 }
 
 android {
@@ -52,40 +48,24 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    // Firebase BOM - Plataforma (actualizada a 33.6.0)
+    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
 
-
-    //Firebase con BOM
-    implementation(libs.firebase.firestore)
-
-    implementation(platform ("com.google.firebase:firebase-bom:33.3.0"))
+    // Firebase productos (las versiones las maneja el BOM)
     implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-analytics-ktx")
 
-
-
-
-
-
+    // Room Database
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     kapt(libs.room.compiler)
+
+    // Coroutines
     implementation(libs.kotlinx.coroutines.android)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
-
-
-
-    //Librerias lifecycle
-
+    // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.4")
-
-    //Coroutines
-
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-
-
-
-
-
 }

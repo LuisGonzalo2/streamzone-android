@@ -4,7 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/dark_gradient_background"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:scrollbars="none">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -222,7 +223,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:baselineAligned="false">
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/til_password"
@@ -256,14 +258,17 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_toggle_password"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        app:icon="@drawable/ic_eye"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        app:icon="@drawable/ic_visibility"
                         app:iconTint="@color/text_secondary"
+                        app:iconSize="24dp"
                         app:backgroundTint="@color/input_background"
                         app:cornerRadius="12dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
                         app:iconGravity="textStart"
                         app:iconPadding="0dp" />
 
@@ -283,7 +288,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:baselineAligned="false">
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/til_confirm_password"
@@ -317,14 +323,17 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_toggle_confirm_password"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        app:icon="@drawable/ic_eye"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        app:icon="@drawable/ic_visibility"
                         app:iconTint="@color/text_secondary"
+                        app:iconSize="24dp"
                         app:backgroundTint="@color/input_background"
                         app:cornerRadius="12dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
                         app:iconGravity="textStart"
                         app:iconPadding="0dp" />
 
@@ -348,7 +357,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:layout_marginBottom="16dp"
-                    android:text="🚀 Crear cuenta"
+                    android:text="Crear cuenta"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="#FFFFFF"

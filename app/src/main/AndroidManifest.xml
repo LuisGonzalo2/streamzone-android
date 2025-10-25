@@ -2,10 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- ====================================== -->
+    <!-- PERMISOS                               -->
+    <!-- ====================================== -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
+        android:name=".application.StreamZoneApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -14,32 +18,53 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CarpoolAppUniversidad">
+
+        <!-- ====================================== -->
+        <!-- PANTALLA DE INICIO (SPLASH)            -->
+        <!-- ====================================== -->
         <activity
-            android:name=".HomeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ListaUsuariosActivity"
-            android:exported="false" /> <!-- Splash - Pantalla de inicio -->
-        <activity
-            android:name=".SplashActivity"
+            android:name=".ui.splash.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <!-- Login -->
+        </activity>
+
+        <!-- ====================================== -->
+        <!-- AUTENTICACIÓN                          -->
+        <!-- ====================================== -->
+
+        <!-- Login de usuarios -->
         <activity
-            android:name=".LoginActivity"
-            android:exported="false" /> <!-- Registro -->
-        <activity
-            android:name=".RegisterActivity"
+            android:name=".ui.auth.LoginActivity"
             android:exported="false"
-            android:parentActivityName=".LoginActivity" /> <!-- MainActivity -->
+            android:screenOrientation="portrait" />
+
+        <!-- Registro de nuevos usuarios -->
         <activity
-            android:name=".MainActivity"
-            android:exported="false" />
+            android:name=".ui.auth.RegisterActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.auth.LoginActivity"
+            android:screenOrientation="portrait" />
+
+        <!-- ====================================== -->
+        <!-- PANTALLAS PRINCIPALES                  -->
+        <!-- ====================================== -->
+
+        <!-- Home: Catálogo de servicios -->
+        <activity
+            android:name=".ui.home.HomeNativeActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Reserva de servicios -->
+        <activity
+            android:name=".ui.reserve.ReserveActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
     </application>
 
 </manifest>

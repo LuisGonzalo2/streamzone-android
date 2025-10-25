@@ -121,7 +121,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="16dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
@@ -159,7 +159,7 @@
                     android:id="@+id/btn_toggle_password"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    app:icon="@drawable/ic_eye"
+                    app:icon="@drawable/ic_visibility"
                     app:iconTint="@color/text_secondary"
                     app:backgroundTint="@color/input_background"
                     app:cornerRadius="12dp"
@@ -170,13 +170,25 @@
 
             </LinearLayout>
 
+            <!-- Checkbox Mantener sesión -->
+            <CheckBox
+                android:id="@+id/check_keep_logged_in"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mantener sesión iniciada"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:layout_gravity="start"
+                android:layout_marginBottom="24dp"
+                android:buttonTint="@color/purple_accent" />
+
             <!-- Botón Iniciar Sesión -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_login"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="16dp"
-                android:text="🚀 Iniciar Sesión"
+                android:text="Iniciar Sesión"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
@@ -211,7 +223,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="24dp"
-                android:text="✨ Crear cuenta nueva ✏️"
+                android:text="Crear cuenta nueva"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"

@@ -17,4 +17,14 @@
     <color name="text_hint">#64748B</color>
     <color name="input_background">#334155</color>
     <color name="green_accent">#10B981</color>
+
+    <!-- jere: color para overlays y placeholders en layouts -->
+    <color name="black_overlay">#1A000000</color>
+
+    <!-- Colores de marca añadidos (// jere) -->
+    <color name="brand_blue">#2563EB</color>
+    <color name="brand_blue_light">#3B82F6</color>
+    <color name="brand_purple">#9333EA</color>
+    <color name="brand_pink">#EC4899</color>
+    <color name="card_border">#223047</color>
 </resources>

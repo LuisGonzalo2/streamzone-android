@@ -1,3 +1,54 @@
 <resources>
     <string name="app_name">StreamZone</string>
+
+    <!-- ===== HOME STRINGS ===== -->
+
+    <!-- Hero Section -->
+    <string name="badge_premium_icon">🎬</string>
+    <string name="badge_premium_text">Entretenimiento Premium</string>
+    <string name="hero_title">StreamZone</string>
+    <string name="hero_greeting">Bienvenido, %1$s</string>
+    <string name="hero_subtitle">Tus plataformas favoritas, al mejor precio</string>
+    <string name="hero_description">Reserva por WhatsApp, recibe acceso con soporte inmediato y renueva sin complicaciones. <b>Administra tus servicios desde tu cuenta.</b></string>
+
+    <!-- Hero Buttons -->
+    <string name="btn_view_catalog">✨ Ver Catálogo 🚀</string>
+    <string name="btn_login_hero">🔐 Iniciar Sesión ✨</string>
+    <string name="btn_view_combos">📦 Ver Combos</string>
+
+    <!-- Stats -->
+    <string name="stats_clients_value">500+</string>
+    <string name="stats_clients_label">Clientes felices</string>
+    <string name="stats_support_value">24/7</string>
+    <string name="stats_support_label">Soporte</string>
+    <string name="stats_guarantee_value">100%</string>
+    <string name="stats_guarantee_label">Garantía</string>
+
+    <!-- Catalog Section -->
+    <string name="catalog_title">Nuestros Servicios</string>
+    <string name="catalog_subtitle">Elige tu plan y comienza a disfrutar al instante</string>
+
+    <!-- Service Card -->
+    <string name="badge_check">✓</string>
+    <string name="access_immediate">Acceso inmediato</string>
+    <string name="btn_buy_now">🚀 Comprar Ahora ✨</string>
+
+    <!-- Footer -->
+    <string name="footer_copyright">© 2023 StreamZone. Todos los derechos reservados.</string>
+
+    <!-- Services Data -->
+    <string name="service_netflix">Netflix</string>
+    <string name="service_netflix_price">US$ 4,00 /mes</string>
+
+    <string name="service_disney_premium">Disney+ Premium</string>
+    <string name="service_disney_premium_price">US$ 3,75 /mes</string>
+
+    <string name="service_disney_standard">Disney+ Standard</string>
+    <string name="service_disney_standard_price">US$ 3,25 /mes</string>
+
+    <string name="service_max">Max</string>
+    <string name="service_max_price">US$ 3,00 /mes</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_service_selected">Servicio seleccionado: %1$s</string>
 </resources>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ===== HERO SECTION ===== -->
+    <dimen name="hero_padding">16dp</dimen>
+    <dimen name="hero_vertical_padding">32dp</dimen>
+    <dimen name="hero_title_size">34sp</dimen>
+    <dimen name="hero_subtitle_size">16sp</dimen>
+    <dimen name="hero_greeting_size">18sp</dimen>
+
+    <!-- Badge Premium -->
+    <dimen name="badge_premium_padding_horizontal">12dp</dimen>
+    <dimen name="badge_premium_padding_vertical">8dp</dimen>
+    <dimen name="badge_premium_corner_radius">999dp</dimen>
+    <dimen name="badge_premium_text_size">12sp</dimen>
+    <dimen name="badge_premium_icon_size">20sp</dimen>
+
+    <!-- Buttons Hero -->
+    <dimen name="button_hero_padding_horizontal">16dp</dimen>
+    <dimen name="button_hero_padding_vertical">12dp</dimen>
+    <dimen name="button_hero_corner_radius">12dp</dimen>
+    <dimen name="button_hero_text_size">16sp</dimen>
+    <dimen name="button_spacing">12dp</dimen>
+
+    <!-- Stats -->
+    <dimen name="stats_value_size">20sp</dimen>
+    <dimen name="stats_label_size">12sp</dimen>
+    <dimen name="stats_spacing">24dp</dimen>
+
+    <!-- ===== SERVICE CARDS ===== -->
+    <dimen name="card_corner_radius">16dp</dimen>
+    <dimen name="card_padding">24dp</dimen>
+    <dimen name="card_elevation">18dp</dimen>
+    <dimen name="card_margin">8dp</dimen>
+
+    <!-- Service Icon -->
+    <dimen name="service_icon_size">84dp</dimen>
+    <dimen name="service_icon_corner_radius">12dp</dimen>
+    <dimen name="service_icon_text_size">36sp</dimen>
+
+    <!-- Badge Check -->
+    <dimen name="badge_check_size">40dp</dimen>
+    <dimen name="badge_check_margin">12dp</dimen>
+    <dimen name="badge_check_text_size">18sp</dimen>
+
+    <!-- Service Title -->
+    <dimen name="service_title_size">20sp</dimen>
+    <dimen name="service_title_margin_top">16dp</dimen>
+
+    <!-- Price Pill -->
+    <dimen name="price_pill_padding_horizontal">24dp</dimen>
+    <dimen name="price_pill_padding_vertical">8dp</dimen>
+    <dimen name="price_pill_corner_radius">999dp</dimen>
+    <dimen name="price_pill_text_size">20sp</dimen>
+    <dimen name="price_pill_margin_top">16dp</dimen>
+
+    <!-- Access Badge -->
+    <dimen name="access_badge_padding_horizontal">14dp</dimen>
+    <dimen name="access_badge_padding_vertical">6dp</dimen>
+    <dimen name="access_badge_corner_radius">999dp</dimen>
+    <dimen name="access_badge_text_size">14sp</dimen>
+    <dimen name="access_badge_margin_top">16dp</dimen>
+
+    <!-- Buy Button -->
+    <dimen name="buy_button_padding_vertical">12dp</dimen>
+    <dimen name="buy_button_corner_radius">999dp</dimen>
+    <dimen name="buy_button_text_size">16sp</dimen>
+    <dimen name="buy_button_margin_top">16dp</dimen>
+
+    <!-- ===== GRID & SPACING ===== -->
+    <dimen name="grid_spacing">24dp</dimen>
+    <dimen name="section_spacing">32dp</dimen>
+    <dimen name="section_title_size">28sp</dimen>
+    <dimen name="section_subtitle_size">14sp</dimen>
+
+    <!-- ===== FOOTER ===== -->
+    <dimen name="footer_padding">32dp</dimen>
+    <dimen name="footer_text_size">14sp</dimen>
+
+    <!-- ===== GENERAL ===== -->
+    <dimen name="margin_small">8dp</dimen>
+    <dimen name="margin_medium">16dp</dimen>
+    <dimen name="margin_large">24dp</dimen>
+    <dimen name="margin_xlarge">32dp</dimen>
+</resources>

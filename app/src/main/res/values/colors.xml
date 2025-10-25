@@ -8,7 +8,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Colores del diseño oscuro -->
+    <!-- Colores del diseño oscuro ) -->
     <color name="dark_background">#0D1B2A</color>
     <color name="dark_card_background">#1B263B</color>
     <color name="purple_accent">#A855F7</color>
@@ -17,4 +17,71 @@
     <color name="text_hint">#64748B</color>
     <color name="input_background">#334155</color>
     <color name="green_accent">#10B981</color>
+
+
+    <!-- Blue palette -->
+    <color name="blue_600">#2563EB</color>
+    <color name="blue_500">#3B82F6</color>
+
+    <!-- Purple palette -->
+    <color name="purple_600">#9333EA</color>
+    <color name="purple_500_custom">#A855F7</color>
+
+    <!-- Pink palette -->
+    <color name="pink_600">#DB2777</color>
+    <color name="pink_500">#EC4899</color>
+
+    <!-- Emerald palette -->
+    <color name="emerald_600">#059669</color>
+    <color name="emerald_500">#10B981</color>
+
+    <!-- Zinc palette (fondos oscuros) -->
+    <color name="zinc_900">#18181B</color>
+    <color name="zinc_800">#27272A</color>
+    <color name="zinc_700">#3f3f46</color>
+
+    <!-- Gray palette -->
+    <color name="gray_900">#111827</color>
+    <color name="gray_800">#1f2937</color>
+
+    <!-- Colores específicos para Service Icons -->
+    <color name="netflix_start">#ff4b4b</color>
+    <color name="netflix_end">#b20a0a</color>
+
+    <color name="disney_start">#4ea1ff</color>
+    <color name="disney_end">#1766d6</color>
+
+    <color name="max_start">#b374ff</color>
+    <color name="max_end">#6b2bff</color>
+
+    <color name="vix_start">#ff8a3d</color>
+    <color name="vix_end">#ff5a00</color>
+
+    <color name="prime_start">#2fb0ff</color>
+    <color name="prime_end">#0b66d1</color>
+
+    <!-- Price pill background -->
+    <color name="price_pill_start">#27123a</color>
+    <color name="price_pill_end">#3b1b54</color>
+
+    <!-- Access badge background (con alpha) -->
+    <color name="access_badge_bg">#1F10B981</color>
+    <color name="access_badge_text">#10B981</color>
+
+    <!-- Gradientes de tarjetas -->
+    <color name="card_gradient_start">#02FFFFFF</color>
+    <color name="card_gradient_end">#28000000</color>
+
+    <!-- Badge premium -->
+    <color name="badge_premium_bg_start">#193B82F6</color>
+    <color name="badge_premium_bg_end">#19A855F7</color>
+    <color name="badge_premium_border">#333B82F6</color>
+    <color name="badge_premium_text">#60A5FA</color>
+
+    <!-- Hero background layers -->
+    <color name="hero_overlay_1">#B3000000</color>
+    <color name="hero_overlay_2">#4D000000</color>
+    <color name="hero_gradient_blue">#192563EB</color>
+    <color name="hero_gradient_purple">#199333EA</color>
+    <color name="hero_gradient_pink">#19DB2777</color>
 </resources>

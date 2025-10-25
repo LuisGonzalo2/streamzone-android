@@ -11,15 +11,16 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Top bar (jere) -->
+        <!-- Top bar mejorado (sin botones de Inicio y Login) -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="56dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:padding="4dp"
+            android:padding="8dp"
             android:layout_marginBottom="8dp">
 
+            <!-- Logo y nombre -->
             <TextView
                 android:id="@+id/tvLogo"
                 android:layout_width="wrap_content"
@@ -36,36 +37,29 @@
                 android:layout_height="wrap_content"
                 android:text="@string/brand_name"
                 android:textColor="@color/white"
-                android:textSize="16sp"
-                android:layout_marginStart="8dp" />
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginStart="12dp" />
 
-            <LinearLayout
+            <!-- Espaciador -->
+            <View
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content" />
 
+            <!-- Botón Cerrar Sesión -->
             <Button
-                android:id="@+id/btnTopInicio"
+                android:id="@+id/btnCerrarSesion"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:text="@string/btn_inicio"
+                android:layout_height="40dp"
+                android:text="👋 Cerrar Sesión"
                 android:background="@drawable/btn_outline"
-                android:textColor="#C9B7FF"
-                android:paddingLeft="12dp"
-                android:paddingRight="12dp"
+                android:textColor="#FFB3B3"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
                 android:textSize="12sp"
-                android:layout_marginEnd="8dp" />
+                android:textAllCaps="false" />
 
-            <Button
-                android:id="@+id/btnTopLogin"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:text="@string/btn_login"
-                android:background="@drawable/btn_gradient"
-                android:textColor="@color/white"
-                android:paddingLeft="12dp"
-                android:paddingRight="12dp"
-                android:textSize="12sp" />
         </LinearLayout>
 
         <!-- Saludo -->
@@ -115,39 +109,9 @@
                 android:textColor="#95A0B0"
                 android:layout_marginTop="8dp" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="12dp"
-                android:weightSum="2"
-                android:baselineAligned="false">
-
-                <Button
-                    android:id="@+id/btnViewCatalog"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="@string/btn_view_catalog"
-                    android:background="@drawable/btn_gradient"
-                    android:textColor="@color/white"
-                    android:padding="12dp" />
-
-                <Button
-                    android:id="@+id/btnViewCombos"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/btn_view_combos"
-                    android:background="@drawable/btn_outline"
-                    android:textColor="#C9B7FF"
-                    android:padding="12dp" />
-            </LinearLayout>
-
         </LinearLayout>
 
-        <!-- Stats row (jere) -->
+        <!-- Stats row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

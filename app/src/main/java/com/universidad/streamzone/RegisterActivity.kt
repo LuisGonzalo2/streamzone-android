@@ -28,7 +28,25 @@ import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
 
-    private lateinit var tilFullName: TextInputLayout
+    private fun registerNetworkCallback() {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                // Conexión restaurada, no mostrar mensaje
+            }
+
+            override fun onLost(network: Network) {
+                // Conexión perdida, no mostrar mensaje
+            }
+        }
+
+        try {
+            connectivityManager.registerDefaultNetworkCallback(networkCallback!!)
+        } catch (e: Exception) {
+            // Silencioso
+        }
+    }private lateinit var tilFullName: TextInputLayout
     private lateinit var tilEmail: TextInputLayout
     private lateinit var tilPassword: TextInputLayout
     private lateinit var tilConfirmPassword: TextInputLayout
@@ -64,13 +82,11 @@ class RegisterActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         restoreFormData()
-        registerNetworkCallback()
     }
 
     override fun onPause() {
         super.onPause()
         saveFormData()
-        unregisterNetworkCallback()
     }
 
     override fun onDestroy() {
@@ -78,7 +94,6 @@ class RegisterActivity : AppCompatActivity() {
         if (isFinishing) {
             clearTempData()
         }
-        unregisterNetworkCallback()
     }
 
     private fun initViews() {
@@ -184,7 +199,7 @@ class RegisterActivity : AppCompatActivity() {
         // Mostrar que está procesando
         runOnUiThread {
             btnRegister.isEnabled = false
-            btnRegister.text = "⏳ Verificando..."
+            btnRegister.text = "Creando cuenta..."
         }
 
         val dao = AppDatabase.getInstance(this).usuarioDao()
@@ -202,18 +217,18 @@ class RegisterActivity : AppCompatActivity() {
 
                 if (usuarioExistentePorEmail != null) {
                     runOnUiThread {
-                        tilEmail.error = "Este correo ya está registrado localmente"
+                        tilEmail.error = "Este correo ya está registrado"
                         btnRegister.isEnabled = true
-                        btnRegister.text = "🚀 Crear cuenta"
+                        btnRegister.text = "Crear cuenta"
                     }
                     return@launch
                 }
 
                 if (usuarioExistentePorTelefono != null) {
                     runOnUiThread {
-                        etPhone.error = "Este número ya está registrado localmente"
+                        etPhone.error = "Este número ya está registrado"
                         btnRegister.isEnabled = true
-                        btnRegister.text = "🚀 Crear cuenta"
+                        btnRegister.text = "Crear cuenta"
                     }
                     return@launch
                 }
@@ -227,9 +242,9 @@ class RegisterActivity : AppCompatActivity() {
                     FirebaseService.verificarEmailExiste(email) { emailExiste ->
                         if (emailExiste) {
                             runOnUiThread {
-                                tilEmail.error = "Este correo ya está registrado en la nube"
+                                tilEmail.error = "Este correo ya está registrado"
                                 btnRegister.isEnabled = true
-                                btnRegister.text = "🚀 Crear cuenta"
+                                btnRegister.text = "Crear cuenta"
                             }
                             return@verificarEmailExiste
                         }
@@ -238,9 +253,9 @@ class RegisterActivity : AppCompatActivity() {
                         FirebaseService.verificarTelefonoExiste(phone) { telefonoExiste ->
                             if (telefonoExiste) {
                                 runOnUiThread {
-                                    etPhone.error = "Este número ya está registrado en la nube"
+                                    etPhone.error = "Este número ya está registrado"
                                     btnRegister.isEnabled = true
-                                    btnRegister.text = "🚀 Crear cuenta"
+                                    btnRegister.text = "Crear cuenta"
                                 }
                                 return@verificarTelefonoExiste
                             }
@@ -258,11 +273,11 @@ class RegisterActivity : AppCompatActivity() {
                 android.util.Log.e("RegisterActivity", "Error general en handleRegister", e)
                 runOnUiThread {
                     btnRegister.isEnabled = true
-                    btnRegister.text = "🚀 Crear cuenta"
+                    btnRegister.text = "Crear cuenta"
                     Toast.makeText(
                         this@RegisterActivity,
-                        "Error inesperado: ${e.message}",
-                        Toast.LENGTH_LONG
+                        "Error al crear la cuenta. Intenta de nuevo",
+                        Toast.LENGTH_SHORT
                     ).show()
                 }
             }
@@ -295,7 +310,7 @@ class RegisterActivity : AppCompatActivity() {
                 if (hayInternet) {
                     android.util.Log.d("RegisterActivity", "Guardando en Firebase...")
                     runOnUiThread {
-                        btnRegister.text = "⏳ Guardando en la nube..."
+                        btnRegister.text = "Creando cuenta..."
                     }
 
                     // HAY INTERNET: Intentar guardar en Firebase primero
@@ -315,10 +330,10 @@ class RegisterActivity : AppCompatActivity() {
 
                                     runOnUiThread {
                                         btnRegister.isEnabled = true
-                                        btnRegister.text = "🚀 Crear cuenta"
+                                        btnRegister.text = "Crear cuenta"
                                         Toast.makeText(
                                             this@RegisterActivity,
-                                            "✅ Registro exitoso (sincronizado con la nube)",
+                                            "Cuenta creada exitosamente",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                         navigateToLogin()
@@ -327,11 +342,11 @@ class RegisterActivity : AppCompatActivity() {
                                     android.util.Log.e("RegisterActivity", "Error al guardar en Room", e)
                                     runOnUiThread {
                                         btnRegister.isEnabled = true
-                                        btnRegister.text = "🚀 Crear cuenta"
+                                        btnRegister.text = "Crear cuenta"
                                         Toast.makeText(
                                             this@RegisterActivity,
-                                            "Error: ${e.message}",
-                                            Toast.LENGTH_LONG
+                                            "Error al crear la cuenta. Intenta de nuevo",
+                                            Toast.LENGTH_SHORT
                                         ).show()
                                     }
                                 }
@@ -346,11 +361,11 @@ class RegisterActivity : AppCompatActivity() {
                                     android.util.Log.d("RegisterActivity", "Guardado solo en Room")
                                     runOnUiThread {
                                         btnRegister.isEnabled = true
-                                        btnRegister.text = "🚀 Crear cuenta"
+                                        btnRegister.text = "Crear cuenta"
                                         Toast.makeText(
                                             this@RegisterActivity,
-                                            "⚠️ Registro guardado localmente. Se sincronizará cuando haya conexión",
-                                            Toast.LENGTH_LONG
+                                            "Cuenta creada exitosamente",
+                                            Toast.LENGTH_SHORT
                                         ).show()
                                         navigateToLogin()
                                     }
@@ -358,11 +373,11 @@ class RegisterActivity : AppCompatActivity() {
                                     android.util.Log.e("RegisterActivity", "Error al guardar en Room", ex)
                                     runOnUiThread {
                                         btnRegister.isEnabled = true
-                                        btnRegister.text = "🚀 Crear cuenta"
+                                        btnRegister.text = "Crear cuenta"
                                         Toast.makeText(
                                             this@RegisterActivity,
-                                            "Error: ${ex.message}",
-                                            Toast.LENGTH_LONG
+                                            "Error al crear la cuenta. Intenta de nuevo",
+                                            Toast.LENGTH_SHORT
                                         ).show()
                                     }
                                 }
@@ -372,7 +387,7 @@ class RegisterActivity : AppCompatActivity() {
                 } else {
                     android.util.Log.d("RegisterActivity", "Sin internet, guardando solo en Room...")
                     runOnUiThread {
-                        btnRegister.text = "⏳ Guardando localmente..."
+                        btnRegister.text = "Creando cuenta..."
                     }
 
                     try {
@@ -381,11 +396,11 @@ class RegisterActivity : AppCompatActivity() {
                         android.util.Log.d("RegisterActivity", "Guardado en Room exitosamente")
                         runOnUiThread {
                             btnRegister.isEnabled = true
-                            btnRegister.text = "🚀 Crear cuenta"
+                            btnRegister.text = "Crear cuenta"
                             Toast.makeText(
                                 this@RegisterActivity,
-                                "📴 Sin internet. Registro guardado localmente",
-                                Toast.LENGTH_LONG
+                                "Cuenta creada exitosamente",
+                                Toast.LENGTH_SHORT
                             ).show()
                             navigateToLogin()
                         }
@@ -393,11 +408,11 @@ class RegisterActivity : AppCompatActivity() {
                         android.util.Log.e("RegisterActivity", "Error al guardar en Room", e)
                         runOnUiThread {
                             btnRegister.isEnabled = true
-                            btnRegister.text = "🚀 Crear cuenta"
+                            btnRegister.text = "Crear cuenta"
                             Toast.makeText(
                                 this@RegisterActivity,
-                                "Error al registrar: ${e.message}",
-                                Toast.LENGTH_LONG
+                                "Error al crear la cuenta. Intenta de nuevo",
+                                Toast.LENGTH_SHORT
                             ).show()
                         }
                     }
@@ -406,11 +421,11 @@ class RegisterActivity : AppCompatActivity() {
                 android.util.Log.e("RegisterActivity", "Error en guardarUsuario", e)
                 runOnUiThread {
                     btnRegister.isEnabled = true
-                    btnRegister.text = "🚀 Crear cuenta"
+                    btnRegister.text = "Crear cuenta"
                     Toast.makeText(
                         this@RegisterActivity,
-                        "Error: ${e.message}",
-                        Toast.LENGTH_LONG
+                        "Error al crear la cuenta. Intenta de nuevo",
+                        Toast.LENGTH_SHORT
                     ).show()
                 }
             }
@@ -613,41 +628,5 @@ class RegisterActivity : AppCompatActivity() {
         return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-    }
-
-    private fun registerNetworkCallback() {
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                runOnUiThread {
-                    Toast.makeText(this@RegisterActivity, "✅ Conexión restaurada", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onLost(network: Network) {
-                runOnUiThread {
-                    Toast.makeText(this@RegisterActivity, "📴 Conexión perdida", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        try {
-            connectivityManager.registerDefaultNetworkCallback(networkCallback!!)
-        } catch (e: Exception) {
-            // Silencioso
-        }
-    }
-
-    private fun unregisterNetworkCallback() {
-        networkCallback?.let {
-            try {
-                val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-                connectivityManager.unregisterNetworkCallback(it)
-            } catch (e: Exception) {
-                // Silencioso
-            }
-        }
-        networkCallback = null
     }
 }

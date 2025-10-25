@@ -53,9 +53,8 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        registerNetworkCallback()
 
-        // Intentar sincronizar datos pendientes si hay internet
+        // Intentar sincronizar datos pendientes si hay internet (silenciosamente)
         if (isNetworkAvailable()) {
             SyncService.sincronizarUsuariosPendientes(this)
         }
@@ -64,12 +63,10 @@ class LoginActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         saveEmail()
-        unregisterNetworkCallback()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        unregisterNetworkCallback()
     }
 
     private fun initViews() {
@@ -104,6 +101,10 @@ class LoginActivity : AppCompatActivity() {
         val email = etEmail.text.toString().trim()
         val password = etPassword.text.toString().trim()
 
+        android.util.Log.d("LoginActivity", "=== INICIO LOGIN ===")
+        android.util.Log.d("LoginActivity", "Email: $email")
+        android.util.Log.d("LoginActivity", "Password length: ${password.length}")
+
         tilEmail.error = null
         tilPassword.error = null
 
@@ -116,8 +117,14 @@ class LoginActivity : AppCompatActivity() {
             // Primero buscar en Room (local)
             val usuarioLocal = dao.buscarPorEmail(email)
 
+            android.util.Log.d("LoginActivity", "Usuario en Room: $usuarioLocal")
+
             if (usuarioLocal != null) {
                 // Usuario encontrado localmente
+                android.util.Log.d("LoginActivity", "Password en Room: ${usuarioLocal.password}")
+                android.util.Log.d("LoginActivity", "Password ingresada: $password")
+                android.util.Log.d("LoginActivity", "¿Coinciden?: ${usuarioLocal.password == password}")
+
                 if (usuarioLocal.password != password) {
                     runOnUiThread {
                         tilPassword.error = "Contraseña incorrecta"
@@ -132,14 +139,24 @@ class LoginActivity : AppCompatActivity() {
                 }
             } else {
                 // No está en Room, buscar en Firebase si hay internet
+                android.util.Log.d("LoginActivity", "Usuario NO encontrado en Room")
+
                 if (isNetworkAvailable()) {
+                    android.util.Log.d("LoginActivity", "Buscando en Firebase...")
+
                     FirebaseService.verificarUsuarioPorEmail(email) { usuarioFirebase ->
+                        android.util.Log.d("LoginActivity", "Usuario en Firebase: $usuarioFirebase")
+
                         if (usuarioFirebase == null) {
                             runOnUiThread {
                                 tilEmail.error = "Esta cuenta no existe. Por favor regístrate primero."
                                 etEmail.requestFocus()
                             }
                         } else {
+                            android.util.Log.d("LoginActivity", "Password en Firebase: ${usuarioFirebase.password}")
+                            android.util.Log.d("LoginActivity", "Password ingresada: $password")
+                            android.util.Log.d("LoginActivity", "¿Coinciden?: ${usuarioFirebase.password == password}")
+
                             if (usuarioFirebase.password != password) {
                                 runOnUiThread {
                                     tilPassword.error = "Contraseña incorrecta"
@@ -149,6 +166,7 @@ class LoginActivity : AppCompatActivity() {
                                 // Guardar en Room para uso offline
                                 lifecycleScope.launch {
                                     dao.insertar(usuarioFirebase)
+                                    android.util.Log.d("LoginActivity", "Usuario guardado en Room desde Firebase")
                                     runOnUiThread {
                                         loginExitoso(usuarioFirebase.fullname, email)
                                     }
@@ -158,10 +176,11 @@ class LoginActivity : AppCompatActivity() {
                     }
                 } else {
                     // Sin internet y no está en Room
+                    android.util.Log.d("LoginActivity", "Sin internet y usuario no en Room")
                     runOnUiThread {
                         AlertDialog.Builder(this@LoginActivity)
-                            .setTitle("Sin Conexión")
-                            .setMessage("No se encontró el usuario localmente y no hay conexión a internet para verificar en línea.")
+                            .setTitle("Sin conexión")
+                            .setMessage("No se pudo verificar tu cuenta. Por favor, conéctate a internet.")
                             .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
                             .show()
                     }
@@ -173,7 +192,7 @@ class LoginActivity : AppCompatActivity() {
     private fun loginExitoso(nombreUsuario: String, email: String) {
         Toast.makeText(
             this@LoginActivity,
-            "✅ Bienvenido $nombreUsuario",
+            "Bienvenido",
             Toast.LENGTH_SHORT
         ).show()
 
@@ -294,43 +313,5 @@ class LoginActivity : AppCompatActivity() {
         return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-    }
-
-    private fun registerNetworkCallback() {
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                runOnUiThread {
-                    Toast.makeText(this@LoginActivity, "✅ Conexión restaurada", Toast.LENGTH_SHORT).show()
-                    // Intentar sincronizar cuando se recupera la conexión
-                    SyncService.sincronizarUsuariosPendientes(this@LoginActivity)
-                }
-            }
-
-            override fun onLost(network: Network) {
-                runOnUiThread {
-                    Toast.makeText(this@LoginActivity, "📴 Conexión perdida", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        try {
-            connectivityManager.registerDefaultNetworkCallback(networkCallback!!)
-        } catch (e: Exception) {
-            // Silencioso
-        }
-    }
-
-    private fun unregisterNetworkCallback() {
-        networkCallback?.let {
-            try {
-                val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-                connectivityManager.unregisterNetworkCallback(it)
-            } catch (e: Exception) {
-                // Silencioso
-            }
-        }
-        networkCallback = null
     }
 }

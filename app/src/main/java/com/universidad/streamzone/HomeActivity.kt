@@ -43,14 +43,14 @@ class HomeActivity : AppCompatActivity() {
         val userName = sharedPrefs.getString("logged_in_user_name", "Usuario")
         val userEmail = sharedPrefs.getString("logged_in_user_email", "")
 
-        findViewById<TextView>(R.id.txtTituloHome).text = "¡Bienvenido, $userName! 🎉"
+        findViewById<TextView>(R.id.txtTituloHome).text = "Bienvenido, $userName"
         findViewById<TextView>(R.id.txtSubtituloHome).text = userEmail
 
         // Mostrar estado de conexión
         val estadoConexion = if (isNetworkAvailable()) {
-            "🌐 Conectado"
+            "Conectado"
         } else {
-            "📴 Modo offline"
+            "Sin conexión"
         }
         findViewById<TextView>(R.id.txtEstadoConexion).text = estadoConexion
     }

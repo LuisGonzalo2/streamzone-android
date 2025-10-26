@@ -7,6 +7,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputFilter
 import android.text.InputType
 import android.text.TextWatcher
 import android.util.Log
@@ -21,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.hbb20.CountryCodePicker
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.remote.FirebaseService
 import com.universidad.streamzone.data.local.dao.UsuarioDao
@@ -50,19 +52,23 @@ class RegisterActivity : AppCompatActivity() {
         }
     }private lateinit var tilFullName: TextInputLayout
     private lateinit var tilEmail: TextInputLayout
+    // AÑADE ESTA LÍNEA
+    private lateinit var ccp: CountryCodePicker
+
     private lateinit var tilPassword: TextInputLayout
     private lateinit var tilConfirmPassword: TextInputLayout
+    private lateinit var tilPhone: TextInputLayout
     private lateinit var etFullName: TextInputEditText
     private lateinit var etEmail: TextInputEditText
     private lateinit var etPassword: TextInputEditText
     private lateinit var etConfirmPassword: TextInputEditText
-    private lateinit var spinnerCountryCode: Spinner
     private lateinit var etPhone: TextInputEditText
     private lateinit var btnTogglePassword: MaterialButton
     private lateinit var btnToggleConfirmPassword: MaterialButton
     private lateinit var checkShowPassword: CheckBox
     private lateinit var btnRegister: MaterialButton
     private lateinit var tvBackToLogin: TextView
+
 
     private var isPasswordVisible = false
     private var isConfirmPasswordVisible = false
@@ -77,7 +83,7 @@ class RegisterActivity : AppCompatActivity() {
         sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
 
         initViews()
-        setupSpinner()
+        setupPhone()
         setupListeners()
     }
 
@@ -103,29 +109,44 @@ class RegisterActivity : AppCompatActivity() {
         tilEmail = findViewById(R.id.til_email)
         tilPassword = findViewById(R.id.til_password)
         tilConfirmPassword = findViewById(R.id.til_confirm_password)
+        tilPhone = findViewById(R.id.til_phone)
+        ccp = findViewById(R.id.ccp)
         etFullName = findViewById(R.id.et_full_name)
         etEmail = findViewById(R.id.et_email)
         etPassword = findViewById(R.id.et_password)
         etConfirmPassword = findViewById(R.id.et_confirm_password)
-        etPhone = findViewById(R.id.et_phone)
-        spinnerCountryCode = findViewById(R.id.spinner_country_code)
+        etPhone = findViewById(R.id.et_Phone)
         btnTogglePassword = findViewById(R.id.btn_toggle_password)
         btnToggleConfirmPassword = findViewById(R.id.btn_toggle_confirm_password)
         btnRegister = findViewById(R.id.btn_register)
         checkShowPassword = findViewById(R.id.check_show_password)
         tvBackToLogin = findViewById(R.id.tv_back_to_login)
+        ccp.registerCarrierNumberEditText(etPhone)
+
+
+
+
+
     }
 
-    private fun setupSpinner() {
-        val countryCodes = arrayOf(
-            "EC +593 🇪🇨", "US +1 🇺🇸", "CO +57 🇨🇴", "PE +51 🇵🇪",
-            "AR +54 🇦🇷", "MX +52 🇲🇽", "VE +58 🇻🇪", "CL +56 🇨🇱",
-            "BR +55 🇧🇷", "ES +34 🇪🇸"
-        )
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, countryCodes)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerCountryCode.adapter = adapter
+    private fun setupPhone() {
+
+        val digitsDashSpaceFilter = InputFilter { source, start, end, dest, dstart, dend ->
+            for (i in start until end) {
+                val char = source[i]
+
+                if (!char.isDigit() && char != '-' && char != ' ') {
+                    return@InputFilter ""
+                }
+            }
+            null
+        }
+        val existingFilters = etPhone.filters
+        etPhone.filters = existingFilters.plus(digitsDashSpaceFilter)
+
     }
+
+
 
     private fun setupListeners() {
         btnRegister.setOnClickListener {
@@ -164,23 +185,7 @@ class RegisterActivity : AppCompatActivity() {
             etConfirmPassword.setSelection(etConfirmPassword.text?.length ?: 0)
         }
 
-        etPhone.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                if (s != null) {
-                    if (s.isNotEmpty() && s[0] == '0') {
-                        etPhone.setText(s.substring(1))
-                        etPhone.setSelection(etPhone.text?.length ?: 0)
-                        return
-                    }
-                    if (s.length > 10) {
-                        etPhone.setText(s.substring(0, 10))
-                        etPhone.setSelection(10)
-                    }
-                }
-            }
-        })
+
     }
 
     private fun handleRegister() {
@@ -190,11 +195,12 @@ class RegisterActivity : AppCompatActivity() {
         val password = etPassword.text.toString()
         val confirmPassword = etConfirmPassword.text.toString()
 
+
         clearAllErrors()
 
         if (!validateFullName(fullName)) return
-        if (!validateEmail(email)) return
         if (!validatePhone(phone)) return
+        if (!validateEmail(email)) return
         if (!validatePassword(password)) return
         if (!validateConfirmPassword(password, confirmPassword)) return
 
@@ -487,22 +493,20 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun validatePhone(phone: String): Boolean {
+
+
         return when {
             phone.isEmpty() -> {
-                Toast.makeText(this, "El número de teléfono es obligatorio", Toast.LENGTH_SHORT).show()
+                etPhone.error = "El número de teléfono es obligatorio"
                 etPhone.requestFocus()
                 false
             }
-            phone.length != 10 -> {
-                Toast.makeText(this, "El teléfono debe tener exactamente 10 dígitos", Toast.LENGTH_SHORT).show()
+            !ccp.isValidFullNumber -> {
+                etPhone.error = "Número no válido para ${ccp.selectedCountryName}"
                 etPhone.requestFocus()
                 false
             }
-            !phone.matches(Regex("^[1-9][0-9]{9}$")) -> {
-                Toast.makeText(this, "El teléfono no puede empezar con 0", Toast.LENGTH_SHORT).show()
-                etPhone.requestFocus()
-                false
-            }
+
             else -> true
         }
     }

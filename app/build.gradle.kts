@@ -68,4 +68,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.4")
+
+    //Libreria para el numero de telefno
+    implementation("com.hbb20:ccp:2.7.3")
+
 }

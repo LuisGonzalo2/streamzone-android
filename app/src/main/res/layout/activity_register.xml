@@ -130,21 +130,36 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="20dp">
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="20dp"
+                    android:padding="5dp">
 
-                    <Spinner
-                        android:id="@+id/spinner_country_code"
-                        android:layout_width="120dp"
-                        android:layout_height="56dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/button_gradient_blue"
-                        android:paddingHorizontal="12dp"
-                        android:popupBackground="@color/dark_card_background" />
+                    <com.hbb20.CountryCodePicker
+                        android:id="@+id/ccp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        app:ccp_showFlag="true"
+                        app:ccpDialog_backgroundColor="@color/dark_card_background"
+                        app:ccpDialog_textColor="@color/white"
+                        app:ccpDialog_searchEditTextTint="@color/white"
+                        app:ccp_rememberLastSelection="true"
+                        app:ccp_countryPreference="EC,PE,CO,MX"
+                        app:ccp_showNameCode="false"
+                        app:ccp_contentColor="@color/white"
+                        app:ccp_arrowSize="24dp"
+                        app:ccp_textSize="16sp"
+                        app:ccp_autoDetectCountry="true">
+
+                    </com.hbb20.CountryCodePicker>
 
                     <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_phone"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
                         app:boxBackgroundMode="filled"
                         app:boxBackgroundColor="@color/input_background"
                         app:boxStrokeWidth="0dp"
@@ -156,16 +171,15 @@
                         app:hintEnabled="false">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_phone"
+                            android:id="@+id/et_Phone"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="9X XXX XXXX"
+                            android:hint="Telefono"
                             android:inputType="phone"
-                            android:maxLength="10"
-                            android:textSize="16sp"
+                            android:padding="16dp"
                             android:textColor="@color/text_primary"
                             android:textColorHint="@color/text_hint"
-                            android:padding="16dp" />
+                            android:textSize="16sp" />
 
                     </com.google.android.material.textfield.TextInputLayout>
 

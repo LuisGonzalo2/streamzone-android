@@ -533,6 +533,12 @@ class RegisterActivity : AppCompatActivity() {
                 etPassword.requestFocus()
                 false
             }
+            password.length > 20 -> {
+                tilPassword.error = "La contraseña debe tener como maximo 20 caracteres"
+                etPassword.requestFocus()
+                false
+            }
+
             !password.matches(Regex(".*[A-Z].*")) -> {
                 tilPassword.error = "Debe contener al menos una mayúscula"
                 etPassword.requestFocus()
@@ -590,6 +596,9 @@ class RegisterActivity : AppCompatActivity() {
         getter: () -> Boolean,
         setter: (Boolean) -> Unit
     ) {
+        val currentTypeface = editText.typeface
+        val selection = editText.selectionEnd
+
         if (getter()) {
             editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             button.setIconResource(R.drawable.ic_visibility)
@@ -599,7 +608,8 @@ class RegisterActivity : AppCompatActivity() {
             button.setIconResource(R.drawable.ic_visibility_off)
             setter(true)
         }
-        editText.setSelection(editText.text?.length ?: 0)
+        editText.typeface = currentTypeface
+        editText.setSelection(selection)
     }
 
     private fun saveFormData() {

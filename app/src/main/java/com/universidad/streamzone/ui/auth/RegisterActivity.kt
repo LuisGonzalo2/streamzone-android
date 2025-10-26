@@ -29,6 +29,7 @@ import com.universidad.streamzone.data.local.dao.UsuarioDao
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.model.UsuarioEntity
 import kotlinx.coroutines.launch
+import kotlin.text.substringAfterLast
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -452,6 +453,11 @@ class RegisterActivity : AppCompatActivity() {
                 etFullName.requestFocus()
                 false
             }
+            name.length > 20 -> {
+                tilFullName.error = "El nombre no puede exceder los 20 caracteres"
+                etFullName.requestFocus()
+                false
+            }
             !name.contains(" ") -> {
                 tilFullName.error = "Ingresa tu nombre y apellido"
                 etFullName.requestFocus()
@@ -462,6 +468,7 @@ class RegisterActivity : AppCompatActivity() {
                 etFullName.requestFocus()
                 false
             }
+
             else -> true
         }
     }
@@ -473,21 +480,24 @@ class RegisterActivity : AppCompatActivity() {
                 etEmail.requestFocus()
                 false
             }
-            !email.contains("@") -> {
-                tilEmail.error = "El correo debe contener @"
+            email.length > 30 -> {
+                tilEmail.error = "El correo electrónico es demasiado largo"
                 etEmail.requestFocus()
                 false
             }
-            !email.contains(".") -> {
-                tilEmail.error = "El correo debe contener un dominio válido"
-                etEmail.requestFocus()
-                false
-            }
+
             !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                 tilEmail.error = "Formato de correo inválido"
                 etEmail.requestFocus()
                 false
             }
+
+            !email.endsWith(".com") -> {
+                tilEmail.error = "Solo se aceptan correos .com"
+                etEmail.requestFocus()
+                false
+            }
+
             else -> true
         }
     }

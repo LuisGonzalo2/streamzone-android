@@ -131,20 +131,36 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun setupPhone() {
-
+        // Filtro para permitir solo dígitos, guiones y espacios
         val digitsDashSpaceFilter = InputFilter { source, start, end, dest, dstart, dend ->
             for (i in start until end) {
                 val char = source[i]
-
                 if (!char.isDigit() && char != '-' && char != ' ') {
                     return@InputFilter ""
                 }
             }
             null
         }
-        val existingFilters = etPhone.filters
-        etPhone.filters = existingFilters.plus(digitsDashSpaceFilter)
 
+        // Límite de longitud máxima (15 dígitos según estándar E.164)
+        val lengthFilter = InputFilter.LengthFilter(15)
+
+        // Aplicar ambos filtros
+        etPhone.filters = arrayOf(digitsDashSpaceFilter, lengthFilter)
+
+        // Listener para quitar el 0 inicial automáticamente
+        etPhone.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                if (s != null && s.isNotEmpty() && s[0] == '0') {
+                    etPhone.setText(s.substring(1))
+                    etPhone.setSelection(etPhone.text?.length ?: 0)
+                }
+            }
+        })
     }
 
 
@@ -192,7 +208,8 @@ class RegisterActivity : AppCompatActivity() {
     private fun handleRegister() {
         val fullName = etFullName.text.toString().trim()
         val email = etEmail.text.toString().trim()
-        val phone = etPhone.text.toString().trim()
+        val phoneWithCountryCode = ccp.fullNumberWithPlus // Ej: +593987654321
+        val phone = phoneWithCountryCode.replace("+", "") // Guardar sin el +
         val password = etPassword.text.toString()
         val confirmPassword = etConfirmPassword.text.toString()
 
@@ -304,6 +321,8 @@ class RegisterActivity : AppCompatActivity() {
     ) {
         lifecycleScope.launch {
             try {
+                // Obtener número completo con código de país
+                val fullPhoneNumber = ccp.fullNumberWithPlus.replace("+", "")
                 // Crear usuario
                 val usuario = UsuarioEntity(
                     fullname = fullName,
@@ -496,20 +515,35 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun validatePhone(phone: String): Boolean {
-
-
         return when {
             phone.isEmpty() -> {
                 etPhone.error = "El número de teléfono es obligatorio"
                 etPhone.requestFocus()
                 false
             }
-            !ccp.isValidFullNumber -> {
-                etPhone.error = "Número no válido para ${ccp.selectedCountryName}"
+            phone.startsWith("0") -> {
+                etPhone.error = "No incluyas el 0 inicial"
                 etPhone.requestFocus()
                 false
             }
+            !ccp.isValidFullNumber -> {
+                val countryName = ccp.selectedCountryName
+                val phoneLength = etPhone.text.toString().replace(Regex("[^0-9]"), "").length
 
+                // Validación específica por país
+                val mensaje = when (ccp.selectedCountryNameCode) {
+                    "EC" -> if (phoneLength != 9) "El número debe tener 9 dígitos (sin el 0)" else "Número no válido"
+                    "US", "CA" -> if (phoneLength != 10) "El número debe tener 10 dígitos" else "Número no válido"
+                    "CO" -> if (phoneLength != 10) "El número debe tener 10 dígitos" else "Número no válido"
+                    "PE" -> if (phoneLength != 9) "El número debe tener 9 dígitos" else "Número no válido"
+                    "MX" -> if (phoneLength != 10) "El número debe tener 10 dígitos" else "Número no válido"
+                    else -> "Número no válido para $countryName"
+                }
+
+                etPhone.error = mensaje
+                etPhone.requestFocus()
+                false
+            }
             else -> true
         }
     }

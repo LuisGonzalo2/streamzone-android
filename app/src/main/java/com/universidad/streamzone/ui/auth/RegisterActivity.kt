@@ -7,6 +7,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputFilter
 import android.text.InputType
 import android.text.TextWatcher
 import android.util.Log
@@ -21,12 +22,14 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.hbb20.CountryCodePicker
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.remote.FirebaseService
 import com.universidad.streamzone.data.local.dao.UsuarioDao
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.model.UsuarioEntity
 import kotlinx.coroutines.launch
+import kotlin.text.substringAfterLast
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -50,19 +53,23 @@ class RegisterActivity : AppCompatActivity() {
         }
     }private lateinit var tilFullName: TextInputLayout
     private lateinit var tilEmail: TextInputLayout
+    // AÑADE ESTA LÍNEA
+    private lateinit var ccp: CountryCodePicker
+
     private lateinit var tilPassword: TextInputLayout
     private lateinit var tilConfirmPassword: TextInputLayout
+    private lateinit var tilPhone: TextInputLayout
     private lateinit var etFullName: TextInputEditText
     private lateinit var etEmail: TextInputEditText
     private lateinit var etPassword: TextInputEditText
     private lateinit var etConfirmPassword: TextInputEditText
-    private lateinit var spinnerCountryCode: Spinner
     private lateinit var etPhone: TextInputEditText
     private lateinit var btnTogglePassword: MaterialButton
     private lateinit var btnToggleConfirmPassword: MaterialButton
     private lateinit var checkShowPassword: CheckBox
     private lateinit var btnRegister: MaterialButton
     private lateinit var tvBackToLogin: TextView
+
 
     private var isPasswordVisible = false
     private var isConfirmPasswordVisible = false
@@ -77,7 +84,7 @@ class RegisterActivity : AppCompatActivity() {
         sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
 
         initViews()
-        setupSpinner()
+        setupPhone()
         setupListeners()
     }
 
@@ -103,29 +110,60 @@ class RegisterActivity : AppCompatActivity() {
         tilEmail = findViewById(R.id.til_email)
         tilPassword = findViewById(R.id.til_password)
         tilConfirmPassword = findViewById(R.id.til_confirm_password)
+        tilPhone = findViewById(R.id.til_phone)
+        ccp = findViewById(R.id.ccp)
         etFullName = findViewById(R.id.et_full_name)
         etEmail = findViewById(R.id.et_email)
         etPassword = findViewById(R.id.et_password)
         etConfirmPassword = findViewById(R.id.et_confirm_password)
-        etPhone = findViewById(R.id.et_phone)
-        spinnerCountryCode = findViewById(R.id.spinner_country_code)
+        etPhone = findViewById(R.id.et_Phone)
         btnTogglePassword = findViewById(R.id.btn_toggle_password)
         btnToggleConfirmPassword = findViewById(R.id.btn_toggle_confirm_password)
         btnRegister = findViewById(R.id.btn_register)
         checkShowPassword = findViewById(R.id.check_show_password)
         tvBackToLogin = findViewById(R.id.tv_back_to_login)
+        ccp.registerCarrierNumberEditText(etPhone)
+
+
+
+
+
     }
 
-    private fun setupSpinner() {
-        val countryCodes = arrayOf(
-            "EC +593 🇪🇨", "US +1 🇺🇸", "CO +57 🇨🇴", "PE +51 🇵🇪",
-            "AR +54 🇦🇷", "MX +52 🇲🇽", "VE +58 🇻🇪", "CL +56 🇨🇱",
-            "BR +55 🇧🇷", "ES +34 🇪🇸"
-        )
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, countryCodes)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerCountryCode.adapter = adapter
+    private fun setupPhone() {
+        // Filtro para permitir solo dígitos, guiones y espacios
+        val digitsDashSpaceFilter = InputFilter { source, start, end, dest, dstart, dend ->
+            for (i in start until end) {
+                val char = source[i]
+                if (!char.isDigit() && char != '-' && char != ' ') {
+                    return@InputFilter ""
+                }
+            }
+            null
+        }
+
+        // Límite de longitud máxima (15 dígitos según estándar E.164)
+        val lengthFilter = InputFilter.LengthFilter(15)
+
+        // Aplicar ambos filtros
+        etPhone.filters = arrayOf(digitsDashSpaceFilter, lengthFilter)
+
+        // Listener para quitar el 0 inicial automáticamente
+        etPhone.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                if (s != null && s.isNotEmpty() && s[0] == '0') {
+                    etPhone.setText(s.substring(1))
+                    etPhone.setSelection(etPhone.text?.length ?: 0)
+                }
+            }
+        })
     }
+
+
 
     private fun setupListeners() {
         btnRegister.setOnClickListener {
@@ -164,37 +202,23 @@ class RegisterActivity : AppCompatActivity() {
             etConfirmPassword.setSelection(etConfirmPassword.text?.length ?: 0)
         }
 
-        etPhone.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                if (s != null) {
-                    if (s.isNotEmpty() && s[0] == '0') {
-                        etPhone.setText(s.substring(1))
-                        etPhone.setSelection(etPhone.text?.length ?: 0)
-                        return
-                    }
-                    if (s.length > 10) {
-                        etPhone.setText(s.substring(0, 10))
-                        etPhone.setSelection(10)
-                    }
-                }
-            }
-        })
+
     }
 
     private fun handleRegister() {
         val fullName = etFullName.text.toString().trim()
         val email = etEmail.text.toString().trim()
-        val phone = etPhone.text.toString().trim()
+        val phoneWithCountryCode = ccp.fullNumberWithPlus // Ej: +593987654321
+        val phone = phoneWithCountryCode.replace("+", "") // Guardar sin el +
         val password = etPassword.text.toString()
         val confirmPassword = etConfirmPassword.text.toString()
+
 
         clearAllErrors()
 
         if (!validateFullName(fullName)) return
-        if (!validateEmail(email)) return
         if (!validatePhone(phone)) return
+        if (!validateEmail(email)) return
         if (!validatePassword(password)) return
         if (!validateConfirmPassword(password, confirmPassword)) return
 
@@ -297,6 +321,8 @@ class RegisterActivity : AppCompatActivity() {
     ) {
         lifecycleScope.launch {
             try {
+                // Obtener número completo con código de país
+                val fullPhoneNumber = ccp.fullNumberWithPlus.replace("+", "")
                 // Crear usuario
                 val usuario = UsuarioEntity(
                     fullname = fullName,
@@ -446,6 +472,11 @@ class RegisterActivity : AppCompatActivity() {
                 etFullName.requestFocus()
                 false
             }
+            name.length > 20 -> {
+                tilFullName.error = "El nombre no puede exceder los 20 caracteres"
+                etFullName.requestFocus()
+                false
+            }
             !name.contains(" ") -> {
                 tilFullName.error = "Ingresa tu nombre y apellido"
                 etFullName.requestFocus()
@@ -456,6 +487,7 @@ class RegisterActivity : AppCompatActivity() {
                 etFullName.requestFocus()
                 false
             }
+
             else -> true
         }
     }
@@ -467,16 +499,12 @@ class RegisterActivity : AppCompatActivity() {
                 etEmail.requestFocus()
                 false
             }
-            !email.contains("@") -> {
-                tilEmail.error = "El correo debe contener @"
+            email.length > 30 -> {
+                tilEmail.error = "El correo electrónico es demasiado largo"
                 etEmail.requestFocus()
                 false
             }
-            !email.contains(".") -> {
-                tilEmail.error = "El correo debe contener un dominio válido"
-                etEmail.requestFocus()
-                false
-            }
+
             !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                 tilEmail.error = "Formato de correo inválido"
                 etEmail.requestFocus()
@@ -489,17 +517,30 @@ class RegisterActivity : AppCompatActivity() {
     private fun validatePhone(phone: String): Boolean {
         return when {
             phone.isEmpty() -> {
-                Toast.makeText(this, "El número de teléfono es obligatorio", Toast.LENGTH_SHORT).show()
+                etPhone.error = "El número de teléfono es obligatorio"
                 etPhone.requestFocus()
                 false
             }
-            phone.length != 10 -> {
-                Toast.makeText(this, "El teléfono debe tener exactamente 10 dígitos", Toast.LENGTH_SHORT).show()
+            phone.startsWith("0") -> {
+                etPhone.error = "No incluyas el 0 inicial"
                 etPhone.requestFocus()
                 false
             }
-            !phone.matches(Regex("^[1-9][0-9]{9}$")) -> {
-                Toast.makeText(this, "El teléfono no puede empezar con 0", Toast.LENGTH_SHORT).show()
+            !ccp.isValidFullNumber -> {
+                val countryName = ccp.selectedCountryName
+                val phoneLength = etPhone.text.toString().replace(Regex("[^0-9]"), "").length
+
+                // Validación específica por país
+                val mensaje = when (ccp.selectedCountryNameCode) {
+                    "EC" -> if (phoneLength != 9) "El número debe tener 9 dígitos (sin el 0)" else "Número no válido"
+                    "US", "CA" -> if (phoneLength != 10) "El número debe tener 10 dígitos" else "Número no válido"
+                    "CO" -> if (phoneLength != 10) "El número debe tener 10 dígitos" else "Número no válido"
+                    "PE" -> if (phoneLength != 9) "El número debe tener 9 dígitos" else "Número no válido"
+                    "MX" -> if (phoneLength != 10) "El número debe tener 10 dígitos" else "Número no válido"
+                    else -> "Número no válido para $countryName"
+                }
+
+                etPhone.error = mensaje
                 etPhone.requestFocus()
                 false
             }
@@ -519,6 +560,12 @@ class RegisterActivity : AppCompatActivity() {
                 etPassword.requestFocus()
                 false
             }
+            password.length > 20 -> {
+                tilPassword.error = "La contraseña debe tener como maximo 20 caracteres"
+                etPassword.requestFocus()
+                false
+            }
+
             !password.matches(Regex(".*[A-Z].*")) -> {
                 tilPassword.error = "Debe contener al menos una mayúscula"
                 etPassword.requestFocus()
@@ -576,6 +623,9 @@ class RegisterActivity : AppCompatActivity() {
         getter: () -> Boolean,
         setter: (Boolean) -> Unit
     ) {
+        val currentTypeface = editText.typeface
+        val selection = editText.selectionEnd
+
         if (getter()) {
             editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             button.setIconResource(R.drawable.ic_visibility)
@@ -585,7 +635,8 @@ class RegisterActivity : AppCompatActivity() {
             button.setIconResource(R.drawable.ic_visibility_off)
             setter(true)
         }
-        editText.setSelection(editText.text?.length ?: 0)
+        editText.typeface = currentTypeface
+        editText.setSelection(selection)
     }
 
     private fun saveFormData() {

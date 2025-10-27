@@ -86,7 +86,7 @@
                     android:text="Nombre completo"
                     android:textSize="14sp"
                     android:textColor="@color/text_secondary"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginBottom="10dp" />
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_full_name"
@@ -110,6 +110,7 @@
                         android:layout_height="wrap_content"
                         android:hint="Tu nombre completo"
                         android:inputType="textPersonName|textCapWords"
+                        android:maxLength="20"
                         android:textSize="16sp"
                         android:textColor="@color/text_primary"
                         android:textColorHint="@color/text_hint"
@@ -130,21 +131,36 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="20dp">
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="20dp"
+                    android:padding="5dp">
 
-                    <Spinner
-                        android:id="@+id/spinner_country_code"
-                        android:layout_width="120dp"
-                        android:layout_height="56dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/button_gradient_blue"
-                        android:paddingHorizontal="12dp"
-                        android:popupBackground="@color/dark_card_background" />
+                    <com.hbb20.CountryCodePicker
+                        android:id="@+id/ccp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        app:ccp_showFlag="true"
+                        app:ccpDialog_backgroundColor="@color/dark_card_background"
+                        app:ccpDialog_textColor="@color/white"
+                        app:ccpDialog_searchEditTextTint="@color/white"
+                        app:ccp_rememberLastSelection="true"
+                        app:ccp_countryPreference="EC,PE,CO,MX"
+                        app:ccp_showNameCode="false"
+                        app:ccp_contentColor="@color/white"
+                        app:ccp_arrowSize="24dp"
+                        app:ccp_textSize="16sp"
+                        app:ccp_autoDetectCountry="true">
+
+                    </com.hbb20.CountryCodePicker>
 
                     <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_phone"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
                         app:boxBackgroundMode="filled"
                         app:boxBackgroundColor="@color/input_background"
                         app:boxStrokeWidth="0dp"
@@ -156,16 +172,15 @@
                         app:hintEnabled="false">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_phone"
+                            android:id="@+id/et_Phone"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="9X XXX XXXX"
+                            android:hint="Telefono"
                             android:inputType="phone"
-                            android:maxLength="10"
-                            android:textSize="16sp"
+                            android:padding="16dp"
                             android:textColor="@color/text_primary"
                             android:textColorHint="@color/text_hint"
-                            android:padding="16dp" />
+                            android:textSize="16sp" />
 
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -184,7 +199,6 @@
                     android:id="@+id/til_email"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
                     app:boxBackgroundMode="filled"
                     app:boxBackgroundColor="@color/input_background"
                     app:boxStrokeWidth="0dp"
@@ -202,6 +216,7 @@
                         android:layout_height="wrap_content"
                         android:hint="tu@correo.com"
                         android:inputType="textEmailAddress"
+                        android:maxLength="30"
                         android:textSize="16sp"
                         android:textColor="@color/text_primary"
                         android:textColorHint="@color/text_hint"
@@ -216,15 +231,14 @@
                     android:text="Contraseña"
                     android:textSize="14sp"
                     android:textColor="@color/text_secondary"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginBottom="10dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:baselineAligned="false">
+                    android:layout_marginBottom="10dp">
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/til_password"
@@ -232,6 +246,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
+
                         app:boxBackgroundMode="filled"
                         app:boxBackgroundColor="@color/input_background"
                         app:boxStrokeWidth="0dp"
@@ -240,37 +255,34 @@
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
                         app:boxCornerRadiusBottomEnd="12dp"
-                        app:hintEnabled="false"
-                        app:errorEnabled="true">
+                        app:hintEnabled="false">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/et_password"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="••••••"
+                            android:hint="Confirmar"
                             android:inputType="textPassword"
-                            android:textSize="16sp"
+                            android:maxLength="20"
+                            android:padding="16dp"
                             android:textColor="@color/text_primary"
                             android:textColorHint="@color/text_hint"
-                            android:padding="16dp" />
+                            android:textSize="16sp" />
 
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_toggle_password"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        app:icon="@drawable/ic_visibility"
-                        app:iconTint="@color/text_secondary"
-                        app:iconSize="24dp"
-                        app:backgroundTint="@color/input_background"
-                        app:cornerRadius="12dp"
+                        android:layout_width="50dp"
+                        android:layout_height="wrap_content"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
-                        android:insetLeft="0dp"
-                        android:insetRight="0dp"
+                        app:icon="@drawable/ic_visibility"
+                        app:iconTint="@color/text_secondary"
+                        app:backgroundTint="@color/input_background"
                         app:iconGravity="textStart"
-                        app:iconPadding="0dp" />
+                        app:iconPadding="0dp"
+                        app:cornerRadius="12dp"/>
 
                 </LinearLayout>
 
@@ -281,15 +293,13 @@
                     android:text="Confirmar contraseña"
                     android:textSize="14sp"
                     android:textColor="@color/text_secondary"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginBottom="8dp"  />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:baselineAligned="false">
+                    android:gravity="center_vertical">
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/til_confirm_password"
@@ -297,6 +307,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
+
                         app:boxBackgroundMode="filled"
                         app:boxBackgroundColor="@color/input_background"
                         app:boxStrokeWidth="0dp"
@@ -305,37 +316,34 @@
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusBottomStart="12dp"
                         app:boxCornerRadiusBottomEnd="12dp"
-                        app:hintEnabled="false"
-                        app:errorEnabled="true">
+                        app:hintEnabled="false">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/et_confirm_password"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="••••••"
+                            android:hint="Contraseña"
                             android:inputType="textPassword"
-                            android:textSize="16sp"
+                            android:maxLength="20"
+                            android:padding="16dp"
                             android:textColor="@color/text_primary"
                             android:textColorHint="@color/text_hint"
-                            android:padding="16dp" />
+                            android:textSize="16sp"/>
 
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_toggle_confirm_password"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        app:icon="@drawable/ic_visibility"
-                        app:iconTint="@color/text_secondary"
-                        app:iconSize="24dp"
-                        app:backgroundTint="@color/input_background"
-                        app:cornerRadius="12dp"
+                        android:layout_width="50dp"
+                        android:layout_height="wrap_content"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
-                        android:insetLeft="0dp"
-                        android:insetRight="0dp"
+                        app:icon="@drawable/ic_visibility"
+                        app:iconTint="@color/text_secondary"
+                        app:backgroundTint="@color/input_background"
                         app:iconGravity="textStart"
-                        app:iconPadding="0dp" />
+                        app:iconPadding="0dp"
+                        app:cornerRadius="12dp" />
 
                 </LinearLayout>
 

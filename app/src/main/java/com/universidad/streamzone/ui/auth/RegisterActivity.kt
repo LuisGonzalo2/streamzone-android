@@ -491,13 +491,6 @@ class RegisterActivity : AppCompatActivity() {
                 etEmail.requestFocus()
                 false
             }
-
-            !email.endsWith(".com") -> {
-                tilEmail.error = "Solo se aceptan correos .com"
-                etEmail.requestFocus()
-                false
-            }
-
             else -> true
         }
     }

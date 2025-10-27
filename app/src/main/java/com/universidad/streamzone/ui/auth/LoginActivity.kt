@@ -100,6 +100,7 @@ class LoginActivity : AppCompatActivity() {
 
         // Restaurar estado del checkbox
         checkKeepLoggedIn.isChecked = sharedPrefs.getBoolean("keep_logged_in_preference", false)
+
     }
 
     private fun setupClickListeners() {
@@ -275,22 +276,24 @@ class LoginActivity : AppCompatActivity() {
     private fun validateEmail(email: String): Boolean {
         return when {
             email.isEmpty() -> {
-                tilEmail.error = "Ingresa tu correo electrónico"
+                tilEmail.error = "El correo electrónico es obligatorio"
                 etEmail.requestFocus()
                 false
             }
-            !email.contains("@") -> {
-                tilEmail.error = "El correo debe contener @"
+            email.length > 30 -> {
+                tilEmail.error = "El correo electrónico es demasiado largo"
                 etEmail.requestFocus()
                 false
             }
-            !email.contains(".") -> {
-                tilEmail.error = "Ingresa un correo válido"
-                etEmail.requestFocus()
-                false
-            }
+
             !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                 tilEmail.error = "Formato de correo inválido"
+                etEmail.requestFocus()
+                false
+            }
+
+            !email.endsWith(".com") -> {
+                tilEmail.error = "Solo se aceptan correos .com"
                 etEmail.requestFocus()
                 false
             }
@@ -307,6 +310,11 @@ class LoginActivity : AppCompatActivity() {
             }
             password.length < 6 -> {
                 tilPassword.error = "La contraseña debe tener al menos 6 caracteres"
+                etPassword.requestFocus()
+                false
+            }
+            password.length > 20 -> {
+                tilPassword.error = "La contraseña debe tener como maximo 20 caracteres"
                 etPassword.requestFocus()
                 false
             }
@@ -346,17 +354,24 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun togglePasswordVisibility() {
+        val currentTypeface = etPassword.typeface
+        val selection = etPassword.selectionEnd
+
         if (isPasswordVisible) {
             etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            btnTogglePassword.setIconResource(R.drawable.ic_visibility)
+            btnTogglePassword.setIconResource(R.drawable.ic_visibility) // Ojo cerrado
             isPasswordVisible = false
         } else {
             etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-            btnTogglePassword.setIconResource(R.drawable.ic_visibility_off)
+            btnTogglePassword.setIconResource(R.drawable.ic_visibility_off) // Ojo abierto
             isPasswordVisible = true
         }
-        etPassword.setSelection(etPassword.text?.length ?: 0)
+
+        etPassword.typeface = currentTypeface
+        etPassword.setSelection(selection)
     }
+
+
 
     private fun saveEmail() {
         val email = etEmail.text.toString().trim()

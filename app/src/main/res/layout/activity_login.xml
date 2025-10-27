@@ -145,7 +145,7 @@
                         android:id="@+id/et_password"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="••••••"
+                        android:hint="Ingrese su contraseña"
                         android:inputType="textPassword"
                         android:textSize="16sp"
                         android:textColor="@color/text_primary"

@@ -64,7 +64,10 @@
             android:name=".ui.reserve.ReserveActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-
+        <activity
+            android:name=".ui.home.UserProfileActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

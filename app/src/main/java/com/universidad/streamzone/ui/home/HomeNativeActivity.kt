@@ -6,7 +6,10 @@ import android.graphics.LinearGradient
 import android.graphics.Shader
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -53,20 +56,30 @@ class HomeNativeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_home_native)
+
+        // Usar el layout base con navbar inferior
+        setContentView(R.layout.activity_base)
 
         sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
 
+        // Inflar el contenido específico del home
+        val contentContainer = findViewById<FrameLayout>(R.id.content_container)
+        LayoutInflater.from(this).inflate(R.layout.activity_home_native, contentContainer, true)
+
+        setupViews()
+        setupRecyclerView()
+        setupBottomNavbar() // Configurar navbar inferior
+    }
+
+    private fun setupViews() {
         rvServices = findViewById(R.id.rvServices)
         tvGreeting = findViewById(R.id.tvGreeting)
 
         currentUser = intent.getStringExtra("USER_FULLNAME") ?: ""
         tvGreeting.text = if (currentUser.isNotEmpty()) "Bienvenido, $currentUser" else "Bienvenido"
 
-        // Configurar botón de cerrar sesión
-        findViewById<Button>(R.id.btnCerrarSesion).setOnClickListener {
-            cerrarSesion()
-        }
+        // Ocultar el botón de cerrar sesión antiguo
+        findViewById<Button>(R.id.btnCerrarSesion).visibility = View.GONE
 
         val tvTitle: TextView? = findViewById(R.id.tvAppTitle)
         tvTitle?.post {
@@ -80,7 +93,9 @@ class HomeNativeActivity : AppCompatActivity() {
             tvTitle.paint.shader = textShader
             tvTitle.invalidate()
         }
+    }
 
+    private fun setupRecyclerView() {
         rvServices.layoutManager = GridLayoutManager(this, 2)
         val spacingPx = (resources.displayMetrics.density * 12).toInt()
         rvServices.addItemDecoration(GridSpacingItemDecoration(2, spacingPx, true))
@@ -89,10 +104,36 @@ class HomeNativeActivity : AppCompatActivity() {
         rvServices.adapter = adapter
     }
 
+    // Configurar navbar inferior
+    private fun setupBottomNavbar() {
+        // Botón Home
+        findViewById<View>(R.id.btn_home).setOnClickListener {
+            // Ya estamos en home
+            showToast("Estás en el inicio")
+        }
+
+        // Botón Regalos
+        findViewById<View>(R.id.btn_gift).setOnClickListener {
+            showToast("Próximamente: Sección de Regalos")
+        }
+
+        // Botón Perfil - ABRE LA NUEVA ACTIVIDAD
+        findViewById<View>(R.id.btn_profile).setOnClickListener {
+            val intent = Intent(this, UserProfileActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Botón Cerrar Sesión
+        findViewById<View>(R.id.btn_logout_nav).setOnClickListener {
+            cerrarSesion()
+        }
+    }
+
     private fun cerrarSesion() {
         sharedPrefs.edit().apply {
             remove("logged_in_user_email")
             remove("logged_in_user_name")
+            remove("session_start_time")
             apply()
         }
 
@@ -113,5 +154,9 @@ class HomeNativeActivity : AppCompatActivity() {
         intent.putExtra("SERVICE_DESC", service.desc)
         intent.putExtra("USER_FULLNAME", currentUser)
         startActivity(intent)
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }

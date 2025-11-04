@@ -44,4 +44,53 @@
     <string name="payment_mobile">📱 Pago Móvil</string>
 
     <string name="copyright">© 2025 StreamZone. Todos los derechos reservados.</string>
+    <!-- Subtítulo del diálogo de compra (usa el nombre del servicio) -->
+    <string name="dialog_subtitle_template">Para comprar %1$s necesitas crear una cuenta en StreamZone</string>
+    <!-- Plurals para el conteo de dispositivos en el diálogo de compra -->
+    <plurals name="device_count">
+        <item quantity="one">%d Dispositivo</item>
+        <item quantity="other">%d Dispositivos</item>
+    </plurals>
+
+    <!-- Strings añadidos para dialog_purchase.xml -->
+    <string name="completar_compra">Completar Compra</string>
+    <string name="cerrar">Cerrar</string>
+    <string name="logo_servicio">Logo servicio</string>
+    <string name="duracion">Duración</string>
+    <string name="mes_1">1 mes</string>
+    <string name="mes_2">2 meses</string>
+    <string name="mes_3">3 meses</string>
+    <string name="mes_6">6 meses</string>
+    <string name="numero_dispositivos">Número de Dispositivos</string>
+    <string name="menos">-</string>
+    <string name="mas">+</string>
+    <string name="dispositivo_uno">1\nDispositivo</string>
+    <string name="informacion_pago">Información de Pago</string>
+    <string name="email_paypal">Email: guale2023@outlook.com</string>
+    <string name="instrucciones_importantes">Instrucciones Importantes</string>
+    <string name="texto_instrucciones">Una vez que hayas realizado el pago, debes confirmar tu compra enviando una captura por WhatsApp a nuestros agentes. Asegúrate de incluir el número de referencia.</string>
+    <string name="notas_adicionales">Notas adicionales (opcional)</string>
+    <string name="comentarios_hint">Comentarios o instrucciones especiales...</string>
+    <string name="total_a_pagar">Total a pagar:</string>
+    <string name="precio_ejemplo">US$ 4,00</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="whatsapp">WhatsApp</string>
+    <string name="agentes">Agentes</string>
+    <string name="sin_comprobante">⚡  Sin el comprobante, tu servicio NO será activado</string>
+    <string name="paypal_label">PayPal</string>
+    <string name="banco_pichincha">Banco Pichincha</string>
+    <string name="banco_guayaquil">Banco Guayaquil</string>
+    <string name="banco_pacifico">Banco Pacífico</string>
+    <string name="titular_pichincha">Titular: Jeremias Guale Santana</string>
+    <string name="titular_guayaquil">Titular: Jeremias Joel Guale Santana</string>
+    <string name="titular_pacifico">Titular: Byron Guale Santana</string>
+    <string name="cuenta_pichincha">Cuenta: 2209034638</string>
+    <string name="cuenta_guayaquil">Cuenta: 0122407273</string>
+    <string name="cuenta_pacifico">Cuenta: 1061220256</string>
+    <string name="tipo_ahorro">Tipo: Ahorros</string>
+    <string name="tipo_ahorro_transaccional">Tipo: Ahorro Transaccional</string>
+    <string name="important_emoji">🚨</string>
+    <string name="metodo_paypal">Método: PayPal</string>
+    <string name="tipo_transferencia">Tipo: Transferencia</string>
+    <string name="icono_instrucciones">Icono instrucciones importantes</string>
 </resources>

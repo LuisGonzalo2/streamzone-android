@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.LinearGradient
 import android.graphics.Shader
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -18,7 +19,6 @@ import com.universidad.streamzone.data.model.Service
 import com.universidad.streamzone.ui.auth.LoginActivity
 import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
 import com.universidad.streamzone.ui.home.adapter.ServiceAdapter
-import com.universidad.streamzone.ui.reserve.ReserveActivity
 
 class HomeNativeActivity : AppCompatActivity() {
 
@@ -72,9 +72,9 @@ class HomeNativeActivity : AppCompatActivity() {
         tvTitle?.post {
             val width = tvTitle.paint.measureText(tvTitle.text.toString())
             val colors = intArrayOf(
-                ContextCompat.getColor(this, R.color.brand_blue),
-                ContextCompat.getColor(this, R.color.brand_purple),
-                ContextCompat.getColor(this, R.color.brand_pink)
+                getColorByName("brand_blue"),
+                getColorByName("brand_purple"),
+                getColorByName("brand_pink")
             )
             val textShader: Shader = LinearGradient(0f, 0f, width, tvTitle.textSize, colors, null, Shader.TileMode.CLAMP)
             tvTitle.paint.shader = textShader
@@ -87,6 +87,11 @@ class HomeNativeActivity : AppCompatActivity() {
 
         val adapter = ServiceAdapter(services) { service -> onReserve(service) }
         rvServices.adapter = adapter
+    }
+
+    private fun getColorByName(name: String): Int {
+        val id = resources.getIdentifier(name, "color", packageName)
+        return if (id != 0) ContextCompat.getColor(this, id) else Color.parseColor("#FFFFFF")
     }
 
     private fun cerrarSesion() {
@@ -106,12 +111,16 @@ class HomeNativeActivity : AppCompatActivity() {
 
     private fun onReserve(service: Service) {
         Log.d("HomeNativeActivity", "Reserva iniciada: ${service.id} - ${service.title}")
-        val intent = Intent(this, ReserveActivity::class.java)
-        intent.putExtra("SERVICE_ID", service.id)
-        intent.putExtra("SERVICE_TITLE", service.title)
-        intent.putExtra("SERVICE_PRICE", service.price)
-        intent.putExtra("SERVICE_DESC", service.desc)
-        intent.putExtra("USER_FULLNAME", currentUser)
-        startActivity(intent)
+        // En lugar de abrir directamente ReserveActivity, mostrar el diálogo de compra
+        val dlg = PurchaseDialogFragment.newInstance(
+            service.id,
+            service.title,
+            service.price,
+            service.desc,
+            currentUser,
+            null,
+            service.iconRes
+        )
+        dlg.show(supportFragmentManager, "purchaseDialog")
     }
 }

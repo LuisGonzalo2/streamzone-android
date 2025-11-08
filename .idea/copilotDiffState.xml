@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/commit_msg.txt">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/commit_msg.txt" />
+              <option name="updatedContent" value="feat(purchase-dialog): corregir visibilidad de logos e icono de instrucciones&#10;&#10;Checklist rápido antes del mensaje&#10;&#10;Incluye título y cuerpo detallado.&#10;Menciona los archivos modificados (dialog_purchase.xml, ic_bank.xml, ic_bill.xml, ic_siren.xml).&#10;Indica la verificación/resumen breve.&#10;&#10;Cambios en drawables para asegurar contraste:&#10;&#10;- ic_bank.xml — usar android:fillColor=&quot;@color/white&quot; para que el icono del banco contraste en el círculo morado.&#10;- ic_bill.xml — usar android:fillColor=&quot;@color/white&quot; para que el icono PayPal/factura sea visible.&#10;- ic_siren.xml — usar android:fillColor=&quot;@color/brand_pink&quot; para que la sirena se muestre coloreada dentro del círculo naranja.&#10;&#10;Cambios en layout:&#10;&#10;- dialog_purchase.xml:&#10;  - Eliminado android:tint=&quot;@color/white&quot; en ivImportantIcon para que el drawable muestre su propio color.&#10;  - Añadido android:tint=&quot;@null&quot; en ivPayment1, ivPayment2, ivPayment3, ivPayment4 e ivServiceLogo para evitar tints globales que ocultaban los iconos.&#10;&#10;Resultado: los logos y el icono de &quot;Instrucciones Importantes&quot; se ven correctamente en el diálogo de compra.&#10;&#10;Nota: recursos verificados (no hay errores críticos, sólo warnings de layout). Ejecutar build localmente para validación final.&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

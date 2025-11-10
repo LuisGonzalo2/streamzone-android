@@ -69,8 +69,14 @@
     <string name="email_paypal">Email: guale2023@outlook.com</string>
     <string name="instrucciones_importantes">Instrucciones Importantes</string>
     <string name="texto_instrucciones">Una vez que hayas realizado el pago, debes confirmar tu compra enviando una captura por WhatsApp a nuestros agentes. Asegúrate de incluir el número de referencia.</string>
+    <string name="instruction_bullet_1">Confirma tu pago enviando una captura por WhatsApp o usando el botón de Agentes.</string>
+    <string name="instruction_bullet_2">Incluye el número de referencia y el monto exacto para que verifiquemos rápidamente.</string>
+    <string name="instruction_bullet_3">Sin comprobante no podremos activar el servicio — guarda tu recibo.</string>
+    <string name="footer_prefix">Sin comprobante, tu servicio </string>
+    <string name="footer_no">NO</string>
+    <string name="footer_suffix">, será activado.</string>
     <string name="notas_adicionales">Notas adicionales (opcional)</string>
-    <string name="comentarios_hint">Comentarios o instrucciones especiales...</string>
+    <string name="comentarios_hint">Comentarios o instrucciones especiales…</string>
     <string name="total_a_pagar">Total a pagar:</string>
     <string name="precio_ejemplo">US$ 4,00</string>
     <string name="cancelar">Cancelar</string>
@@ -93,4 +99,12 @@
     <string name="metodo_paypal">Método: PayPal</string>
     <string name="tipo_transferencia">Tipo: Transferencia</string>
     <string name="icono_instrucciones">Icono instrucciones importantes</string>
+
+    <!-- WhatsApp / Agente (añadidos) -->
+    <string name="whatsapp_number">593984280334</string>
+    <string name="whatsapp_number_display">(+593 98 428 0334)</string>
+    <string name="agent_button_template">👩‍💼  Agente 1 (%1$s)</string>
+    <string name="whatsapp_message_template">Hola 👋, he realizado una compra en StreamZone (servicio: %1$s - total: %2$s). Por favor, Agente, acepte mi solicitud y confirme la activación. Muchas gracias 🙏✨</string>
+    <string name="purchase_registered_title_template">%1$s - ¡Compra Registrada! 🎉</string>
+    <string name="whatsapp_fallback">Hola 👋, he realizado una compra. Por favor, Agente acepte mi solicitud. Gracias 🙏✨</string>
 </resources>

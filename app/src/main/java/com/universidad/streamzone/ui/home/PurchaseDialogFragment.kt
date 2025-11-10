@@ -113,8 +113,6 @@ class PurchaseDialogFragment : DialogFragment() {
         val btnDevicePlus = root.findViewById<Button>(R.id.btnDevicePlus)
         val tvDeviceCount = root.findViewById<TextView>(R.id.tvDeviceCount)
 
-        val btnWhatsApp = root.findViewById<Button>(R.id.btnWhatsApp)
-        val btnAgents = root.findViewById<Button>(R.id.btnAgents)
         val ivPayment1 = root.findViewById<ImageView>(R.id.ivPayment1)
         val ivPayment2 = root.findViewById<ImageView>(R.id.ivPayment2)
         val ivPayment3 = root.findViewById<ImageView>(R.id.ivPayment3)
@@ -128,11 +126,7 @@ class PurchaseDialogFragment : DialogFragment() {
         val btnCancel = root.findViewById<Button>(R.id.btnCancel)
         val btnComplete = root.findViewById<Button>(R.id.btnComplete)
         val tvImportantText = root.findViewById<TextView>(R.id.tvImportantText)
-        // Footer (existe en el layout): referencia directa
-        val tvImportantFooter = root.findViewById<TextView?>(R.id.tvImportantFooter)
-        // Icono circular superpuesto en instrucciones importantes
-        val ivImportantIcon = root.findViewById<ImageView>(R.id.ivImportantIcon)
-        val tvImportantEmoji = root.findViewById<TextView>(R.id.tvImportantEmoji)
+        // Icono superpuesto eliminado del layout
 
         // Set initial texts
         tvServiceName.text = serviceTitle
@@ -144,7 +138,7 @@ class PurchaseDialogFragment : DialogFragment() {
             if (iconResId != 0) {
                 iv.setBackgroundResource(iconResId)
             } else {
-                val key = title.toLowerCase(Locale.ROOT).replace("\\s+".toRegex(), "_")
+                val key = title.lowercase(Locale.ROOT).replace("\\s+".toRegex(), "_")
                 val bgResName = "rounded_square_${'$'}key"
                 val bgResId = resources.getIdentifier(bgResName, "drawable", requireContext().packageName)
                 if (bgResId != 0) iv.setBackgroundResource(bgResId) else iv.setBackgroundResource(R.drawable.rounded_square)
@@ -153,7 +147,7 @@ class PurchaseDialogFragment : DialogFragment() {
             // Buscar logo por serviceId (ej. logo_netflix) o por título transformado
             val candidates = mutableListOf<String>()
             if (serviceId.isNotBlank()) candidates.add("logo_${'$'}serviceId")
-            val titleKey = title.toLowerCase(Locale.ROOT).replace("\\s+".toRegex(), "_")
+            val titleKey = title.lowercase(Locale.ROOT).replace("\\s+".toRegex(), "_")
             candidates.add("logo_${'$'}titleKey")
             candidates.add(titleKey)
 
@@ -282,43 +276,35 @@ class PurchaseDialogFragment : DialogFragment() {
             updateDeviceCountText()
         }
 
-        // WhatsApp / Agents actions (placeholders)
-        btnWhatsApp.setOnClickListener {
-            // abrir WhatsApp (ejemplo con enlace genérico)
-            try {
-                val url = "https://wa.me/?text=${Uri.encode("Hola, hice un pago para el servicio $serviceTitle.") }"
-                val i = Intent(Intent.ACTION_VIEW)
-                // usar extensión toUri() de KTX
-                i.data = url.toUri()
-                startActivity(i)
-            } catch (ex: Exception) {
-                Log.e("PurchaseDialogFragment", "No se pudo abrir WhatsApp", ex)
-                Toast.makeText(requireContext(), "No se pudo abrir WhatsApp", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        btnAgents.setOnClickListener {
-            // placeholder: abrir pantalla de agentes o contacto
-            Toast.makeText(requireContext(), "Contacta a nuestros agentes", Toast.LENGTH_SHORT).show()
-        }
-
         // Cancel / Close
         btnClose.setOnClickListener { dismiss() }
         btnCancel.setOnClickListener { dismiss() }
 
         // Complete purchase -> abrir ReserveActivity con extras
         btnComplete.setOnClickListener {
-            val intent = Intent(requireContext(), ReserveActivity::class.java)
-            intent.putExtra("SERVICE_ID", serviceId)
-            intent.putExtra("SERVICE_TITLE", serviceTitle)
-            intent.putExtra("SERVICE_PRICE", servicePrice)
-            intent.putExtra("SERVICE_DESC", serviceDesc)
-            intent.putExtra("USER_FULLNAME", userFullname)
-            intent.putExtra("DURATION_MONTHS", selectedDurationMonths)
-            intent.putExtra("DEVICE_COUNT", deviceCount)
-            intent.putExtra("NOTES", "")
-            intent.putExtra("TOTAL_AMOUNT", tvTotalAmount.text.toString())
-            startActivity(intent)
+            // Mostrar diálogo de confirmación de compra (nuevo comportamiento solicitado)
+            try {
+                val completeDlg = PurchaseCompleteDialogFragment.newInstance(
+                    serviceTitle,
+                    tvTotalAmount.text.toString(),
+                    userFullname
+                )
+                completeDlg.show(parentFragmentManager, "purchaseCompleteDialog")
+            } catch (ex: Exception) {
+                // Si por alguna razón no se puede mostrar el diálogo, mantener el flujo antiguo como fallback
+                val intent = Intent(requireContext(), ReserveActivity::class.java)
+                intent.putExtra("SERVICE_ID", serviceId)
+                intent.putExtra("SERVICE_TITLE", serviceTitle)
+                intent.putExtra("SERVICE_PRICE", servicePrice)
+                intent.putExtra("SERVICE_DESC", serviceDesc)
+                intent.putExtra("USER_FULLNAME", userFullname)
+                intent.putExtra("DURATION_MONTHS", selectedDurationMonths)
+                intent.putExtra("DEVICE_COUNT", deviceCount)
+                intent.putExtra("NOTES", "")
+                intent.putExtra("TOTAL_AMOUNT", tvTotalAmount.text.toString())
+                startActivity(intent)
+            }
+            // Cerrar el diálogo de compra actual
             dismiss()
         }
 
@@ -425,33 +411,13 @@ class PurchaseDialogFragment : DialogFragment() {
             span.setSpan(StyleSpan(Typeface.BOLD), start, start + boldPhrase.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         tvImportantText.text = span
-        // Asignar texto de footer de forma segura (nullable)
-        tvImportantFooter?.text = getString(R.string.sin_comprobante)
+        // El texto del footer está definido en el layout mediante recursos; no hace falta reasignarlo aquí.
 
-        // Ajustar el icono de instrucciones: preferir `ic_siren` tintado de blanco, fallback a emoji
-        try {
-            val sirenRes = resources.getIdentifier("ic_siren", "drawable", requireContext().packageName)
-            if (sirenRes != 0) {
-                ivImportantIcon.setImageResource(sirenRes)
-                // asegurar tint blanco
-                try {
-                    ivImportantIcon.imageTintList = androidx.core.content.ContextCompat.getColorStateList(requireContext(), R.color.white)
-                } catch (_: Exception) { /* no crítico */ }
-                tvImportantEmoji.visibility = View.GONE
-            } else {
-                val bmp = createEmojiBitmap("🚨", 64)
-                ivImportantIcon.setImageBitmap(bmp)
-                tvImportantEmoji.visibility = View.GONE
-            }
-        } catch (ex: Exception) {
-            tvImportantEmoji.visibility = View.GONE
-        }
+        // initialize UI
+        updateDurationSelection()
+        updateDeviceCountText()
 
-         // initialize UI
-         updateDurationSelection()
-         updateDeviceCountText()
-
-         return root
+        return root
      }
 
     private fun calculateTotal(): Double {

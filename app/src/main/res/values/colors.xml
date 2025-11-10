@@ -27,4 +27,7 @@
     <color name="text_secondary">#98A0AA</color>
     <color name="text_hint">#7E8A92</color>
     <color name="input_background">#0E232B</color>
+
+    <!-- Color para la X del diálogo de compra completa -->
+    <color name="close_red">#FF3B30</color>
 </resources>

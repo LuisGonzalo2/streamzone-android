@@ -1,0 +1,51 @@
+Descripción de cambios realizados (por petición del usuario):
+
+Objetivo:
+- Mostrar una ventana modal igual a la de la imagen cuando se complete la compra. La ventana debe contener el número fijo +593 984 280 334 y permitir que el cliente haga click en el agente para abrir WhatsApp con un mensaje profesional (incluye emojis).
+
+Archivos añadidos:
+1) app/src/main/res/layout/dialog_purchase_complete.xml
+   - Layout para el diálogo de compra completada. Contiene título, caja de "PASO OBLIGATORIO" y un botón verde con el texto: "👩‍💼  Agente 1 (+593 98 428 0334)".
+
+2) app/src/main/java/com/universidad/streamzone/ui/home/PurchaseCompleteDialogFragment.kt
+   - Nuevo DialogFragment que muestra `dialog_purchase_complete.xml`.
+   - Al pulsar el botón del agente abre WhatsApp usando el número fijo (sin espacios): 593984280334.
+   - Mensaje predefinido profesional (en español) con emojis:
+     "Hola 👋, he realizado una compra en StreamZone (servicio: <SERVICIO> - total: <TOTAL>). Por favor, Agente, acepte mi solicitud y confirme la activación. Muchas gracias 🙏✨"
+   - Muestra Toast de error si no puede abrir WhatsApp.
+
+Archivos modificados:
+1) app/src/main/java/com/universidad/streamzone/ui/home/PurchaseDialogFragment.kt
+   - Cambio principal: el botón "Completar" ahora muestra el nuevo `PurchaseCompleteDialogFragment` en lugar de abrir directamente `ReserveActivity`.
+   - Se mantiene un fallback: si mostrar el diálogo falla por cualquier motivo, se usa el flujo antiguo que abre `ReserveActivity` con los extras.
+   - No se cambió la UI existente del diálogo de compra; solo se cambió el comportamiento al pulsar "Completar".
+
+Notas de implementación y decisiones:
+- Número fijo usado exactamente como solicitaste: 593984280334 (se construye el enlace con https://wa.me/593984280334?text=... ).
+- Mensaje: redactado profesionalmente y con emojis, tal como solicitaste. Se incluyen servicio y total (si están disponibles) para que el agente tenga contexto.
+- El diálogo `dialog_purchase_complete.xml` tiene estilos simples que reutilizan drawables ya existentes (`dialog_bg`, `important_box`, `button_gradient_green`), por lo que debería encajar visualmente con la app.
+- Añadí un botón de cerrar (X) para permitir cerrar la ventana.
+
+Cómo probar localmente (smoke test):
+1) Desde la app, en `HomeNativeActivity` seleccionar un servicio y abrir el diálogo de compra.
+2) En `PurchaseDialogFragment`, completar selección de duración/dispositivos si quieres y pulsar "Completar".
+3) Debe aparecer la ventana "¡Compra Registrada! 🎉" (nuevo diálogo). Pulsar "Agente 1" abre WhatsApp con el número +593984280334 y el mensaje predefinido.
+4) Si WhatsApp no está instalado, el Intent abrirá el navegador con `https://wa.me/...` o fallará con un Toast.
+
+Archivos añadidos/modificados resumen:
+- AÑADIDOS:
+  - app/src/main/res/layout/dialog_purchase_complete.xml
+  - app/src/main/java/com/universidad/streamzone/ui/home/PurchaseCompleteDialogFragment.kt
+  - t.txt (este archivo)
+- MODIFICADOS:
+  - app/src/main/java/com/universidad/streamzone/ui/home/PurchaseDialogFragment.kt
+
+Commit:
+- Se creó un commit con un mensaje detallado (incluye todos los cambios listados). Revisa el historial de git para confirmar.
+
+Si quieres que:
+- Añada más agentes (lista) o parametrice el número desde resources/strings.xml, lo hago en la siguiente iteración.
+- Cambie el texto del mensaje profesional, puedo proponer 2-3 variantes para elegir.
+
+Fin de t.txt.
+

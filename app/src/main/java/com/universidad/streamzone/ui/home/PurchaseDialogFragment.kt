@@ -34,8 +34,27 @@ import android.widget.LinearLayout
 import android.text.Spannable
 import android.text.SpannableString
 import android.graphics.Rect
+import java.text.Normalizer
 
 class PurchaseDialogFragment : DialogFragment() {
+
+    // Mapa determinista de serviceId -> logo drawable (prioritario sobre heurística)
+    private val LOGO_MAP = mapOf(
+        "netflix" to R.drawable.logo_netflix,
+        "disney_plus_premium" to R.drawable.logo_disney_plus_premium,
+        "disney_plus_standard" to R.drawable.logo_disney_plus_standard,
+        "max" to R.drawable.logo_max,
+        "prime" to R.drawable.logo_prime,
+        "youtube_premium" to R.drawable.logo_youtube_premium,
+        "paramount" to R.drawable.logo_paramount,
+        "chatgpt" to R.drawable.logo_chatgpt,
+        "crunchyroll" to R.drawable.logo_crunchyroll,
+        "spotify" to R.drawable.logo_spotify,
+        "deezer" to R.drawable.logo_deezer,
+        "appletv" to R.drawable.logo_appletv,
+        "canva" to R.drawable.logo_canva,
+        "office365_year" to R.drawable.logo_office365_year
+    )
 
     companion object {
         private const val ARG_SERVICE_ID = "arg_service_id"
@@ -134,6 +153,26 @@ class PurchaseDialogFragment : DialogFragment() {
 
         // Cargar logo si se suministró una URL; usar drawable por defecto si no
         fun setServiceLogoFallback(iv: ImageView, title: String): Boolean {
+            // Primero, intentar usar el mapa determinista si existe entrada para el serviceId
+            val mapped = LOGO_MAP[serviceId.lowercase(Locale.ROOT)]
+            if (mapped != null) {
+                try {
+                    // background: preferir iconResId si está, sino buscar rounded_square_{serviceId}, sino fallback
+                    if (iconResId != 0) {
+                        iv.setBackgroundResource(iconResId)
+                    } else {
+                        val bgName = "rounded_square_${serviceId.lowercase(Locale.ROOT).replace("\\s+".toRegex(), "_") }"
+                        val bgId = resources.getIdentifier(bgName, "drawable", requireContext().packageName)
+                        if (bgId != 0) iv.setBackgroundResource(bgId) else iv.setBackgroundResource(R.drawable.rounded_square)
+                    }
+                    iv.setImageResource(mapped)
+                    iv.visibility = View.VISIBLE
+                    return true
+                } catch (ex: Exception) {
+                    // si falla, continuar con la heurística
+                }
+            }
+
             // Preferir el icono explícito pasado en el bundle (más robusto)
             if (iconResId != 0) {
                 iv.setBackgroundResource(iconResId)
@@ -144,15 +183,75 @@ class PurchaseDialogFragment : DialogFragment() {
                 if (bgResId != 0) iv.setBackgroundResource(bgResId) else iv.setBackgroundResource(R.drawable.rounded_square)
             }
 
-            // Buscar logo por serviceId (ej. logo_netflix) o por título transformado
+            // Normalizar una cadena para buscar recursos: quitar acentos, reemplazar símbolos comunes
+            fun normalizeName(input: String): String {
+                var s = Normalizer.normalize(input, Normalizer.Form.NFD)
+                s = s.replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+                s = s.lowercase(Locale.ROOT)
+                // Reemplazar '+' por 'plus', '&' por 'and' y cualquier caracter no alfanumérico por '_'
+                s = s.replace("+", "plus")
+                s = s.replace("&", "and")
+                s = s.replace("[^a-z0-9]+".toRegex(), "_")
+                // limpiar guiones bajos iniciales/finales y duplicados
+                s = s.replace("__+".toRegex(), "_")
+                s = s.trim('_')
+                return s
+            }
+
             val candidates = mutableListOf<String>()
-            if (serviceId.isNotBlank()) candidates.add("logo_${'$'}serviceId")
-            val titleKey = title.lowercase(Locale.ROOT).replace("\\s+".toRegex(), "_")
-            candidates.add("logo_${'$'}titleKey")
-            candidates.add(titleKey)
+            // Añadir serviceId si existe (ya debería venir sin espacios)
+            if (serviceId.isNotBlank()) {
+                candidates.add(serviceId)
+                // también añadir normalized serviceId
+                candidates.add(normalizeName(serviceId))
+                // añadir variante con prefijo logo_
+                candidates.add("logo_${'$'}serviceId")
+                // variante normalizada con logo_
+                candidates.add("logo_${normalizeName(serviceId)}")
+            }
+
+            // versión simple del título (solo lowercase y espacios->underscore) para compatibilidad con nombres existentes
+            val simpleTitleKey = title.lowercase(Locale.ROOT).replace("\\s+".toRegex(), "_")
+
+            val titleKey = normalizeName(title)
+            // variantes útiles: base, with logo_ prefix, with _standard/_premium/_hd suffixes
+            val suffixes = listOf("", "_standard", "_premium", "_hd", "_plus")
+
+            // PRE-COMPUTE: variantes sin _plus para usar cuando el drawable está nombrado sin la palabra 'plus'
+            val simpleTitleKeyNoPlus = simpleTitleKey.replace("_plus", "").replace("__+".toRegex(), "_").trim('_')
+            val titleKeyNoPlus = titleKey.replace("_plus", "").replace("__+".toRegex(), "_").trim('_')
+
+            for (suf in suffixes) {
+                // usar interpolación Kotlin correcta
+                candidates.add("logo_${titleKey}${suf}")
+                candidates.add("${titleKey}${suf}")
+                candidates.add("logo_${simpleTitleKey}${suf}")
+                candidates.add("${simpleTitleKey}${suf}")
+            }
+
+            // Intentar además variaciones donde 'plus' se mantenga como palabra separada
+            if (titleKey.contains("plus")) {
+                val alt = titleKey.replace("plus", "_plus").replace("__+".toRegex(), "_")
+                candidates.add("logo_${alt}")
+                candidates.add(alt)
+                // también intentar sin la palabra plus (ej. 'paramount' para 'Paramount+')
+                val withoutPlus = titleKeyNoPlus
+                if (withoutPlus.isNotBlank()) {
+                    candidates.add("logo_${withoutPlus}")
+                    candidates.add(withoutPlus)
+                    if (simpleTitleKeyNoPlus.isNotBlank()) {
+                        candidates.add("logo_${simpleTitleKeyNoPlus}")
+                        candidates.add(simpleTitleKeyNoPlus)
+                    }
+                }
+            }
 
             var logoSet = false
+            val tried = mutableSetOf<String>()
             for (name in candidates) {
+                if (name.isBlank()) continue
+                if (tried.contains(name)) continue
+                tried.add(name)
                 val logoId = resources.getIdentifier(name, "drawable", requireContext().packageName)
                 if (logoId != 0) {
                     try {
@@ -164,8 +263,9 @@ class PurchaseDialogFragment : DialogFragment() {
                     }
                 }
             }
-            // Parche explícito para Netflix si no se encontró automáticamente
-            if (!logoSet && serviceId == "netflix") {
+
+            // Mantener parche para Netflix por compatibilidad si aún no se encontró
+            if (!logoSet && serviceId.lowercase(Locale.ROOT) == "netflix") {
                 try {
                     iv.setBackgroundResource(R.drawable.rounded_square_netflix)
                     iv.setImageResource(R.drawable.logo_netflix)
@@ -174,6 +274,7 @@ class PurchaseDialogFragment : DialogFragment() {
                     // ignore
                 }
             }
+
             if (!logoSet) iv.setImageDrawable(null)
             Log.d("PurchaseDialogFragment", "setServiceLogoFallback: bgId=${iconResId}, serviceId=${serviceId}, titleKey=${titleKey}, logoFound=${logoSet}")
             iv.visibility = View.VISIBLE
@@ -188,7 +289,7 @@ class PurchaseDialogFragment : DialogFragment() {
                     error(R.drawable.rounded_square)
                 }
             } catch (ex: Exception) {
-                Log.w("PurchaseDialogFragment", "No se pudo cargar logo: ${'$'}{ex.message}")
+                Log.w("PurchaseDialogFragment", "No se pudo cargar logo: ${ex.message}")
                 setServiceLogoFallback(ivServiceLogo, serviceTitle)
             }
         } else {
@@ -340,7 +441,6 @@ class PurchaseDialogFragment : DialogFragment() {
                         if (name.startsWith("logo_")) {
                             iv.setBackgroundResource(resId)
                             iv.setPadding(pad, pad, pad, pad)
-                            // poner un icono peque o encima (dependiendo del iv)
                             val defaultIcon = when (iv.id) {
                                 R.id.ivPayment4 -> R.drawable.ic_bill
                                 else -> R.drawable.ic_bank
@@ -418,7 +518,7 @@ class PurchaseDialogFragment : DialogFragment() {
         updateDeviceCountText()
 
         return root
-     }
+    }
 
     private fun calculateTotal(): Double {
         val unit = parsePriceToDouble(servicePrice)
@@ -432,7 +532,7 @@ class PurchaseDialogFragment : DialogFragment() {
         var s = priceStr.replace("US$", "", ignoreCase = true)
         s = s.replace("/mes", "", ignoreCase = true)
         s = s.replace("/año", "", ignoreCase = true)
-        s = s.replace("/ao", "", ignoreCase = true)
+        s = s.replace("/a\u0000o", "", ignoreCase = true)
         s = s.replace("USD", "", ignoreCase = true)
         s = s.replace(" ", "")
         // permitir coma decimal

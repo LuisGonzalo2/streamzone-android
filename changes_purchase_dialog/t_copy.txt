@@ -1,6 +1,6 @@
 (Copia de t.txt)
 
-Descripción de cambios realizados (por petición del usuario):
+Descripción de cambios realizados
 
 Objetivo:
 - Mostrar una ventana modal igual a la de la imagen cuando se complete la compra. La ventana debe contener el número fijo +593 984 280 334 y permitir que el cliente haga click en el agente para abrir WhatsApp con un mensaje profesional (incluye emojis).
@@ -51,3 +51,10 @@ Si quieres que:
 
 Fin de t.txt.
 
+Correguido logos, se corrigui logos ya que cuando generabas las compras no se estaban mstrnado todos los logos
+fix(purchase-dialog): cargar correctamente logos de servicios y corregir fallo de compilación
+  Cuerpo (detallado):
+  Added deterministic logo mapping and improved fallback heuristic
+  Añadido LOGO_MAP (serviceId -> drawable) y usado como prioridad para asignar logos.
+  Mejorada la heurística de búsqueda de drawables con normalización (quita acentos, '+'→'plus', '&'→'and') y variantes (_standard/_premium/_hd/_plus).
+  Corregidas interpolaciones Kotlin mal formadas que causaban el error de compilación en kapt.

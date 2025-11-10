@@ -1,0 +1,81 @@
+Resumen: Cómo se construyó y cómo funciona la ventana (diálogo) de "Compra Registrada"
+
+Archivos relevantes:
+- `app/src/main/java/com/universidad/streamzone/ui/home/PurchaseCompleteDialogFragment.kt`
+  - Clase Kotlin que extiende DialogFragment y controla la lógica del diálogo.
+- `app/src/main/res/layout/dialog_purchase_complete.xml`
+  - Layout XML que define la interfaz visual del diálogo.
+
+1) ¿Qué hace esta ventana?
+- Muestra un diálogo modal que informa al usuario que su compra fue registrada.
+- Indica un paso obligatorio: contactar por WhatsApp para confirmar la compra y recibir credenciales.
+- Ofrece un botón para seleccionar un "agente" que abre WhatsApp con un mensaje preformateado.
+- Tiene un botón para cerrar el diálogo.
+
+2) Estructura del layout (`dialog_purchase_complete.xml`)
+- Root: LinearLayout vertical con padding y fondo `@drawable/dialog_bg`.
+- Encabezado: LinearLayout horizontal que contiene:
+  - `TextView` (`@id/tvCompleteTitle`): título central/izquierda ("¡Compra Registrada! 🎉")
+  - `AppCompatImageButton` (`@id/btnCloseComplete`): botón de cerrar con ícono `@drawable/ic_close_black_24dp`.
+- Espacio (Space) para separación.
+- Caja informativa obligatoria: LinearLayout vertical con fondo `@drawable/important_box` y padding que contiene dos TextView:
+  - `tvObligatorioTitle` ("PASO OBLIGATORIO")
+  - `tvObligatorioText` (texto que indica contactar por WhatsApp)
+- Más espacio y un `TextView` explicativo (`tvSelectAgent`) que pide seleccionar un agente.
+- `Button` (`btnAgent`) con fondo `@drawable/button_gradient_green` que actúa como accion principal (abrir WhatsApp).
+
+3) Lógica del fragment (`PurchaseCompleteDialogFragment.kt`)
+- Argumentos: la clase define 3 argumentos de Bundle opcionales: `service`, `total`, `user`. Hay un constructor estático `newInstance(service, total, user)` que los empaqueta.
+- En `onCreate` se leen los argumentos con valores por defecto vacíos y se aplica un estilo al diálogo: `setStyle(STYLE_NORMAL, android.R.style.Theme_DeviceDefault_Dialog_Alert)`.
+- En `onCreateView` se infla `R.layout.dialog_purchase_complete` y se referencian las vistas:
+  - `btnClose` (ImageButton): al hacer click llama a `dismiss()` para cerrar el diálogo.
+  - `btnAgent` (Button): al cargar intenta obtener un texto para mostrar el número de WhatsApp (recurso `whatsapp_number_display`) y formatea el texto del botón con `agent_button_template` (si existe). Si falla, deja el texto por defecto del layout.
+  - Al pulsar `btnAgent` se obtiene el número de teléfono desde el recurso `whatsapp_number` (ejemplo: "593984280334"). Se construye un mensaje usando `whatsapp_message_template` pasando `service` y `total` (si están vacíos, se sustituye por "-").
+  - Se compone una URL para abrir WhatsApp Web/APP: `https://wa.me/{phone}?text={Uri.encode(message)}` y se lanza un `Intent.ACTION_VIEW` con esa URL. Si falla, muestra un Toast "No se pudo abrir WhatsApp".
+
+4) Recursos externos necesarios (verifica que existan en `res/values` y `res/drawable`):
+- drawables usados en layout: `dialog_bg`, `important_box`, `button_gradient_green`, `ic_close_black_24dp`.
+- colores: `@color/text_primary`, `@color/text_secondary`, `@color/orange_500`, `@color/close_red`.
+- strings (mencionadas en el fragment):
+  - `whatsapp_number_display` (ej. texto corto que muestre el número con formato legible)
+  - `whatsapp_number` (sin espacios: el número internacional, p. ej. 593984280334)
+  - `whatsapp_message_template` (plantilla con placeholders para servicio y total)
+  - `agent_button_template` (plantilla del texto del botón que incluya el número legible)
+Si alguno falta, hay fallbacks en el código (valor por defecto del número y mensaje fallback).
+
+5) Flujo de ejecución (paso a paso)
+- Otra parte de la app crea el diálogo mediante `PurchaseCompleteDialogFragment.newInstance(service, total, user)` y lo muestra (ej. `show(...)`).
+- Al crearse el fragmento, `onCreate` lee los argumentos.
+- Al inflarse la vista (`onCreateView`): se actualiza el título si se recibió `service`; se formatea el texto del botón agente con el número visible; se asignan listeners:
+  - Close -> cierra el diálogo.
+  - Agent -> construye URL de WhatsApp y lanza Intent para abrirla.
+
+6) Casos límite y recomendaciones
+- Si WhatsApp no está instalado y el sistema no sabe abrir `https://wa.me/...`, Android abrirá el navegador web con esa URL; eso normalmente funciona. Si tampoco hay navegador, se captura la excepción y se muestra un Toast.
+- Validar que `whatsapp_number` esté en formato E.164 sin signos ni espacios (ej. "593984280334") para que `wa.me` funcione correctamente.
+- Si deseas abrir directamente la app de WhatsApp en lugar de la web, se podría usar un Intent con paquete `com.whatsapp` (requiere comprobar si está instalada).
+- Usar `Uri.encode(message)` es correcto para evitar problemas con caracteres especiales.
+- Asegurar que los recursos de strings estén traducidos si la app es multi-idioma.
+
+7) Cómo mejorar o extender
+- Añadir logs para monitorear errores al crear el Intent.
+- Mostrar un diálogo de confirmación si el usuario abre WhatsApp correctamente o si canceló.
+- Hacer el diálogo más accesible (contentDescription en botones, roles para TalkBack).
+- Añadir tests unitarios/Android tests que comprueben:
+  - Que los argumentos se lean correctamente.
+  - Que el botón cierra el diálogo.
+  - Que al pulsar el botón se construye la URL esperada (mockear Intents).
+
+8) Cómo reutilizar este componente
+- Llamar `PurchaseCompleteDialogFragment.newInstance(service, total, user)` desde cualquier Activity/Fragment y usar `show(parentFragmentManager, "purchase_complete")`.
+- Cambiar los drawables o estilos si quieres un look diferente.
+
+9) Prueba rápida (manual)
+- Ejecutar la app en un emulador o dispositivo.
+- Alcanzar la pantalla que dispara el diálogo (o crear un botón de test que haga `PurchaseCompleteDialogFragment.newInstance("Netflix", "4.00", "jeremias").show(supportFragmentManager, "pc")`).
+- Pulsar "Selecciona un agente" y verificar que se abra WhatsApp o el navegador con la URL `https://wa.me/...` y que el mensaje esté correctamente codificado.
+
+10) Resumen breve técnico
+- UI: `dialog_purchase_complete.xml` (LinearLayouts, TextViews, Button, ImageButton).
+- Lógica: `PurchaseCompleteDialogFragment.kt` (lectura de argumentos, formateo de texto, Intent para WhatsApp, manejo simple de errores).
+

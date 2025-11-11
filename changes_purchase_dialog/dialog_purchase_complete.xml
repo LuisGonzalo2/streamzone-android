@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@drawable/dialog_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tvCompleteTitle"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="¡Compra Registrada! 🎉"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="@color/text_primary" />
+
+        <ImageButton
+            android:id="@+id/btnCloseComplete"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close_black_24dp"
+            android:contentDescription="Cerrar"
+            android:tint="@color/close_red" />
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="12dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/important_box"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/tvObligatorioTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PASO OBLIGATORIO"
+            android:textStyle="bold"
+            android:textColor="@color/orange_500" />
+
+        <TextView
+            android:id="@+id/tvObligatorioText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Debes contactar por WhatsApp para confirmar tu compra y recibir las credenciales"
+            android:textColor="@color/text_secondary"
+            android:paddingTop="8dp" />
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="14dp" />
+
+    <TextView
+        android:id="@+id/tvSelectAgent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Selecciona un agente para continuar con tu compra:"
+        android:textColor="@color/text_secondary"
+        android:paddingBottom="8dp" />
+
+    <Button
+        android:id="@+id/btnAgent"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:background="@drawable/button_gradient_green"
+        android:text=""
+        android:textColor="@color/text_primary"
+        android:textStyle="bold"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp" />
+
+</LinearLayout>
+

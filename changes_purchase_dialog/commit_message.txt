@@ -1,0 +1,16 @@
+feat(purchase): mostrar diálogo de compra completada con enlace a WhatsApp
+
+Añadidos:
+- dialog_purchase_complete.xml (layout del diálogo de confirmación)
+- PurchaseCompleteDialogFragment.kt (DialogFragment que muestra el diálogo y abre WhatsApp)
+
+Modificados:
+- PurchaseDialogFragment.kt — al pulsar "Completar" ahora se muestra el diálogo de confirmación; se conserva un fallback que abre ReserveActivity si algo falla.
+
+Descripción:
+Mostrar una ventana que indica "¡Compra Registrada! 🎉" y obliga a contactar por WhatsApp al agente (número fijo +593 98 428 0334), abriendo WhatsApp/wa.me con un mensaje profesional y emojis.
+
+Notas de QA:
+- Probar en dispositivo con WhatsApp instalado y en emulador sin WhatsApp (debe abrir navegador con wa.me).
+- Parametrizar número y textos en `strings.xml` si se requiere soporte i18n.
+

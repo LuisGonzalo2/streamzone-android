@@ -1,0 +1,19 @@
+Lista de archivos añadidos y modificados (resumen)
+
+AÑADIDOS:
+- app/src/main/res/layout/dialog_purchase_complete.xml
+- app/src/main/java/com/universidad/streamzone/ui/home/PurchaseCompleteDialogFragment.kt
+- changes_purchase_dialog/summary.txt
+- changes_purchase_dialog/README.txt
+- changes_purchase_dialog/files_list.txt
+- changes_purchase_dialog/commit_message.txt
+- changes_purchase_dialog/instructions.txt
+- changes_purchase_dialog/t_copy.txt
+- t.txt (copia original en la raíz)
+
+MODIFICADOS:
+- app/src/main/java/com/universidad/streamzone/ui/home/PurchaseDialogFragment.kt
+
+Notas:
+- Revisa visualmente `dialog_purchase_complete.xml` para ajustar estilos si deseas un match pixel-perfect con la captura.
+

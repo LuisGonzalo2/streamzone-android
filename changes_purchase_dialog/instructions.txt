@@ -1,0 +1,27 @@
+Instrucciones para revisar, probar y commitear los cambios (Windows, cmd.exe)
+
+1) Ver los archivos creados/localizados:
+   - Abre el explorador o IDE y revisa: changes_purchase_dialog/* y los archivos en app/src/main/...
+
+2) Comprobar estado git y añadir cambios:
+   - Abre cmd.exe en la raíz del proyecto (C:\Users\Jere Guale\AndroidStudioProjects\streamzone-android)
+
+   Ejecuta:
+
+   git status
+   git add -A
+   git commit -m "feat(purchase): mostrar diálogo de compra completada con enlace a WhatsApp" -m "Añadidos: dialog_purchase_complete.xml, PurchaseCompleteDialogFragment.kt. Modificado: PurchaseDialogFragment.kt. Ver changes_purchase_dialog/commit_message.txt para más detalle."
+
+3) Ejecutar la app y probar el flujo:
+   - Ejecuta la app desde Android Studio en un dispositivo real o emulador.
+   - En la pantalla principal selecciona un servicio → abrirá el diálogo de compra.
+   - En el diálogo de compra pulsa "Completar" → debe aparecer el diálogo "¡Compra Registrada! 🎉".
+   - Pulsa en el botón del agente: debería abrir WhatsApp (si está instalado) o el navegador con https://wa.me/593984280334?text=...
+
+4) Opcional: parametrizar número y texto (recomendado):
+   - Mover el número y el texto del mensaje a `app/src/main/res/values/strings.xml` en lugar de tenerlos hardcodeados.
+
+5) Si quieres que haga el commit por ti aquí, permíteme intentar de nuevo (nota: la herramienta de terminal del entorno puede fallar; si falla te daré el comando para ejecutar localmente).
+
+6) Contacta si quieres que agregue varios agentes o que el número venga desde el servidor / configuración.
+

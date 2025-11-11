@@ -1,0 +1,26 @@
+Resumen de cambios implementados
+
+Objetivo
+- Al completar una compra, mostrar una ventana modal que indique que la compra fue registrada y pida contactar vía WhatsApp para confirmar y recibir credenciales; incluir el número +593 98 428 0334 y permitir al usuario abrir WhatsApp con un mensaje profesional y emojis.
+
+Qué se implementó
+1) Nuevo diálogo visual y fragmento que lo muestra:
+   - `app/src/main/res/layout/dialog_purchase_complete.xml` (nuevo layout para la ventana de compra registrada).
+   - `app/src/main/java/com/universidad/streamzone/ui/home/PurchaseCompleteDialogFragment.kt` (nuevo DialogFragment que maneja el botón del agente y abre WhatsApp con mensaje prellenado).
+
+2) Cambio de comportamiento en el flujo de compra existente:
+   - `app/src/main/java/com/universidad/streamzone/ui/home/PurchaseDialogFragment.kt` — al pulsar "Completar" ahora abre el nuevo diálogo de confirmación; mantenido fallback que abre `ReserveActivity` si algo falla.
+
+Detalles importantes
+- Número de WhatsApp usado: 593984280334 (se monta en enlace wa.me).
+- Mensaje predefinido en el Intent: "Hola 👋, he realizado una compra en StreamZone (servicio: <SERVICIO> - total: <TOTAL>). Por favor, Agente, acepte mi solicitud y confirme la activación. Muchas gracias 🙏✨"
+- Añadí `t.txt` (copiado en `changes_purchase_dialog/t_copy.txt`) con la descripción completa.
+
+Notas
+- No modifiqué recursos gráficos existentes salvo reutilizar drawables para que el diálogo nuevo se integre con el estilo actual.
+- Verifiqué que los archivos Kotlin añadidos/actualizados no muestran errores estáticos en la verificación rápida.
+
+Siguientes pasos recomendados
+- Parametrizar el número y el texto en `strings.xml` para permitir traducciones y cambios sin editar código.
+- Si quieres, añadir la lista de agentes y mostrar varios botones en el diálogo en lugar de un único agente.
+

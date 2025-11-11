@@ -49,6 +49,9 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    // Image loading (Coil) para cargar logos remotos/locales en los diálogos
+    implementation("io.coil-kt:coil:2.7.0")
+
     // Firebase BOM - Plataforma (actualizada a 33.6.0)
     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
 

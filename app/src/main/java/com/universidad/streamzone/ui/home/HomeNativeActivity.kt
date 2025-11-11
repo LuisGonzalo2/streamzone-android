@@ -147,13 +147,17 @@ class HomeNativeActivity : AppCompatActivity() {
 
     private fun onReserve(service: Service) {
         Log.d("HomeNativeActivity", "Reserva iniciada: ${service.id} - ${service.title}")
-        val intent = Intent(this, ReserveActivity::class.java)
-        intent.putExtra("SERVICE_ID", service.id)
-        intent.putExtra("SERVICE_TITLE", service.title)
-        intent.putExtra("SERVICE_PRICE", service.price)
-        intent.putExtra("SERVICE_DESC", service.desc)
-        intent.putExtra("USER_FULLNAME", currentUser)
-        startActivity(intent)
+        // En lugar de abrir directamente ReserveActivity, mostrar el diálogo de compra
+        val dlg = PurchaseDialogFragment.newInstance(
+            service.id,
+            service.title,
+            service.price,
+            service.desc,
+            currentUser,
+            null,
+            service.iconRes
+        )
+        dlg.show(supportFragmentManager, "purchaseDialog")
     }
 
     private fun showToast(message: String) {

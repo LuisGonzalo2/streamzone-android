@@ -1,30 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Colores base de Android -->
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="bg_dark">#0F1720</color>
+    <color name="bg_card">#11202B</color>
+    <color name="surface">#0B1A24</color>
+    <color name="accent_start">#6C5CE7</color>
+    <color name="accent_end">#4A90E2</color>
+    <color name="muted">#98A0AA</color>
+    <color name="white">#FFFFFF</color>
+    <color name="warning">#FFB020</color>
+    <color name="outline">#2A3B46</color>
 
-    <!-- Colores del diseño oscuro -->
-    <color name="dark_background">#0D1B2A</color>
-    <color name="dark_card_background">#1B263B</color>
-    <color name="purple_accent">#A855F7</color>
+    <!-- Colores añadidos para compatibilidad con layouts existentes -->
+    <color name="dark_card_background">#0F1A22</color>
+    <color name="card_border">#22313A</color>
+    <color name="brand_purple">#6C5CE7</color>
+    <color name="brand_blue">#4A90E2</color>
+    <color name="brand_pink">#FF6FA8</color>
+    <color name="purple_accent">#7458E8</color>
+
+    <!-- Naranja (material) usados en varios layouts -->
+    <color name="orange_300">#FFB74D</color>
+    <color name="orange_500">#FB8C00</color>
+    <color name="orange_700">#F57C00</color>
+
     <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#94A3B8</color>
-    <color name="text_hint">#64748B</color>
-    <color name="input_background">#334155</color>
-    <color name="green_accent">#10B981</color>
+    <color name="text_secondary">#98A0AA</color>
+    <color name="text_hint">#7E8A92</color>
+    <color name="input_background">#0E232B</color>
 
-    <!-- jere: color para overlays y placeholders en layouts -->
-    <color name="black_overlay">#1A000000</color>
-
-    <!-- Colores de marca añadidos (// jere) -->
-    <color name="brand_blue">#2563EB</color>
-    <color name="brand_blue_light">#3B82F6</color>
-    <color name="brand_purple">#9333EA</color>
-    <color name="brand_pink">#EC4899</color>
-    <color name="card_border">#223047</color>
+    <!-- Color para la X del diálogo de compra completa -->
+    <color name="close_red">#FF3B30</color>
 </resources>

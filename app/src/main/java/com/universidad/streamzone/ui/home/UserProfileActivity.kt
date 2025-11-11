@@ -23,7 +23,7 @@ class UserProfileActivity : AppCompatActivity() {
     private lateinit var btnEditProfile: Button
     private lateinit var btnLogout: Button
 
-    // ✅ NUEVAS VARIABLES DECLARADAS
+    // NUEVAS VARIABLES DECLARADAS
     private lateinit var tvFullName: TextView
     private lateinit var tvPhone: TextView
     private lateinit var tvPersonalEmail: TextView
@@ -46,7 +46,7 @@ class UserProfileActivity : AppCompatActivity() {
         btnEditProfile = findViewById(R.id.btn_edit_profile)
         btnLogout = findViewById(R.id.btn_logout)
 
-        // ✅ NUEVAS REFERENCIAS para la sección de información personal
+        // NUEVAS REFERENCIAS para la sección de información personal
         tvFullName = findViewById(R.id.tv_full_name)
         tvPhone = findViewById(R.id.tv_phone)
         tvPersonalEmail = findViewById(R.id.tv_personal_email)
@@ -57,7 +57,7 @@ class UserProfileActivity : AppCompatActivity() {
         val userName = sharedPrefs.getString("logged_in_user_name", "Usuario")
         val userEmail = sharedPrefs.getString("logged_in_user_email", "usuario@email.com")
 
-        // ✅ ACTUALIZAR TODAS LAS SECCIONES
+        // ACTUALIZAR TODAS LAS SECCIONES
         tvUserName.text = userName ?: "Usuario"
         tvUserEmail.text = userEmail ?: "usuario@email.com"
         tvFullName.text = userName ?: "No disponible"

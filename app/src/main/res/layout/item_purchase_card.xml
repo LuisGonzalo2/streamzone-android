@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="#1E293B">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header: Servicio y Estado -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Icono del servicio -->
+            <TextView
+                android:id="@+id/tv_service_icon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="📺"
+                android:textSize="32sp"
+                android:gravity="center"
+                android:background="@drawable/rounded_circle"
+                android:layout_marginEnd="12dp" />
+
+            <!-- Nombre y precio -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_service_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Netflix Premium"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_service_price"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="US$ 4,00 /mes"
+                    android:textColor="#94A3B8"
+                    android:textSize="14sp"
+                    android:layout_marginTop="2dp" />
+
+            </LinearLayout>
+
+            <!-- Badge de estado -->
+            <TextView
+                android:id="@+id/tv_status_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⏳ Pendiente"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:background="@drawable/badge_pending"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp" />
+
+        </LinearLayout>
+
+        <!-- Divisor -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#334155"
+            android:layout_marginVertical="12dp" />
+
+        <!-- Información de la compra -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Fecha de compra -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="6dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="📅 Comprado:"
+                    android:textColor="#94A3B8"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_purchase_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="11 Nov 2025"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Fecha de expiración -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="6dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="⏰ Vence:"
+                    android:textColor="#94A3B8"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_expiration_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="11 Dic 2025"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Duración -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="⏱️ Duración:"
+                    android:textColor="#94A3B8"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1 mes"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Credenciales (solo visible si status = active) -->
+        <LinearLayout
+            android:id="@+id/credentials_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/important_box"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔑 Credenciales"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Email -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Email:"
+                    android:textColor="#94A3B8"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_credential_email"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="usuario@netflix.com"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <Button
+                    android:id="@+id/btn_copy_email"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:text="📋"
+                    android:textSize="16sp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_marginStart="4dp" />
+
+            </LinearLayout>
+
+            <!-- Password -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Contraseña:"
+                    android:textColor="#94A3B8"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_credential_password"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="••••••••"
+                    android:textColor="@color/white"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btn_copy_password"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:text="📋"
+                    android:textSize="16sp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:layout_marginStart="4dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Mensaje si está pendiente -->
+        <TextView
+            android:id="@+id/tv_pending_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⏳ Esperando credenciales. Contacta al agente por WhatsApp."
+            android:textColor="#F59E0B"
+            android:textSize="12sp"
+            android:layout_marginTop="12dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

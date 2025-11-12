@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.model.Category
 import com.universidad.streamzone.ui.auth.LoginActivity
+import com.universidad.streamzone.ui.category.CategoryActivity
 import com.universidad.streamzone.ui.home.adapter.CategoryCardAdapter
 import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
 
@@ -156,8 +157,11 @@ class HomeNativeActivity : AppCompatActivity() {
     }
 
     private fun onCategoryClick(category: Category) {
-        // TODO: Abrir CategoryActivity con los servicios de esta categoría
-        Toast.makeText(this, "Abriendo categoría: ${category.name}", Toast.LENGTH_SHORT).show()
+        val intent = Intent(this, CategoryActivity::class.java)
+        intent.putExtra("CATEGORY_NAME", category.name)
+        intent.putExtra("CATEGORY_ICON", category.icon)
+        intent.putStringArrayListExtra("SERVICE_IDS", ArrayList(category.serviceIds))
+        startActivity(intent)
     }
 
     private fun cerrarSesion() {

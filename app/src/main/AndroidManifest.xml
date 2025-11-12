@@ -68,6 +68,11 @@
             android:name=".ui.home.UserProfileActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <!-- Pantalla de servicios por categoría -->
+        <activity
+            android:name=".ui.category.CategoryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

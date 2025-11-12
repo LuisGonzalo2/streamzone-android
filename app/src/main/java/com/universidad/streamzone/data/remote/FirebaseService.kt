@@ -5,6 +5,7 @@ import android.os.Looper
 import android.util.Log
 import com.universidad.streamzone.data.model.UsuarioEntity
 import com.google.firebase.firestore.FirebaseFirestore
+import com.universidad.streamzone.data.model.PurchaseEntity
 
 object FirebaseService {
     private val db = FirebaseFirestore.getInstance()
@@ -150,6 +151,76 @@ object FirebaseService {
             }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Error al obtener usuarios", e)
+                callback(emptyList())
+            }
+    }
+
+    // ========================================
+    // GESTIÓN DE COMPRAS
+    // ========================================
+
+    fun guardarCompra(purchase: PurchaseEntity, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
+        try {
+            Log.d(TAG, "Guardando compra en Firebase: ${purchase.serviceName} para ${purchase.userEmail}")
+
+            val data = hashMapOf(
+                "userEmail" to purchase.userEmail,
+                "userName" to purchase.userName,
+                "serviceId" to purchase.serviceId,
+                "serviceName" to purchase.serviceName,
+                "servicePrice" to purchase.servicePrice,
+                "serviceDuration" to purchase.serviceDuration,
+                "email" to purchase.email,
+                "password" to purchase.password,
+                "purchaseDate" to purchase.purchaseDate,
+                "expirationDate" to purchase.expirationDate,
+                "status" to purchase.status
+            )
+
+            db.collection("purchases")
+                .add(data)
+                .addOnSuccessListener { documentReference ->
+                    Log.d(TAG, "Compra guardada en Firestore con ID: ${documentReference.id}")
+                    onSuccess(documentReference.id)
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Error al guardar compra en Firestore", e)
+                    onFailure(e)
+                }
+        } catch (e: Exception) {
+            Log.e(TAG, "Excepción al guardar compra", e)
+            onFailure(e)
+        }
+    }
+
+    fun obtenerComprasPorUsuario(email: String, callback: (List<PurchaseEntity>) -> Unit) {
+        db.collection("purchases")
+            .whereEqualTo("userEmail", email)
+            .orderBy("purchaseDate", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { result ->
+                val compras = result.map { doc ->
+                    PurchaseEntity(
+                        id = 0,
+                        userEmail = doc.getString("userEmail") ?: "",
+                        userName = doc.getString("userName") ?: "",
+                        serviceId = doc.getString("serviceId") ?: "",
+                        serviceName = doc.getString("serviceName") ?: "",
+                        servicePrice = doc.getString("servicePrice") ?: "",
+                        serviceDuration = doc.getString("serviceDuration") ?: "",
+                        email = doc.getString("email"),
+                        password = doc.getString("password"),
+                        purchaseDate = doc.getLong("purchaseDate") ?: 0L,
+                        expirationDate = doc.getLong("expirationDate") ?: 0L,
+                        status = doc.getString("status") ?: "active",
+                        sincronizado = true,
+                        firebaseId = doc.id
+                    )
+                }
+                callback(compras)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error al obtener compras", e)
                 callback(emptyList())
             }
     }

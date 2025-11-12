@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import com.universidad.streamzone.data.model.PurchaseEntity
+import com.universidad.streamzone.data.model.ServicioPopular
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -43,4 +44,15 @@ interface PurchaseDao {
     // Eliminar compras expiradas
     @Query("DELETE FROM purchases WHERE expirationDate < :timestamp AND status = 'expired'")
     suspend fun eliminarExpiradas(timestamp: Long)
+
+    // Obtener los servicios más populares (top 3 más vendidos)
+    @Query("""
+    SELECT serviceId, serviceName, servicePrice, COUNT(*) as purchaseCount
+    FROM purchases
+    WHERE status IN ('active', 'pending')
+    GROUP BY serviceId
+    ORDER BY purchaseCount DESC
+    LIMIT 3
+""")
+    suspend fun obtenerServiciosMasPopulares(): List<ServicioPopular>
 }

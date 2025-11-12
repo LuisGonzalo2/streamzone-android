@@ -3,6 +3,7 @@ package com.universidad.streamzone.ui.home
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
@@ -19,7 +20,10 @@ import com.universidad.streamzone.ui.auth.LoginActivity
 import com.universidad.streamzone.ui.category.CategoryActivity
 import com.universidad.streamzone.ui.home.adapter.CategoryCardAdapter
 import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
-
+import androidx.lifecycle.lifecycleScope
+import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.model.ServicioPopular
+import kotlinx.coroutines.launch
 class HomeNativeActivity : AppCompatActivity() {
 
     private lateinit var rvCategories: RecyclerView
@@ -100,6 +104,12 @@ class HomeNativeActivity : AppCompatActivity() {
             insets
         }
 
+        // DEBUG: Verificar que los views existen
+        Log.d("HomeNative", "Netflix card: ${findViewById<View>(R.id.card_popular_netflix) != null}")
+        Log.d("HomeNative", "Spotify card: ${findViewById<View>(R.id.card_popular_spotify) != null}")
+        Log.d("HomeNative", "Disney card: ${findViewById<View>(R.id.card_popular_disney) != null}")
+
+
         setupViews()
         setupCategoriesRecyclerView()
         setupPopularServices()
@@ -135,35 +145,29 @@ class HomeNativeActivity : AppCompatActivity() {
         rvCategories.adapter = adapter
     }
     private fun setupPopularServices() {
-        // Lista de servicios populares (puedes hacerlo dinámico después)
-        val popularServices = listOf(
-            Service(
-                "netflix",
-                "Netflix",
-                "US$ 4,00 /mes",
-                "Acceso inmediato",
-                R.drawable.rounded_square_netflix
-            ),
-            Service("spotify", "Spotify", "US$ 3,50 /mes", "Acceso inmediato", R.drawable.rounded_square_spotify),
-            Service("disney_plus_premium", "Disney+ Premium", "US$ 3,75 /mes", "Acceso inmediato", R.drawable.rounded_square_disney_premium)
-        )
+        // Servicios por defecto
+        val netflix = Service("netflix", "Netflix", "US$ 4,00 /mes", "Acceso inmediato", R.drawable.rounded_square_netflix)
+        val spotify = Service("spotify", "Spotify", "US$ 3,50 /mes", "Acceso inmediato", R.drawable.rounded_square_spotify)
+        val disney = Service("disney_plus_premium", "Disney+ Premium", "US$ 3,75 /mes", "Acceso inmediato", R.drawable.rounded_square_disney_premium)
 
-        // Netflix
+        // Configurar clicks directamente
         findViewById<View>(R.id.card_popular_netflix).setOnClickListener {
-            openPurchaseDialog(popularServices[0])
+            Log.d("HomeNative", "Click en Netflix")
+            openPurchaseDialog(netflix)
         }
 
-        // Spotify
         findViewById<View>(R.id.card_popular_spotify).setOnClickListener {
-            openPurchaseDialog(popularServices[1])
+            Log.d("HomeNative", "Click en Spotify")
+            openPurchaseDialog(spotify)
         }
 
-        // Disney+
         findViewById<View>(R.id.card_popular_disney).setOnClickListener {
-            openPurchaseDialog(popularServices[2])
+            Log.d("HomeNative", "Click en Disney")
+            openPurchaseDialog(disney)
         }
-    }
 
+        Log.d("HomeNative", "Listeners configurados para servicios populares")
+    }
     private fun openPurchaseDialog(service: Service) {
         val dlg = PurchaseDialogFragment.newInstance(
             service.id,
@@ -176,6 +180,8 @@ class HomeNativeActivity : AppCompatActivity() {
         )
         dlg.show(supportFragmentManager, "purchaseDialog")
     }
+
+
 
     private fun setupBottomNavbar() {
         // Botón Home

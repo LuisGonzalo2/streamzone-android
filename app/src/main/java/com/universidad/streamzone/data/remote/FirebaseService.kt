@@ -224,4 +224,71 @@ object FirebaseService {
                 callback(emptyList())
             }
     }
+
+    // ACTUALIZAR USUARIO
+    fun actualizarUsuario(usuario: UsuarioEntity, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        try {
+            if (usuario.firebaseId.isNullOrEmpty()) {
+                Log.w(TAG, "Usuario no tiene firebaseId, buscando por email...")
+                // Buscar el documento por email
+                db.collection("usuarios")
+                    .whereEqualTo("email", usuario.email)
+                    .get()
+                    .addOnSuccessListener { documents ->
+                        if (documents.isEmpty) {
+                            Log.w(TAG, "Usuario no encontrado en Firebase, creando nuevo...")
+                            // Si no existe, crearlo (adaptar callback)
+                            guardarUsuario(
+                                usuario,
+                                onSuccess = { firebaseId ->
+                                    Log.d(TAG, "Usuario creado con ID: $firebaseId")
+                                    onSuccess()
+                                },
+                                onFailure = onFailure
+                            )
+                        } else {
+                            // Actualizar el existente
+                            val docId = documents.documents[0].id
+                            actualizarUsuarioPorId(docId, usuario, onSuccess, onFailure)
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Error al buscar usuario", e)
+                        onFailure(e)
+                    }
+            } else {
+                // Ya tiene firebaseId, actualizar directamente
+                actualizarUsuarioPorId(usuario.firebaseId!!, usuario, onSuccess, onFailure)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Excepción al actualizar usuario", e)
+            onFailure(e)
+        }
+    }
+
+    private fun actualizarUsuarioPorId(
+        docId: String,
+        usuario: UsuarioEntity,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        val data = hashMapOf(
+            "fullname" to usuario.fullname,
+            "email" to usuario.email,
+            "phone" to usuario.phone,
+            "password" to usuario.password
+        )
+
+        db.collection("usuarios")
+            .document(docId)
+            .update(data as Map<String, Any>)
+            .addOnSuccessListener {
+                Log.d(TAG, "Usuario actualizado en Firestore con ID: $docId")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error al actualizar usuario en Firestore", e)
+                onFailure(e)
+            }
+    }
 }

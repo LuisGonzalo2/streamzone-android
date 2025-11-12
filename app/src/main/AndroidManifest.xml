@@ -73,6 +73,11 @@
             android:name=".ui.category.CategoryActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <!-- Editar perfil -->
+        <activity
+            android:name=".ui.profile.EditProfileActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.ui.auth.LoginActivity
+import com.universidad.streamzone.ui.profile.EditProfileActivity
 import com.universidad.streamzone.ui.profile.adapter.PurchaseCardAdapter
 import kotlinx.coroutines.launch
 
@@ -35,6 +36,8 @@ class UserProfileActivity : AppCompatActivity() {
     // Compras
     private lateinit var rvPurchases: RecyclerView
     private lateinit var emptyPurchasesContainer: LinearLayout
+
+    private val EDIT_PROFILE_REQUEST = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -182,14 +185,23 @@ class UserProfileActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         btnEditProfile.setOnClickListener {
-            Toast.makeText(this, "Próximamente: Editar Perfil", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, EditProfileActivity::class.java)
+            startActivityForResult(intent, EDIT_PROFILE_REQUEST)
         }
+
 
         btnLogout.setOnClickListener {
             logout()
         }
     }
-
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == EDIT_PROFILE_REQUEST && resultCode == RESULT_OK) {
+            // Recargar datos del perfil
+            loadUserData()
+            Toast.makeText(this, "Perfil actualizado", Toast.LENGTH_SHORT).show()
+        }
+    }
     private fun setupBottomNavbar() {
         // Botón Home - Solo cerrar esta actividad
         findViewById<View>(R.id.btn_home).setOnClickListener {

@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.model.Category
+import com.universidad.streamzone.data.model.Service
 import com.universidad.streamzone.ui.auth.LoginActivity
 import com.universidad.streamzone.ui.category.CategoryActivity
 import com.universidad.streamzone.ui.home.adapter.CategoryCardAdapter
@@ -101,6 +102,7 @@ class HomeNativeActivity : AppCompatActivity() {
 
         setupViews()
         setupCategoriesRecyclerView()
+        setupPopularServices()
         setupBottomNavbar()
     }
 
@@ -131,6 +133,48 @@ class HomeNativeActivity : AppCompatActivity() {
             onCategoryClick(category)
         }
         rvCategories.adapter = adapter
+    }
+    private fun setupPopularServices() {
+        // Lista de servicios populares (puedes hacerlo dinámico después)
+        val popularServices = listOf(
+            Service(
+                "netflix",
+                "Netflix",
+                "US$ 4,00 /mes",
+                "Acceso inmediato",
+                R.drawable.rounded_square_netflix
+            ),
+            Service("spotify", "Spotify", "US$ 3,50 /mes", "Acceso inmediato", R.drawable.rounded_square_spotify),
+            Service("disney_plus_premium", "Disney+ Premium", "US$ 3,75 /mes", "Acceso inmediato", R.drawable.rounded_square_disney_premium)
+        )
+
+        // Netflix
+        findViewById<View>(R.id.card_popular_netflix).setOnClickListener {
+            openPurchaseDialog(popularServices[0])
+        }
+
+        // Spotify
+        findViewById<View>(R.id.card_popular_spotify).setOnClickListener {
+            openPurchaseDialog(popularServices[1])
+        }
+
+        // Disney+
+        findViewById<View>(R.id.card_popular_disney).setOnClickListener {
+            openPurchaseDialog(popularServices[2])
+        }
+    }
+
+    private fun openPurchaseDialog(service: Service) {
+        val dlg = PurchaseDialogFragment.newInstance(
+            service.id,
+            service.title,
+            service.price,
+            service.desc,
+            currentUser,
+            null,
+            service.iconRes
+        )
+        dlg.show(supportFragmentManager, "purchaseDialog")
     }
 
     private fun setupBottomNavbar() {

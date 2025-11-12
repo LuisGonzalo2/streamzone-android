@@ -6,14 +6,20 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.ui.auth.LoginActivity
+import com.universidad.streamzone.ui.profile.adapter.PurchaseCardAdapter
 import kotlinx.coroutines.launch
+
 
 class UserProfileActivity : AppCompatActivity() {
 
@@ -22,20 +28,46 @@ class UserProfileActivity : AppCompatActivity() {
     private lateinit var tvUserEmail: TextView
     private lateinit var btnEditProfile: Button
     private lateinit var btnLogout: Button
-
-    // NUEVAS VARIABLES DECLARADAS
     private lateinit var tvFullName: TextView
     private lateinit var tvPhone: TextView
     private lateinit var tvPersonalEmail: TextView
+
+    // Compras
+    private lateinit var rvPurchases: RecyclerView
+    private lateinit var emptyPurchasesContainer: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_profile)
 
+        // Configurar padding para el notch
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(false)
+        }
+
+        // Aplicar padding superior al ScrollView
+        val scrollView = findViewById<ScrollView>(R.id.profile_scroll_view)
+        scrollView?.setOnApplyWindowInsetsListener { view, insets ->
+            val systemBars = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                insets.getInsets(android.view.WindowInsets.Type.systemBars())
+            } else {
+                @Suppress("DEPRECATION")
+                android.graphics.Insets.of(0, insets.systemWindowInsetTop, 0, 0)
+            }
+            view.setPadding(
+                view.paddingLeft,
+                systemBars.top + 16,
+                view.paddingRight,
+                view.paddingBottom
+            )
+            insets
+        }
+
         sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
 
         initViews()
         loadUserData()
+        loadPurchases()
         setupClickListeners()
         setupBottomNavbar()
     }
@@ -45,25 +77,23 @@ class UserProfileActivity : AppCompatActivity() {
         tvUserEmail = findViewById(R.id.tv_user_email)
         btnEditProfile = findViewById(R.id.btn_edit_profile)
         btnLogout = findViewById(R.id.btn_logout)
-
-        // NUEVAS REFERENCIAS para la sección de información personal
         tvFullName = findViewById(R.id.tv_full_name)
         tvPhone = findViewById(R.id.tv_phone)
         tvPersonalEmail = findViewById(R.id.tv_personal_email)
+
+        rvPurchases = findViewById(R.id.rv_purchases)
+        emptyPurchasesContainer = findViewById(R.id.empty_purchases_container)
     }
 
     private fun loadUserData() {
-        // Cargar datos básicos desde SharedPreferences
         val userName = sharedPrefs.getString("logged_in_user_name", "Usuario")
         val userEmail = sharedPrefs.getString("logged_in_user_email", "usuario@email.com")
 
-        // ACTUALIZAR TODAS LAS SECCIONES
         tvUserName.text = userName ?: "Usuario"
         tvUserEmail.text = userEmail ?: "usuario@email.com"
         tvFullName.text = userName ?: "No disponible"
         tvPersonalEmail.text = userEmail ?: "No disponible"
 
-        // Cargar datos completos desde la base de datos (incluyendo teléfono)
         if (!userEmail.isNullOrEmpty()) {
             loadUserDetailsFromDatabase(userEmail)
         }
@@ -76,21 +106,78 @@ class UserProfileActivity : AppCompatActivity() {
                 val usuario = dao.buscarPorEmail(userEmail)
 
                 usuario?.let { user ->
-                    // Actualizar la UI con los datos completos del usuario
                     runOnUiThread {
                         tvUserName.text = user.fullname
                         tvUserEmail.text = user.email
                         tvFullName.text = user.fullname
                         tvPersonalEmail.text = user.email
                         tvPhone.text = user.phone ?: "No registrado"
-
-                        Log.d("UserProfile", "Datos cargados: ${user.fullname} - ${user.email} - ${user.phone}")
                     }
                 }
             } catch (e: Exception) {
                 Log.e("UserProfile", "Error al cargar datos del usuario", e)
             }
         }
+    }
+
+    private fun loadPurchases() {
+        val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
+
+        if (userEmail.isEmpty()) {
+            showEmptyState()
+            return
+        }
+
+        lifecycleScope.launch {
+            try {
+                val dao = AppDatabase.getInstance(this@UserProfileActivity).purchaseDao()
+
+                // Cancelar automáticamente cuando la actividad se destruye
+                dao.obtenerComprasPorUsuario(userEmail).collect { purchases ->
+                    if (isDestroyed || isFinishing) return@collect
+
+                    runOnUiThread {
+                        if (purchases.isEmpty()) {
+                            showEmptyState()
+                        } else {
+                            showPurchases(purchases)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignorar errores de cancelación
+                if (e is kotlinx.coroutines.CancellationException) {
+                    Log.d("UserProfile", "Carga de compras cancelada (normal)")
+                } else {
+                    Log.e("UserProfile", "Error al cargar compras", e)
+                    if (!isDestroyed && !isFinishing) {
+                        runOnUiThread {
+                            showEmptyState()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showPurchases(purchases: List<com.universidad.streamzone.data.model.PurchaseEntity>) {
+        rvPurchases.visibility = View.VISIBLE
+        emptyPurchasesContainer.visibility = View.GONE
+
+        rvPurchases.layoutManager = LinearLayoutManager(this)
+        val adapter = PurchaseCardAdapter(purchases) { purchase ->
+            Toast.makeText(
+                this,
+                "Compra: ${purchase.serviceName}",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+        rvPurchases.adapter = adapter
+    }
+
+    private fun showEmptyState() {
+        rvPurchases.visibility = View.GONE
+        emptyPurchasesContainer.visibility = View.VISIBLE
     }
 
     private fun setupClickListeners() {
@@ -101,50 +188,26 @@ class UserProfileActivity : AppCompatActivity() {
         btnLogout.setOnClickListener {
             logout()
         }
-
-
-        // Botones "Mostrar" contraseña (simulados)
-        setupPasswordButtons()
-    }
-
-    private fun setupPasswordButtons() {
-        // Simular funcionalidad de mostrar/ocultar contraseña
-        val btnShowPassword1 = findViewById<Button>(R.id.btn_show_password_1)
-        val btnShowPassword2 = findViewById<Button>(R.id.btn_show_password_2)
-
-        btnShowPassword1?.setOnClickListener {
-            Toast.makeText(this, "Contraseña: crunchy123", Toast.LENGTH_SHORT).show()
-        }
-
-        btnShowPassword2?.setOnClickListener {
-            Toast.makeText(this, "Contraseña: amazon123", Toast.LENGTH_SHORT).show()
-        }
     }
 
     private fun setupBottomNavbar() {
-        // Botón Home - Regresar al home
-        val btnHome = findViewById<View>(R.id.btn_home)
-        btnHome.setOnClickListener {
-            val intent = Intent(this, HomeNativeActivity::class.java)
-            startActivity(intent)
+        // Botón Home - Solo cerrar esta actividad
+        findViewById<View>(R.id.btn_home).setOnClickListener {
             finish()
         }
 
         // Botón Regalos
-        val btnGift = findViewById<View>(R.id.btn_gift)
-        btnGift.setOnClickListener {
+        findViewById<View>(R.id.btn_gift).setOnClickListener {
             Toast.makeText(this, "Próximamente: Sección de Regalos", Toast.LENGTH_SHORT).show()
         }
 
-        // Botón Perfil - Ya estamos en perfil
-        val btnProfile = findViewById<View>(R.id.btn_profile)
-        btnProfile.setOnClickListener {
+        // Botón Perfil - Ya estamos aquí
+        findViewById<View>(R.id.btn_profile).setOnClickListener {
             Toast.makeText(this, "Ya estás en tu perfil", Toast.LENGTH_SHORT).show()
         }
 
         // Botón Cerrar Sesión
-        val btnLogoutNav = findViewById<View>(R.id.btn_logout_nav)
-        btnLogoutNav.setOnClickListener {
+        findViewById<View>(R.id.btn_logout_nav).setOnClickListener {
             logout()
         }
     }

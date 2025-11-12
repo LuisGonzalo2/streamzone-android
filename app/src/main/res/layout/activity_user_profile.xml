@@ -7,6 +7,7 @@
 
     <!-- 📱 Contenido principal -->
     <ScrollView
+        android:id="@+id/profile_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:padding="16dp"
@@ -115,7 +116,7 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- 👤 SECCIÓN: INFORMACIÓN PERSONAL (como en tus fotos) -->
+            <!-- 👤 SECCIÓN: INFORMACIÓN PERSONAL -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -227,328 +228,72 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- 🛍️ SECCIÓN: MIS COMPRAS ACTIVAS -->
+            <!-- Divisor -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#334155"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- 🛍️ SECCIÓN: MIS COMPRAS -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Mis Compras Activas"
+                android:text="📦 Mis Compras"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="12dp" />
 
-            <!-- Tarjeta de Compra Activa 1 - Crunchyroll -->
-            <androidx.cardview.widget.CardView
+            <!-- RecyclerView de compras REALES -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_purchases"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/dark_card_background">
+                android:nestedScrollingEnabled="false"
+                android:clipToPadding="false" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <!-- Header de la compra -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Crunchyroll"
-                            android:textColor="@color/white"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="1 mes · Activo"
-                            android:textColor="#10B981"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-
-                    </LinearLayout>
-
-                    <!-- Días restantes -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="25 días restantes"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="8dp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Vence en menos de un mes"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:layout_marginTop="4dp" />
-
-                    <!-- Fechas -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="12dp"
-                        android:weightSum="2">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Inicio 29/10/25"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Vence 28/11/25"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp"
-                            android:gravity="end" />
-
-                    </LinearLayout>
-
-                    <!-- Credenciales -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Credenciales"
-                        android:textColor="@color/purple_accent"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="16dp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Email"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:layout_marginTop="8dp" />
-
-                    <TextView
-                        android:id="@+id/tv_crunchyroll_email"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="crunchy563@tecnoxz.com"
-                        android:textColor="@color/white"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="4dp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Contraseña"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:layout_marginTop="12dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:id="@+id/tv_crunchyroll_password"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="••••••••"
-                            android:textColor="@color/white"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <Button
-                            android:id="@+id/btn_show_password_1"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Mostrar"
-                            android:textSize="12sp"
-                            android:background="@android:color/transparent"
-                            android:textColor="@color/purple_accent" />
-
-                    </LinearLayout>
-
-                    <!-- Información importante -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Información importante: Pedir Código con el proveedor"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:layout_marginTop="16dp"
-                        android:padding="8dp"
-                        android:background="#1E293B" />
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
-
-            <!-- Tarjeta de Compra Activa 2 - Prime Video -->
-            <androidx.cardview.widget.CardView
+            <!-- Mensaje cuando no hay compras -->
+            <LinearLayout
+                android:id="@+id/empty_purchases_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/dark_card_background">
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:text="🛒"
+                    android:textSize="64sp"
+                    android:layout_marginBottom="16dp" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="No tienes compras aún"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Prime Video"
-                            android:textColor="@color/white"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Explora nuestros servicios y realiza tu primera compra"
+                    android:textColor="#94A3B8"
+                    android:textSize="14sp"
+                    android:gravity="center" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="1 mes · Activo"
-                            android:textColor="#10B981"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+            </LinearLayout>
 
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="25 días restantes"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="8dp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Vence en menos de un mes"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:layout_marginTop="4dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="12dp"
-                        android:weightSum="2">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Inicio 29/10/25"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Vence 28/11/25"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp"
-                            android:gravity="end" />
-
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Credenciales"
-                        android:textColor="@color/purple_accent"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="16dp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Email"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:layout_marginTop="8dp" />
-
-                    <TextView
-                        android:id="@+id/tv_prime_email"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="jere12345.amazon@gmail.com"
-                        android:textColor="@color/white"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="4dp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Contraseña"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:layout_marginTop="12dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:id="@+id/tv_prime_password"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="••••••••"
-                            android:textColor="@color/white"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <Button
-                            android:id="@+id/btn_show_password_2"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Mostrar"
-                            android:textSize="12sp"
-                            android:background="@android:color/transparent"
-                            android:textColor="@color/purple_accent" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
+            <!-- Espaciador final -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="80dp" />
 
         </LinearLayout>
 

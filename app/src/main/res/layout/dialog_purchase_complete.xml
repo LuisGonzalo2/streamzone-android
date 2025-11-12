@@ -24,7 +24,7 @@
             android:textColor="@color/text_primary" />
 
         <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/btnCloseComplete"
+            android:id="@+id/btn_close"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:background="?attr/selectableItemBackgroundBorderless"
@@ -55,7 +55,7 @@
             android:textColor="@color/orange_500" />
 
         <TextView
-            android:id="@+id/tvObligatorioText"
+            android:id="@+id/tv_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Debes contactar por WhatsApp para confirmar tu compra y recibir las credenciales"
@@ -76,14 +76,15 @@
         android:paddingBottom="8dp" />
 
     <Button
-        android:id="@+id/btnAgent"
+        android:id="@+id/btn_whatsapp"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:background="@drawable/button_gradient_green"
-        android:text=""
-        android:textColor="@color/text_primary"
+        android:text="📱 Contactar por WhatsApp"
+        android:textColor="@color/white"
         android:textStyle="bold"
         android:paddingLeft="8dp"
-        android:paddingRight="8dp" />
+        android:paddingRight="8dp"
+        android:textAllCaps="false" />
 
 </LinearLayout>

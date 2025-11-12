@@ -107,4 +107,13 @@
     <!-- Alias sin parent para evitar ciclo implícito con Purchase.DialogBase -->
     <style name="Purchase" />
 
+    <!-- Estilo para diálogos de pantalla completa -->
+    <style name="FullScreenDialog" parent="Theme.AppCompat.Light.Dialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowCloseOnTouchOutside">false</item>
+    </style>
+
 </resources>

@@ -145,7 +145,6 @@ class PurchaseDialogFragment : DialogFragment() {
         val btnCancel = root.findViewById<Button>(R.id.btnCancel)
         val btnComplete = root.findViewById<Button>(R.id.btnComplete)
         val tvImportantText = root.findViewById<TextView>(R.id.tvImportantText)
-        // Icono superpuesto eliminado del layout
 
         // Set initial texts
         tvServiceName.text = serviceTitle
@@ -161,7 +160,7 @@ class PurchaseDialogFragment : DialogFragment() {
                     if (iconResId != 0) {
                         iv.setBackgroundResource(iconResId)
                     } else {
-                        val bgName = "rounded_square_${serviceId.lowercase(Locale.ROOT).replace("\\s+".toRegex(), "_") }"
+                        val bgName = "rounded_square_${serviceId.lowercase(Locale.ROOT).replace("\\s+".toRegex(), "_")}"
                         val bgId = resources.getIdentifier(bgName, "drawable", requireContext().packageName)
                         if (bgId != 0) iv.setBackgroundResource(bgId) else iv.setBackgroundResource(R.drawable.rounded_square)
                     }
@@ -178,7 +177,7 @@ class PurchaseDialogFragment : DialogFragment() {
                 iv.setBackgroundResource(iconResId)
             } else {
                 val key = title.lowercase(Locale.ROOT).replace("\\s+".toRegex(), "_")
-                val bgResName = "rounded_square_${'$'}key"
+                val bgResName = "rounded_square_$key"
                 val bgResId = resources.getIdentifier(bgResName, "drawable", requireContext().packageName)
                 if (bgResId != 0) iv.setBackgroundResource(bgResId) else iv.setBackgroundResource(R.drawable.rounded_square)
             }
@@ -205,7 +204,7 @@ class PurchaseDialogFragment : DialogFragment() {
                 // también añadir normalized serviceId
                 candidates.add(normalizeName(serviceId))
                 // añadir variante con prefijo logo_
-                candidates.add("logo_${'$'}serviceId")
+                candidates.add("logo_$serviceId")
                 // variante normalizada con logo_
                 candidates.add("logo_${normalizeName(serviceId)}")
             }
@@ -302,7 +301,7 @@ class PurchaseDialogFragment : DialogFragment() {
                 val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = ClipData.newPlainText(label, value)
                 clipboard.setPrimaryClip(clip)
-                Toast.makeText(requireContext(), "${'$'}label copiado", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "$label copiado", Toast.LENGTH_SHORT).show()
             } catch (ex: Exception) {
                 Log.e("PurchaseDialogFragment", "Error copiando al portapapeles", ex)
                 Toast.makeText(requireContext(), "No se pudo copiar", Toast.LENGTH_SHORT).show()
@@ -381,29 +380,29 @@ class PurchaseDialogFragment : DialogFragment() {
         btnClose.setOnClickListener { dismiss() }
         btnCancel.setOnClickListener { dismiss() }
 
-        // Complete purchase -> abrir ReserveActivity con extras
+        // Complete purchase -> ACTUALIZADO: guardar compra real
         btnComplete.setOnClickListener {
-            // Mostrar diálogo de confirmación de compra (nuevo comportamiento solicitado)
             try {
+                // Obtener email del usuario desde SharedPreferences
+                val sharedPrefs = requireContext().getSharedPreferences("StreamZoneData", Context.MODE_PRIVATE)
+                val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
+
+                // Calcular duración en texto legible
+                val selectedDuration = "$selectedDurationMonths mes${if (selectedDurationMonths > 1) "es" else ""}"
+
+                // Mostrar diálogo de confirmación con datos reales
                 val completeDlg = PurchaseCompleteDialogFragment.newInstance(
-                    serviceTitle,
-                    tvTotalAmount.text.toString(),
-                    userFullname
+                    serviceId = serviceId,
+                    serviceName = serviceTitle,
+                    servicePrice = tvTotalAmount.text.toString(),
+                    duration = selectedDuration,
+                    userName = userFullname,
+                    userEmail = userEmail
                 )
                 completeDlg.show(parentFragmentManager, "purchaseCompleteDialog")
             } catch (ex: Exception) {
-                // Si por alguna razón no se puede mostrar el diálogo, mantener el flujo antiguo como fallback
-                val intent = Intent(requireContext(), ReserveActivity::class.java)
-                intent.putExtra("SERVICE_ID", serviceId)
-                intent.putExtra("SERVICE_TITLE", serviceTitle)
-                intent.putExtra("SERVICE_PRICE", servicePrice)
-                intent.putExtra("SERVICE_DESC", serviceDesc)
-                intent.putExtra("USER_FULLNAME", userFullname)
-                intent.putExtra("DURATION_MONTHS", selectedDurationMonths)
-                intent.putExtra("DEVICE_COUNT", deviceCount)
-                intent.putExtra("NOTES", "")
-                intent.putExtra("TOTAL_AMOUNT", tvTotalAmount.text.toString())
-                startActivity(intent)
+                Log.e("PurchaseDialogFragment", "Error al mostrar diálogo de compra", ex)
+                Toast.makeText(requireContext(), "Error al procesar compra", Toast.LENGTH_SHORT).show()
             }
             // Cerrar el diálogo de compra actual
             dismiss()
@@ -511,7 +510,6 @@ class PurchaseDialogFragment : DialogFragment() {
             span.setSpan(StyleSpan(Typeface.BOLD), start, start + boldPhrase.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         tvImportantText.text = span
-        // El texto del footer está definido en el layout mediante recursos; no hace falta reasignarlo aquí.
 
         // initialize UI
         updateDurationSelection()

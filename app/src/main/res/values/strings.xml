@@ -107,4 +107,17 @@
     <string name="whatsapp_message_template">Hola 👋, he realizado una compra en StreamZone (servicio: %1$s - total: %2$s). Por favor, Agente, acepte mi solicitud y confirme la activación. Muchas gracias 🙏✨</string>
     <string name="purchase_registered_title_template">%1$s - ¡Compra Registrada! 🎉</string>
     <string name="whatsapp_fallback">Hola 👋, he realizado una compra. Por favor, Agente acepte mi solicitud. Gracias 🙏✨</string>
+
+    <!-- Categorías -->
+    <string name="category_streaming_title">Streaming de Video</string>
+    <string name="category_streaming_desc">Netflix, Disney+, Max y más</string>
+
+    <string name="category_music_title">Música &amp; Audio</string>
+    <string name="category_music_desc">Spotify, Deezer, YouTube Music</string>
+
+    <string name="category_design_title">Diseño &amp; Productividad</string>
+    <string name="category_design_desc">Canva, Office 365, Autodesk</string>
+
+    <string name="category_ai_title">IA &amp; Herramientas</string>
+    <string name="category_ai_desc">ChatGPT y más</string>
 </resources>

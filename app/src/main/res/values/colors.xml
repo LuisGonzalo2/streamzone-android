@@ -30,4 +30,17 @@
 
     <!-- Color para la X del diálogo de compra completa -->
     <color name="close_red">#FF3B30</color>
+
+    <!-- Gradientes para categorías -->
+    <color name="category_streaming_start">#3B82F6</color>
+    <color name="category_streaming_end">#8B5CF6</color>
+
+    <color name="category_music_start">#8B5CF6</color>
+    <color name="category_music_end">#EC4899</color>
+
+    <color name="category_design_start">#10B981</color>
+    <color name="category_design_end">#3B82F6</color>
+
+    <color name="category_ai_start">#F59E0B</color>
+    <color name="category_ai_end">#EF4444</color>
 </resources>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/category_card_height"
+    android:layout_margin="6dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="6dp"
+    android:foreground="?android:attr/selectableItemBackground">
+
+    <LinearLayout
+        android:id="@+id/category_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:gravity="center">
+
+        <!-- Icono dinámico -->
+        <TextView
+            android:id="@+id/tv_category_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📺"
+            android:textSize="@dimen/category_icon_size"
+            android:layout_marginBottom="6dp" />
+
+        <!-- Nombre -->
+        <TextView
+            android:id="@+id/tv_category_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Streaming"
+            android:textColor="@color/white"
+            android:textSize="@dimen/category_name_size"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!-- Contador -->
+        <TextView
+            android:id="@+id/tv_service_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="8 servicios"
+            android:textColor="#E0E0E0"
+            android:textSize="@dimen/category_count_size"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

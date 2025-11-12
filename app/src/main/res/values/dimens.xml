@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tamaños para pantallas normales/pequeñas -->
+    <dimen name="hero_card_padding">16dp</dimen>
+    <dimen name="hero_title_size">12sp</dimen>
+    <dimen name="hero_subtitle_size">16sp</dimen>
+    <dimen name="hero_price_size">13sp</dimen>
+
+    <dimen name="category_card_height">120dp</dimen>
+    <dimen name="category_icon_size">32sp</dimen>
+    <dimen name="category_name_size">14sp</dimen>
+    <dimen name="category_count_size">10sp</dimen>
+
+    <dimen name="stats_text_size">16sp</dimen>
+    <dimen name="stats_label_size">11sp</dimen>
+
+    <dimen name="popular_card_width">130dp</dimen>
+    <dimen name="popular_card_height">95dp</dimen>
+</resources>

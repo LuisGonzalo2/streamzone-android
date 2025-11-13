@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.ui.auth.LoginActivity
+import com.universidad.streamzone.ui.components.NavbarManager
 import com.universidad.streamzone.ui.profile.EditProfileActivity
 import com.universidad.streamzone.ui.profile.adapter.PurchaseCardAdapter
 import kotlinx.coroutines.launch
@@ -32,11 +33,6 @@ class UserProfileActivity : AppCompatActivity() {
     private lateinit var tvFullName: TextView
     private lateinit var tvPhone: TextView
     private lateinit var tvPersonalEmail: TextView
-
-    // Compras
-    private lateinit var rvPurchases: RecyclerView
-    private lateinit var emptyPurchasesContainer: LinearLayout
-
     private val EDIT_PROFILE_REQUEST = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,7 +66,6 @@ class UserProfileActivity : AppCompatActivity() {
 
         initViews()
         loadUserData()
-        loadPurchases()
         setupClickListeners()
         setupBottomNavbar()
     }
@@ -84,8 +79,6 @@ class UserProfileActivity : AppCompatActivity() {
         tvPhone = findViewById(R.id.tv_phone)
         tvPersonalEmail = findViewById(R.id.tv_personal_email)
 
-        rvPurchases = findViewById(R.id.rv_purchases)
-        emptyPurchasesContainer = findViewById(R.id.empty_purchases_container)
     }
 
     private fun loadUserData() {
@@ -123,65 +116,8 @@ class UserProfileActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadPurchases() {
-        val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
-        if (userEmail.isEmpty()) {
-            showEmptyState()
-            return
-        }
 
-        lifecycleScope.launch {
-            try {
-                val dao = AppDatabase.getInstance(this@UserProfileActivity).purchaseDao()
-
-                // Cancelar automáticamente cuando la actividad se destruye
-                dao.obtenerComprasPorUsuario(userEmail).collect { purchases ->
-                    if (isDestroyed || isFinishing) return@collect
-
-                    runOnUiThread {
-                        if (purchases.isEmpty()) {
-                            showEmptyState()
-                        } else {
-                            showPurchases(purchases)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                // Ignorar errores de cancelación
-                if (e is kotlinx.coroutines.CancellationException) {
-                    Log.d("UserProfile", "Carga de compras cancelada (normal)")
-                } else {
-                    Log.e("UserProfile", "Error al cargar compras", e)
-                    if (!isDestroyed && !isFinishing) {
-                        runOnUiThread {
-                            showEmptyState()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun showPurchases(purchases: List<com.universidad.streamzone.data.model.PurchaseEntity>) {
-        rvPurchases.visibility = View.VISIBLE
-        emptyPurchasesContainer.visibility = View.GONE
-
-        rvPurchases.layoutManager = LinearLayoutManager(this)
-        val adapter = PurchaseCardAdapter(purchases) { purchase ->
-            Toast.makeText(
-                this,
-                "Compra: ${purchase.serviceName}",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-        rvPurchases.adapter = adapter
-    }
-
-    private fun showEmptyState() {
-        rvPurchases.visibility = View.GONE
-        emptyPurchasesContainer.visibility = View.VISIBLE
-    }
 
     private fun setupClickListeners() {
         btnEditProfile.setOnClickListener {
@@ -202,26 +138,10 @@ class UserProfileActivity : AppCompatActivity() {
             Toast.makeText(this, "Perfil actualizado", Toast.LENGTH_SHORT).show()
         }
     }
+    private lateinit var navbarManager: NavbarManager
+
     private fun setupBottomNavbar() {
-        // Botón Home - Solo cerrar esta actividad
-        findViewById<View>(R.id.btn_home).setOnClickListener {
-            finish()
-        }
-
-        // Botón Regalos
-        findViewById<View>(R.id.btn_gift).setOnClickListener {
-            Toast.makeText(this, "Próximamente: Sección de Regalos", Toast.LENGTH_SHORT).show()
-        }
-
-        // Botón Perfil - Ya estamos aquí
-        findViewById<View>(R.id.btn_profile).setOnClickListener {
-            Toast.makeText(this, "Ya estás en tu perfil", Toast.LENGTH_SHORT).show()
-        }
-
-        // Botón Cerrar Sesión
-        findViewById<View>(R.id.btn_logout_nav).setOnClickListener {
-            logout()
-        }
+        navbarManager = NavbarManager(this, NavbarManager.Screen.PROFILE)
     }
 
     private fun logout() {

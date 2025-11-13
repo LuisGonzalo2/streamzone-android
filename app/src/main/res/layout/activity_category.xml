@@ -5,9 +5,9 @@
     android:layout_height="match_parent"
     android:background="@drawable/dark_gradient_background">
 
-    <!-- Contenedor dinámico para inflar contenidos -->
+    <!-- Contenedor del contenido de categoría -->
     <FrameLayout
-        android:id="@+id/content_container"
+        android:id="@+id/category_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"

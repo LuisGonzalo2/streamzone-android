@@ -23,6 +23,7 @@ import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
 import androidx.lifecycle.lifecycleScope
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.model.ServicioPopular
+import com.universidad.streamzone.ui.components.NavbarManager
 import kotlinx.coroutines.launch
 class HomeNativeActivity : AppCompatActivity() {
 
@@ -183,27 +184,11 @@ class HomeNativeActivity : AppCompatActivity() {
 
 
 
+    private lateinit var navbarManager: NavbarManager
+
     private fun setupBottomNavbar() {
-        // Botón Home
-        findViewById<View>(R.id.btn_home).setOnClickListener {
-            showToast("Estás en el inicio")
-        }
-
-        // Botón Regalos
-        findViewById<View>(R.id.btn_gift).setOnClickListener {
-            showToast("Próximamente: Sección de Regalos")
-        }
-
-        // Botón Perfil
-        findViewById<View>(R.id.btn_profile).setOnClickListener {
-            val intent = Intent(this, UserProfileActivity::class.java)
-            startActivity(intent)
-        }
-
-        // Botón Cerrar Sesión
-        findViewById<View>(R.id.btn_logout_nav).setOnClickListener {
-            cerrarSesion()
-        }
+        navbarManager = NavbarManager(this, NavbarManager.Screen.HOME)
+        navbarManager.updateNotificationBadge(3)
     }
 
     private fun onCategoryClick(category: Category) {

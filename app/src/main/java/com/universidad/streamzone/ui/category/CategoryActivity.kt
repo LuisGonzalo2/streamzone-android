@@ -14,6 +14,7 @@ import com.google.android.material.button.MaterialButton
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.model.Service
 import com.universidad.streamzone.ui.auth.LoginActivity
+import com.universidad.streamzone.ui.components.NavbarManager
 import com.universidad.streamzone.ui.home.HomeNativeActivity
 import com.universidad.streamzone.ui.home.PurchaseDialogFragment
 import com.universidad.streamzone.ui.home.UserProfileActivity
@@ -61,7 +62,7 @@ class CategoryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         // Usar el layout base con navbar inferior
-        setContentView(R.layout.activity_base)
+        setContentView(R.layout.activity_category)
 
         // Configurar padding para el notch
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
@@ -69,7 +70,7 @@ class CategoryActivity : AppCompatActivity() {
         }
 
         // Inflar el contenido específico de CategoryActivity
-        val contentContainer = findViewById<FrameLayout>(R.id.content_container)
+        val contentContainer = findViewById<FrameLayout>(R.id.category_container)
         val categoryView = LayoutInflater.from(this).inflate(R.layout.activity_category_content, contentContainer, true)
 
         // Aplicar padding superior para evitar el notch
@@ -132,27 +133,10 @@ class CategoryActivity : AppCompatActivity() {
         rvServices.adapter = adapter
     }
 
+    private lateinit var navbarManager: NavbarManager
+
     private fun setupBottomNavbar() {
-        // Botón Home
-        findViewById<View>(R.id.btn_home).setOnClickListener {
-            finish() // Volver al home
-        }
-
-        // Botón Regalos
-        findViewById<View>(R.id.btn_gift).setOnClickListener {
-            showToast("Próximamente: Sección de Regalos")
-        }
-
-        // Botón Perfil
-        findViewById<View>(R.id.btn_profile).setOnClickListener {
-            val intent = Intent(this, UserProfileActivity::class.java)
-            startActivity(intent)
-        }
-
-        // Botón Cerrar Sesión
-        findViewById<View>(R.id.btn_logout_nav).setOnClickListener {
-            cerrarSesion()
-        }
+        navbarManager = NavbarManager(this, NavbarManager.Screen.HOME)
     }
 
     private fun onServiceClick(service: Service) {

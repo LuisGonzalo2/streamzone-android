@@ -78,6 +78,17 @@
             android:name=".ui.profile.EditProfileActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <!-- Mis Compras -->
+        <activity
+            android:name=".ui.purchases.PurchaseHistoryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Notificaciones -->
+        <activity
+            android:name=".ui.notifications.NotificationsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

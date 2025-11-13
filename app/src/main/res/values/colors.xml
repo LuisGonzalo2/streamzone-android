@@ -43,4 +43,10 @@
 
     <color name="category_ai_start">#F59E0B</color>
     <color name="category_ai_end">#EF4444</color>
+
+    <!-- Navbar Spotify Style -->
+    <color name="navbar_background">#1A1A1A</color>
+    <color name="navbar_active">#1DB954</color>
+    <color name="navbar_inactive">#B3B3B3</color>
+    <color name="navbar_badge">#E22134</color>
 </resources>

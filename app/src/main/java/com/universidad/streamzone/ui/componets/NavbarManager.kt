@@ -35,15 +35,10 @@ class NavbarManager(private val activity: Activity, private val currentScreen: S
     private val labelNotifications: TextView = activity.findViewById(R.id.label_notifications)
     private val labelProfile: TextView = activity.findViewById(R.id.label_profile)
 
-    private val indicatorHome: View = activity.findViewById(R.id.indicator_home)
-    private val indicatorPurchases: View = activity.findViewById(R.id.indicator_purchases)
-    private val indicatorNotifications: View = activity.findViewById(R.id.indicator_notifications)
-    private val indicatorProfile: View = activity.findViewById(R.id.indicator_profile)
-
     private val badgeNotifications: TextView = activity.findViewById(R.id.badge_notifications)
 
-    private val primaryColor = ContextCompat.getColor(activity, R.color.purple_accent)
-    private val secondaryColor = ContextCompat.getColor(activity, R.color.text_secondary)
+    private val activeColor = ContextCompat.getColor(activity, R.color.navbar_active)
+    private val inactiveColor = ContextCompat.getColor(activity, R.color.navbar_inactive)
 
     init {
         setupClickListeners()
@@ -86,49 +81,48 @@ class NavbarManager(private val activity: Activity, private val currentScreen: S
 
         // Activar el correspondiente
         when (screen) {
-            Screen.HOME -> activateButton(iconHome, labelHome, indicatorHome, R.drawable.ic_home_filled)
-            Screen.PURCHASES -> activateButton(iconPurchases, labelPurchases, indicatorPurchases, R.drawable.ic_shopping_filled)
-            Screen.NOTIFICATIONS -> activateButton(iconNotifications, labelNotifications, indicatorNotifications, R.drawable.ic_notifications_filled)
-            Screen.PROFILE -> activateButton(iconProfile, labelProfile, indicatorProfile, R.drawable.ic_profile_filled)
+            Screen.HOME -> activateButton(iconHome, labelHome, R.drawable.ic_home_filled)
+            Screen.PURCHASES -> activateButton(iconPurchases, labelPurchases, R.drawable.ic_shopping_filled)
+            Screen.NOTIFICATIONS -> activateButton(iconNotifications, labelNotifications, R.drawable.ic_notifications_filled)
+            Screen.PROFILE -> activateButton(iconProfile, labelProfile, R.drawable.ic_profile_filled)
         }
     }
 
     private fun resetAllButtons() {
-        deactivateButton(iconHome, labelHome, indicatorHome, R.drawable.ic_home_outline)
-        deactivateButton(iconPurchases, labelPurchases, indicatorPurchases, R.drawable.ic_shopping_outline)
-        deactivateButton(iconNotifications, labelNotifications, indicatorNotifications, R.drawable.ic_notifications_outline)
-        deactivateButton(iconProfile, labelProfile, indicatorProfile, R.drawable.ic_profile_outline)
+        deactivateButton(iconHome, labelHome, R.drawable.ic_home_outline)
+        deactivateButton(iconPurchases, labelPurchases, R.drawable.ic_shopping_outline)
+        deactivateButton(iconNotifications, labelNotifications, R.drawable.ic_notifications_outline)
+        deactivateButton(iconProfile, labelProfile, R.drawable.ic_profile_outline)
     }
 
-    private fun activateButton(icon: ImageView, label: TextView, indicator: View, iconRes: Int) {
+    private fun activateButton(icon: ImageView, label: TextView, iconRes: Int) {
         icon.setImageResource(iconRes)
-        icon.setColorFilter(primaryColor)
-        label.setTextColor(primaryColor)
-        indicator.visibility = View.VISIBLE
+        icon.setColorFilter(activeColor)
+        label.setTextColor(activeColor)
 
-        // Animación de entrada del indicador
-        indicator.alpha = 0f
-        indicator.scaleX = 0f
-        indicator.animate()
-            .alpha(1f)
-            .scaleX(1f)
-            .setDuration(300)
+        // Animación de scale suave (estilo Spotify)
+        icon.animate()
+            .scaleX(1.1f)
+            .scaleY(1.1f)
+            .setDuration(200)
             .setInterpolator(AccelerateDecelerateInterpolator())
             .start()
     }
 
-    private fun deactivateButton(icon: ImageView, label: TextView, indicator: View, iconRes: Int) {
+    private fun deactivateButton(icon: ImageView, label: TextView, iconRes: Int) {
         icon.setImageResource(iconRes)
-        icon.setColorFilter(secondaryColor)
-        label.setTextColor(secondaryColor)
-        indicator.visibility = View.INVISIBLE
+        icon.setColorFilter(inactiveColor)
+        label.setTextColor(inactiveColor)
+
+        icon.scaleX = 1f
+        icon.scaleY = 1f
     }
 
     private fun animateClick(view: View) {
-        // Animación de bounce al hacer click
+        // Animación de bounce al hacer click (estilo Spotify)
         view.animate()
-            .scaleX(0.9f)
-            .scaleY(0.9f)
+            .scaleX(0.95f)
+            .scaleY(0.95f)
             .setDuration(100)
             .withEndAction {
                 view.animate()

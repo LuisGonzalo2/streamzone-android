@@ -116,4 +116,10 @@
         <item name="android:windowCloseOnTouchOutside">false</item>
     </style>
 
+    <style name="SpinnerTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorControlNormal">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
+
 </resources>

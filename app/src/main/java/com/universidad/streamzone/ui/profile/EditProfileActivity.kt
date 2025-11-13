@@ -2,8 +2,6 @@ package com.universidad.streamzone.ui.profile
 
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Log
 import android.view.View
 import android.widget.*
@@ -15,13 +13,12 @@ import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.remote.FirebaseService
 import kotlinx.coroutines.launch
 import com.google.android.material.button.MaterialButton
+import com.hbb20.CountryCodePicker
 
 class EditProfileActivity : AppCompatActivity() {
 
     private lateinit var sharedPrefs: SharedPreferences
     private lateinit var etFullName: EditText
-    private lateinit var spinnerCountry: Spinner
-    private lateinit var tvCountryCode: TextView
     private lateinit var etPhone: EditText
     private lateinit var tvEmailDisplay: TextView
     private lateinit var etCurrentPassword: EditText
@@ -42,19 +39,8 @@ class EditProfileActivity : AppCompatActivity() {
     private var isChangePasswordExpanded = false
 
     private var userEmail: String = ""
-    private var selectedCountryCode: String = "+593"
 
-    // Países con sus códigos
-    private val countries = mapOf(
-        "Ecuador 🇪🇨" to "+593",
-        "Estados Unidos 🇺🇸" to "+1",
-        "México 🇲🇽" to "+52",
-        "Colombia 🇨🇴" to "+57",
-        "Perú 🇵🇪" to "+51",
-        "Argentina 🇦🇷" to "+54",
-        "Chile 🇨🇱" to "+56",
-        "España 🇪🇸" to "+34"
-    )
+    private lateinit var ccp: CountryCodePicker
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,15 +71,13 @@ class EditProfileActivity : AppCompatActivity() {
         sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
 
         initViews()
-        setupCountrySpinner()
         loadUserData()
         setupClickListeners()
     }
 
     private fun initViews() {
         etFullName = findViewById(R.id.et_full_name)
-        spinnerCountry = findViewById(R.id.spinner_country)
-        tvCountryCode = findViewById(R.id.tv_country_code)
+        ccp = findViewById(R.id.ccp)
         etPhone = findViewById(R.id.et_phone)
         tvEmailDisplay = findViewById(R.id.tv_email_display)
         etCurrentPassword = findViewById(R.id.et_current_password)
@@ -107,65 +91,6 @@ class EditProfileActivity : AppCompatActivity() {
         btnToggleCurrentPassword = findViewById(R.id.btn_toggle_current_password)
         btnToggleNewPassword = findViewById(R.id.btn_toggle_new_password)
         btnToggleConfirmPassword = findViewById(R.id.btn_toggle_confirm_password)
-    }
-
-    private fun setupCountrySpinner() {
-        val countryNames = countries.keys.toList()
-
-        // Usar layouts personalizados
-        val adapter = ArrayAdapter(this, R.layout.spinner_item, countryNames)
-        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-        spinnerCountry.adapter = adapter
-
-        // Listener para cambiar el código cuando se selecciona un país
-        spinnerCountry.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val selectedCountry = countryNames[position]
-                selectedCountryCode = countries[selectedCountry] ?: "+593"
-                tvCountryCode.text = selectedCountryCode
-
-                // Validar teléfono cuando cambia el país
-                validatePhoneNumber()
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
-
-        // Validación en tiempo real del teléfono
-        etPhone.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                validatePhoneNumber()
-            }
-        })
-    }
-
-    private fun validatePhoneNumber() {
-        val phone = etPhone.text.toString()
-
-        if (phone.isEmpty()) {
-            etPhone.error = null
-            return
-        }
-
-        val minLength = when (selectedCountryCode) {
-            "+593" -> 9  // Ecuador
-            "+1" -> 10   // USA
-            "+52" -> 10  // México
-            "+57" -> 10  // Colombia
-            "+51" -> 9   // Perú
-            "+54" -> 10  // Argentina
-            "+56" -> 9   // Chile
-            "+34" -> 9   // España
-            else -> 8
-        }
-
-        if (phone.length < minLength) {
-            etPhone.error = "Debe tener al menos $minLength dígitos"
-        } else {
-            etPhone.error = null
-        }
     }
 
     private fun loadUserData() {
@@ -188,9 +113,9 @@ class EditProfileActivity : AppCompatActivity() {
                     runOnUiThread {
                         etFullName.setText(user.fullname)
 
-                        // Parsear teléfono con código de país
+                        // Configurar teléfono con CountryCodePicker
                         if (!user.phone.isNullOrEmpty()) {
-                            parseAndSetPhone(user.phone)
+                            ccp.setFullNumber(user.phone)
                         }
                     }
                 }
@@ -198,25 +123,6 @@ class EditProfileActivity : AppCompatActivity() {
                 Log.e("EditProfile", "Error al cargar datos", e)
             }
         }
-    }
-
-    private fun parseAndSetPhone(fullPhone: String) {
-        // Intentar extraer código de país del teléfono guardado
-        countries.entries.forEachIndexed { index, entry ->
-            if (fullPhone.startsWith(entry.value)) {
-                spinnerCountry.setSelection(index)
-                selectedCountryCode = entry.value
-                tvCountryCode.text = selectedCountryCode
-
-                // Quitar código de país del número
-                val phoneWithoutCode = fullPhone.removePrefix(entry.value).trim()
-                etPhone.setText(phoneWithoutCode)
-                return
-            }
-        }
-
-        // Si no tiene código, asumir que es solo el número
-        etPhone.setText(fullPhone)
     }
 
     private fun setupClickListeners() {
@@ -296,12 +202,35 @@ class EditProfileActivity : AppCompatActivity() {
         }
 
         // Validar teléfono si no está vacío
-        if (newPhone.isNotEmpty()) {
-            if (etPhone.error != null) {
-                Toast.makeText(this, "Corrige el número de teléfono", Toast.LENGTH_SHORT).show()
-                return
-            }
+        val phoneNumber = etPhone.text.toString().trim()
+        if (phoneNumber.isEmpty()) {
+            Toast.makeText(this, "El teléfono no puede estar vacío", Toast.LENGTH_SHORT).show()
+            return
         }
+
+        // Validar longitud mínima (mínimo 7 dígitos)
+        if (phoneNumber.length < 7) {
+            Toast.makeText(this, "El teléfono debe tener al menos 7 dígitos", Toast.LENGTH_SHORT).show()
+            etPhone.requestFocus()
+            return
+        }
+
+        // Validar longitud máxima (máximo 15 dígitos según estándar E.164)
+        if (phoneNumber.length > 15) {
+            Toast.makeText(this, "El teléfono no puede tener más de 15 dígitos", Toast.LENGTH_SHORT).show()
+            etPhone.requestFocus()
+            return
+        }
+
+        // Validar que sea un número válido con el CountryCodePicker
+        if (!ccp.isValidFullNumber) {
+            Toast.makeText(this, "Número de teléfono inválido para ${ccp.selectedCountryName}", Toast.LENGTH_LONG).show()
+            etPhone.requestFocus()
+            return
+        }
+
+        // Obtener número completo con código de país
+        val fullPhone = ccp.fullNumberWithPlus
 
         // Si está intentando cambiar la contraseña
         val changingPassword = isChangePasswordExpanded && (newPassword.isNotEmpty() || confirmPassword.isNotEmpty())
@@ -332,13 +261,6 @@ class EditProfileActivity : AppCompatActivity() {
                         etCurrentPassword.requestFocus()
                     }
                     return@launch
-                }
-
-                // Construir teléfono completo con código de país
-                val fullPhone = if (newPhone.isNotEmpty()) {
-                    "$selectedCountryCode$newPhone"
-                } else {
-                    usuario.phone
                 }
 
                 // Actualizar datos

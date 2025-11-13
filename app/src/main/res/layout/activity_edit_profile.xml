@@ -27,14 +27,20 @@
                 android:gravity="center_vertical"
                 android:layout_marginBottom="24dp">
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_back"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:text="←"
-                    android:textSize="24sp"
-                    android:textColor="@color/white"
-                    android:background="@drawable/btn_outline" />
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:icon="@drawable/ic_arrow_back"
+                    app:iconTint="@color/white"
+                    app:backgroundTint="@color/dark_card_background"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:cornerRadius="12dp"
+                    app:strokeColor="@color/purple_accent"
+                    app:strokeWidth="2dp" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -108,24 +114,7 @@
                         android:inputType="textPersonName"
                         android:layout_marginBottom="16dp" />
 
-                    <!-- País -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="País"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="14sp"
-                        android:layout_marginBottom="8dp" />
-
-                    <Spinner
-                        android:id="@+id/spinner_country"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:background="@drawable/input_bg"
-                        android:paddingHorizontal="12dp"
-                        android:layout_marginBottom="16dp" />
-
-                    <!-- Teléfono -->
+                    <!-- País y Teléfono juntos con CountryCodePicker -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -136,33 +125,56 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="50dp"
+                        android:layout_height="wrap_content"
                         android:orientation="horizontal"
+                        android:gravity="center_vertical"
                         android:layout_marginBottom="16dp">
 
-                        <TextView
-                            android:id="@+id/tv_country_code"
+                        <com.hbb20.CountryCodePicker
+                            android:id="@+id/ccp"
                             android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:background="@drawable/input_bg"
-                            android:text="+593"
-                            android:textColor="@color/white"
-                            android:gravity="center"
-                            android:paddingHorizontal="16dp"
-                            android:layout_marginEnd="8dp" />
+                            android:layout_height="wrap_content"
+                            android:padding="8dp"
+                            app:ccp_showFlag="true"
+                            app:ccpDialog_backgroundColor="@color/dark_card_background"
+                            app:ccpDialog_textColor="@color/white"
+                            app:ccpDialog_searchEditTextTint="@color/white"
+                            app:ccp_rememberLastSelection="true"
+                            app:ccp_countryPreference="EC,PE,CO,MX"
+                            app:ccp_showNameCode="false"
+                            app:ccp_contentColor="@color/white"
+                            app:ccp_arrowSize="24dp"
+                            app:ccp_textSize="16sp"
+                            app:ccp_autoDetectCountry="true" />
 
-                        <EditText
-                            android:id="@+id/et_phone"
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/til_phone"
                             android:layout_width="0dp"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:background="@drawable/input_bg"
-                            android:hint="Número de teléfono"
-                            android:textColor="@color/white"
-                            android:textColorHint="@color/text_secondary"
-                            android:paddingHorizontal="16dp"
-                            android:inputType="phone"
-                            android:maxLength="10" />
+                            app:boxBackgroundMode="filled"
+                            app:boxBackgroundColor="@color/input_background"
+                            app:boxStrokeWidth="0dp"
+                            app:boxStrokeWidthFocused="0dp"
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusBottomEnd="12dp"
+                            app:hintEnabled="false">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_phone"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Número de teléfono"
+                                android:inputType="phone"
+                                android:maxLength="15"
+                                android:padding="16dp"
+                                android:textColor="@color/text_primary"
+                                android:textColorHint="@color/text_hint"
+                                android:textSize="16sp" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
 
                     </LinearLayout>
 

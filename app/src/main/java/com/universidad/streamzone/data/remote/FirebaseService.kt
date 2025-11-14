@@ -296,8 +296,24 @@ object FirebaseService {
                 onSuccess()
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Error al actualizar usuario en Firestore", e)
-                onFailure(e)
+                // Si el documento no existe (NOT_FOUND), crearlo con el mismo ID
+                if (e.message?.contains("NOT_FOUND") == true) {
+                    Log.w(TAG, "Documento no encontrado, creando nuevo con ID: $docId")
+                    db.collection("usuarios")
+                        .document(docId)
+                        .set(data)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "Usuario creado en Firestore con ID: $docId")
+                            onSuccess()
+                        }
+                        .addOnFailureListener { createError ->
+                            Log.e(TAG, "Error al crear usuario en Firestore", createError)
+                            onFailure(createError)
+                        }
+                } else {
+                    Log.e(TAG, "Error al actualizar usuario en Firestore", e)
+                    onFailure(e)
+                }
             }
     }
 }

@@ -157,22 +157,42 @@ class LoginActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                // Sincronizar a Firebase si no está sincronizado
-                if (!usuarioLocal.sincronizado && isNetworkAvailable()) {
-                    Log.d("LoginActivity", "Usuario no sincronizado - Sincronizando a Firebase...")
-                    FirebaseService.guardarUsuario(
-                        usuarioLocal,
-                        onSuccess = { firebaseId ->
-                            lifecycleScope.launch {
-                                dao.marcarComoSincronizado(usuarioLocal.id, firebaseId)
-                                Log.d("LoginActivity", "Usuario sincronizado exitosamente con ID: $firebaseId")
+                // SIEMPRE sincronizar con Firebase al hacer login (si hay internet)
+                if (isNetworkAvailable()) {
+                    Log.d("LoginActivity", "Sincronizando usuario con Firebase...")
+
+                    if (usuarioLocal.firebaseId.isNullOrEmpty()) {
+                        // Usuario NO tiene firebaseId -> Crearlo en Firebase
+                        Log.d("LoginActivity", "Usuario sin firebaseId - Creando en Firebase...")
+                        FirebaseService.guardarUsuario(
+                            usuarioLocal,
+                            onSuccess = { firebaseId ->
+                                lifecycleScope.launch {
+                                    dao.marcarComoSincronizado(usuarioLocal.id, firebaseId)
+                                    Log.d("LoginActivity", "Usuario creado en Firebase con ID: $firebaseId")
+                                }
+                            },
+                            onFailure = { e ->
+                                Log.e("LoginActivity", "Error al crear usuario en Firebase: ${e.message}")
+                                // No bloquear el login por error de sincronización
                             }
-                        },
-                        onFailure = { e ->
-                            Log.e("LoginActivity", "Error al sincronizar usuario: ${e.message}")
-                            // No bloquear el login por error de sincronización
-                        }
-                    )
+                        )
+                    } else {
+                        // Usuario SÍ tiene firebaseId -> Actualizarlo en Firebase
+                        Log.d("LoginActivity", "Usuario tiene firebaseId: ${usuarioLocal.firebaseId} - Actualizando en Firebase...")
+                        FirebaseService.actualizarUsuario(
+                            usuarioLocal,
+                            onSuccess = {
+                                Log.d("LoginActivity", "Usuario actualizado en Firebase exitosamente")
+                            },
+                            onFailure = { e ->
+                                Log.e("LoginActivity", "Error al actualizar usuario en Firebase: ${e.message}")
+                                // No bloquear el login por error de sincronización
+                            }
+                        )
+                    }
+                } else {
+                    Log.d("LoginActivity", "Sin conexión a internet - Login offline")
                 }
 
                 // Login exitoso
@@ -217,14 +237,9 @@ class LoginActivity : AppCompatActivity() {
                         }
                     }
                 } else {
-                    // Sin internet y no está en Room
-                    Log.d("LoginActivity", "Sin internet y usuario no en Room")
                     runOnUiThread {
-                        AlertDialog.Builder(this@LoginActivity)
-                            .setTitle("Sin conexión")
-                            .setMessage("No se pudo verificar tu cuenta. Por favor, conéctate a internet.")
-                            .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
-                            .show()
+                        tilEmail.error = "Sin conexión a internet y no hay datos locales"
+                        etEmail.requestFocus()
                     }
                 }
             }

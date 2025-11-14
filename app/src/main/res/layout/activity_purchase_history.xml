@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/purchase_history_main_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/dark_gradient_background">
+    android:background="@drawable/dark_gradient_background"
+    android:paddingTop="16dp">
 
     <!-- Header -->
     <TextView
@@ -14,7 +16,7 @@
         android:textColor="@color/white"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
         android:layout_marginStart="24dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

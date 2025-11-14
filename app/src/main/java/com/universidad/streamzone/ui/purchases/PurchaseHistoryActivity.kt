@@ -26,6 +26,29 @@ class PurchaseHistoryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_purchase_history)
 
+        // Configurar padding para el notch
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(false)
+        }
+
+        // Aplicar padding superior al contenedor principal
+        val mainContainer = findViewById<View>(R.id.purchase_history_main_container)
+        mainContainer?.setOnApplyWindowInsetsListener { view, insets ->
+            val systemBars = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                insets.getInsets(android.view.WindowInsets.Type.systemBars())
+            } else {
+                @Suppress("DEPRECATION")
+                android.graphics.Insets.of(0, insets.systemWindowInsetTop, 0, 0)
+            }
+            view.setPadding(
+                view.paddingLeft,
+                systemBars.top + 16,
+                view.paddingRight,
+                view.paddingBottom
+            )
+            insets
+        }
+
         // Configurar navbar
         navbarManager = NavbarManager(this, NavbarManager.Screen.PURCHASES)
 

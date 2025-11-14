@@ -34,7 +34,7 @@ class EditProfileActivity : AppCompatActivity() {
 
     private lateinit var sharedPrefs: SharedPreferences
     private lateinit var etFullName: EditText
-    private lateinit var etPhone: EditText
+    private lateinit var tvPhoneDisplay: TextView
     private lateinit var tvEmailDisplay: TextView
     private lateinit var etCurrentPassword: EditText
     private lateinit var etNewPassword: EditText
@@ -61,7 +61,7 @@ class EditProfileActivity : AppCompatActivity() {
 
     private var userEmail: String = ""
 
-    private lateinit var ccp: CountryCodePicker
+
 
     // Activity Result Launchers para cámara y galería
     private val camaraLauncher = registerForActivityResult(
@@ -144,9 +144,8 @@ class EditProfileActivity : AppCompatActivity() {
 
     private fun initViews() {
         etFullName = findViewById(R.id.et_full_name)
-        ccp = findViewById(R.id.ccp)
-        etPhone = findViewById(R.id.et_phone)
         tvEmailDisplay = findViewById(R.id.tv_email_display)
+        tvPhoneDisplay = findViewById(R.id.tv_phone_display)
         etCurrentPassword = findViewById(R.id.et_current_password)
         etNewPassword = findViewById(R.id.et_new_password)
         etConfirmPassword = findViewById(R.id.et_confirm_password)
@@ -184,11 +183,7 @@ class EditProfileActivity : AppCompatActivity() {
                     runOnUiThread {
                         etFullName.setText(user.fullname)
 
-                        // Configurar teléfono con CountryCodePicker
-                        if (!user.phone.isNullOrEmpty()) {
-                            ccp.setFullNumber(user.phone)
-                        }
-
+                        tvPhoneDisplay.text = user.phone
                         // Cargar foto de perfil si existe
                         if (!user.fotoBase64.isNullOrEmpty()) {
                             val bitmap = convertirBase64ABitmap(user.fotoBase64!!)
@@ -361,7 +356,6 @@ class EditProfileActivity : AppCompatActivity() {
 
     private fun saveChanges() {
         val newFullName = etFullName.text.toString().trim()
-        val newPhone = etPhone.text.toString().trim()
         val currentPassword = etCurrentPassword.text.toString()
         val newPassword = etNewPassword.text.toString()
         val confirmPassword = etConfirmPassword.text.toString()
@@ -378,37 +372,6 @@ class EditProfileActivity : AppCompatActivity() {
             Toast.makeText(this, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
             return
         }
-
-        // Validar teléfono si no está vacío
-        val phoneNumber = etPhone.text.toString().trim()
-        if (phoneNumber.isEmpty()) {
-            Toast.makeText(this, "El teléfono no puede estar vacío", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // Validar longitud mínima (mínimo 7 dígitos)
-        if (phoneNumber.length < 7) {
-            Toast.makeText(this, "El teléfono debe tener al menos 7 dígitos", Toast.LENGTH_SHORT).show()
-            etPhone.requestFocus()
-            return
-        }
-
-        // Validar longitud máxima (máximo 15 dígitos según estándar E.164)
-        if (phoneNumber.length > 15) {
-            Toast.makeText(this, "El teléfono no puede tener más de 15 dígitos", Toast.LENGTH_SHORT).show()
-            etPhone.requestFocus()
-            return
-        }
-
-        // Validar que sea un número válido con el CountryCodePicker
-        if (!ccp.isValidFullNumber) {
-            Toast.makeText(this, "Número de teléfono inválido para ${ccp.selectedCountryName}", Toast.LENGTH_LONG).show()
-            etPhone.requestFocus()
-            return
-        }
-
-        // Obtener número completo con código de país
-        val fullPhone = ccp.fullNumberWithPlus
 
         // Si está intentando cambiar la contraseña
         val changingPassword = isChangePasswordExpanded && (newPassword.isNotEmpty() || confirmPassword.isNotEmpty())
@@ -444,7 +407,6 @@ class EditProfileActivity : AppCompatActivity() {
                 // Actualizar datos (incluye foto si cambió)
                 val updatedUser = usuario.copy(
                     fullname = newFullName,
-                    phone = fullPhone,
                     password = if (changingPassword) newPassword else usuario.password,
                     fotoBase64 = fotoBase64 ?: usuario.fotoBase64  // Mantener foto existente si no cambió
                 )

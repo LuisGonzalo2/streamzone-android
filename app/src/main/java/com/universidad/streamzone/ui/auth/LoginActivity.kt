@@ -135,7 +135,7 @@ class LoginActivity : AppCompatActivity() {
         if (!validateEmail(email)) return
         if (!validatePassword(password)) return
 
-        val dao = AppDatabase.Companion.getInstance(this).usuarioDao()
+        val dao = AppDatabase.getInstance(this).usuarioDao()
 
         lifecycleScope.launch {
             // Primero buscar en Room (local)
@@ -155,6 +155,24 @@ class LoginActivity : AppCompatActivity() {
                         etPassword.requestFocus()
                     }
                     return@launch
+                }
+
+                // Sincronizar a Firebase si no está sincronizado
+                if (!usuarioLocal.sincronizado && isNetworkAvailable()) {
+                    Log.d("LoginActivity", "Usuario no sincronizado - Sincronizando a Firebase...")
+                    FirebaseService.guardarUsuario(
+                        usuarioLocal,
+                        onSuccess = { firebaseId ->
+                            lifecycleScope.launch {
+                                dao.marcarComoSincronizado(usuarioLocal.id, firebaseId)
+                                Log.d("LoginActivity", "Usuario sincronizado exitosamente con ID: $firebaseId")
+                            }
+                        },
+                        onFailure = { e ->
+                            Log.e("LoginActivity", "Error al sincronizar usuario: ${e.message}")
+                            // No bloquear el login por error de sincronización
+                        }
+                    )
                 }
 
                 // Login exitoso

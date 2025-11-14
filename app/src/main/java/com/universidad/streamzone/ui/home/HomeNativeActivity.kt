@@ -11,26 +11,29 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.universidad.streamzone.R
+import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.model.Category
 import com.universidad.streamzone.data.model.Service
 import com.universidad.streamzone.ui.auth.LoginActivity
 import com.universidad.streamzone.ui.category.CategoryActivity
+import com.universidad.streamzone.ui.components.NavbarManager
 import com.universidad.streamzone.ui.home.adapter.CategoryCardAdapter
 import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
-import androidx.lifecycle.lifecycleScope
-import com.universidad.streamzone.data.local.database.AppDatabase
-import com.universidad.streamzone.data.model.ServicioPopular
-import com.universidad.streamzone.ui.components.NavbarManager
 import kotlinx.coroutines.launch
+
 class HomeNativeActivity : AppCompatActivity() {
 
     private lateinit var rvCategories: RecyclerView
     private lateinit var tvGreeting: TextView
     private lateinit var sharedPrefs: SharedPreferences
+    private lateinit var fabAdminMenu: FloatingActionButton
     private var currentUser: String = ""
+    private var currentUserId: Int = 0
 
     // Definir las categorías
     private val categories = listOf(
@@ -110,15 +113,16 @@ class HomeNativeActivity : AppCompatActivity() {
         Log.d("HomeNative", "Spotify card: ${findViewById<View>(R.id.card_popular_spotify) != null}")
         Log.d("HomeNative", "Disney card: ${findViewById<View>(R.id.card_popular_disney) != null}")
 
-
         setupViews()
         setupCategoriesRecyclerView()
         setupPopularServices()
         setupBottomNavbar()
+        checkAdminStatus()
     }
 
     private fun setupViews() {
         tvGreeting = findViewById(R.id.tvGreeting)
+        fabAdminMenu = findViewById(R.id.fab_admin_menu)
 
         currentUser = intent.getStringExtra("USER_FULLNAME") ?: ""
         tvGreeting.text = if (currentUser.isNotEmpty()) "Bienvenido, $currentUser" else "Bienvenido"
@@ -127,6 +131,43 @@ class HomeNativeActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnViewOffer).setOnClickListener {
             showToast("Próximamente: Ofertas especiales")
         }
+
+        // Configurar FAB de admin
+        fabAdminMenu.setOnClickListener {
+            openAdminMenu()
+        }
+    }
+
+    //  Verificar si el usuario es admin
+    private fun checkAdminStatus() {
+        val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
+
+        if (userEmail.isEmpty()) return
+
+        lifecycleScope.launch {
+            try {
+                val dao = AppDatabase.getInstance(this@HomeNativeActivity).usuarioDao()
+                val usuario = dao.buscarPorEmail(userEmail)
+
+                usuario?.let { user ->
+                    currentUserId = user.id
+                    if (user.isAdmin) {
+                        runOnUiThread {
+                            fabAdminMenu.visibility = View.VISIBLE
+                            Log.d("HomeNative", "Usuario es admin - FAB visible")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("HomeNative", "Error al verificar estado admin", e)
+            }
+        }
+    }
+
+    // NUEVA FUNCIÓN: Abrir menú de admin
+    private fun openAdminMenu() {
+        Toast.makeText(this, "🎉 Panel de Admin - Próximamente", Toast.LENGTH_SHORT).show()
+
     }
 
     private fun setupCategoriesRecyclerView() {
@@ -145,6 +186,7 @@ class HomeNativeActivity : AppCompatActivity() {
         }
         rvCategories.adapter = adapter
     }
+
     private fun setupPopularServices() {
         // Servicios por defecto
         val netflix = Service("netflix", "Netflix", "US$ 4,00 /mes", "Acceso inmediato", R.drawable.rounded_square_netflix)
@@ -169,6 +211,7 @@ class HomeNativeActivity : AppCompatActivity() {
 
         Log.d("HomeNative", "Listeners configurados para servicios populares")
     }
+
     private fun openPurchaseDialog(service: Service) {
         val dlg = PurchaseDialogFragment.newInstance(
             service.id,
@@ -181,8 +224,6 @@ class HomeNativeActivity : AppCompatActivity() {
         )
         dlg.show(supportFragmentManager, "purchaseDialog")
     }
-
-
 
     private lateinit var navbarManager: NavbarManager
 

@@ -15,6 +15,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- FloatingActionButton de Admin (solo visible para admins) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_admin_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone"
+        android:src="@drawable/ic_menu"
+        app:tint="@color/white"
+        app:backgroundTint="@color/purple_accent"
+        app:elevation="6dp"
+        app:fabSize="normal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navbar"
+        android:contentDescription="Menú de administrador" />
+
     <!-- Navbar moderno -->
     <include
         android:id="@+id/bottom_navbar"

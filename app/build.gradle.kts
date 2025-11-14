@@ -76,4 +76,7 @@ dependencies {
     //Libreria para el numero de telefno
     implementation("com.hbb20:ccp:2.7.3")
 
+    // ExifInterface para corregir rotación de imágenes
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
+
 }

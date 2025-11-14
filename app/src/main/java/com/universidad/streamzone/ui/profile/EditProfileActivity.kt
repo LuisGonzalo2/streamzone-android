@@ -1,12 +1,25 @@
 package com.universidad.streamzone.ui.profile
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
+import android.util.Base64
 import android.util.Log
 import android.view.View
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.core.content.FileProvider
+import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.lifecycleScope
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.local.database.AppDatabase
@@ -14,6 +27,8 @@ import com.universidad.streamzone.data.remote.FirebaseService
 import kotlinx.coroutines.launch
 import com.google.android.material.button.MaterialButton
 import com.hbb20.CountryCodePicker
+import java.io.ByteArrayOutputStream
+import java.io.File
 
 class EditProfileActivity : AppCompatActivity() {
 
@@ -33,6 +48,12 @@ class EditProfileActivity : AppCompatActivity() {
     private lateinit var btnToggleNewPassword: MaterialButton
     private lateinit var btnToggleConfirmPassword: MaterialButton
 
+    // Componentes de foto de perfil
+    private lateinit var imgFotoPerfil: ImageView
+    private lateinit var cardFotoPerfil: CardView
+    private var fotoBase64: String? = null
+    private var fotoUri: Uri? = null
+
     private var isCurrentPasswordVisible = false
     private var isNewPasswordVisible = false
     private var isConfirmPasswordVisible = false
@@ -41,6 +62,52 @@ class EditProfileActivity : AppCompatActivity() {
     private var userEmail: String = ""
 
     private lateinit var ccp: CountryCodePicker
+
+    // Activity Result Launchers para cámara y galería
+    private val camaraLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && fotoUri != null) {
+            val bitmap = corregirRotacionImagen(fotoUri!!)
+            imgFotoPerfil.setImageBitmap(bitmap)
+            fotoBase64 = convertirBitmapABase64(bitmap)
+        }
+    }
+
+    private val galeriaLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                val bitmap = corregirRotacionImagen(uri)
+                imgFotoPerfil.setImageBitmap(bitmap)
+                fotoBase64 = convertirBitmapABase64(bitmap)
+            }
+        }
+    }
+
+    private val permisosCamaraLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        when {
+            permissions[Manifest.permission.CAMERA] == true -> {
+                abrirCamara()
+            }
+            else -> {
+                Toast.makeText(this, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private val permisosGaleriaLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            abrirGaleria()
+        } else {
+            Toast.makeText(this, "Permiso de galería denegado", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +158,10 @@ class EditProfileActivity : AppCompatActivity() {
         btnToggleCurrentPassword = findViewById(R.id.btn_toggle_current_password)
         btnToggleNewPassword = findViewById(R.id.btn_toggle_new_password)
         btnToggleConfirmPassword = findViewById(R.id.btn_toggle_confirm_password)
+
+        // Componentes de foto
+        imgFotoPerfil = findViewById(R.id.img_foto_perfil)
+        cardFotoPerfil = findViewById(R.id.card_foto_perfil)
     }
 
     private fun loadUserData() {
@@ -117,6 +188,13 @@ class EditProfileActivity : AppCompatActivity() {
                         if (!user.phone.isNullOrEmpty()) {
                             ccp.setFullNumber(user.phone)
                         }
+
+                        // Cargar foto de perfil si existe
+                        if (!user.fotoBase64.isNullOrEmpty()) {
+                            val bitmap = convertirBase64ABitmap(user.fotoBase64!!)
+                            imgFotoPerfil.setImageBitmap(bitmap)
+                            fotoBase64 = user.fotoBase64
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -128,6 +206,11 @@ class EditProfileActivity : AppCompatActivity() {
     private fun setupClickListeners() {
         btnBack.setOnClickListener {
             finish()
+        }
+
+        // Click en foto de perfil para cambiarla
+        cardFotoPerfil.setOnClickListener {
+            mostrarDialogoSeleccionImagen()
         }
 
         // Toggle para mostrar/ocultar sección de cambiar contraseña
@@ -169,6 +252,101 @@ class EditProfileActivity : AppCompatActivity() {
             togglePasswordVisibility(etConfirmPassword, btnToggleConfirmPassword, isConfirmPasswordVisible)
         }
     }
+
+    // ========================================
+    // FUNCIONES DE FOTO DE PERFIL
+    // ========================================
+
+    private fun mostrarDialogoSeleccionImagen() {
+        val opciones = arrayOf("📷 Tomar foto", "🖼️ Elegir de galería")
+
+        AlertDialog.Builder(this)
+            .setTitle("Cambiar foto de perfil")
+            .setItems(opciones) { _, which ->
+                when (which) {
+                    0 -> solicitarPermisoCamara()
+                    1 -> solicitarPermisoGaleria()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun solicitarPermisoCamara() {
+        permisosCamaraLauncher.launch(arrayOf(Manifest.permission.CAMERA))
+    }
+
+    private fun solicitarPermisoGaleria() {
+        val permiso = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+        permisosGaleriaLauncher.launch(permiso)
+    }
+
+    private fun abrirCamara() {
+        val file = File(filesDir, "foto_perfil_${System.currentTimeMillis()}.jpg")
+        fotoUri = FileProvider.getUriForFile(
+            this,
+            "${packageName}.fileprovider",
+            file
+        )
+        fotoUri?.let { uri ->
+            camaraLauncher.launch(uri)
+        }
+    }
+
+    private fun abrirGaleria() {
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        galeriaLauncher.launch(intent)
+    }
+
+    private fun corregirRotacionImagen(uri: Uri): Bitmap {
+        val bitmap = BitmapFactory.decodeStream(contentResolver.openInputStream(uri))
+
+        val inputStream = contentResolver.openInputStream(uri)
+        val exif = ExifInterface(inputStream!!)
+        val orientation = exif.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL
+        )
+
+        val matrix = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+        }
+
+        val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+
+        // Redimensionar si es muy grande (max 800x800)
+        return if (rotatedBitmap.width > 800 || rotatedBitmap.height > 800) {
+            val ratio = Math.min(800.0 / rotatedBitmap.width, 800.0 / rotatedBitmap.height)
+            val width = (ratio * rotatedBitmap.width).toInt()
+            val height = (ratio * rotatedBitmap.height).toInt()
+            Bitmap.createScaledBitmap(rotatedBitmap, width, height, true)
+        } else {
+            rotatedBitmap
+        }
+    }
+
+    private fun convertirBitmapABase64(bitmap: Bitmap): String {
+        val outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+        val byteArray = outputStream.toByteArray()
+        return Base64.encodeToString(byteArray, Base64.DEFAULT)
+    }
+
+    private fun convertirBase64ABitmap(base64: String): Bitmap {
+        val decodedBytes = Base64.decode(base64, Base64.DEFAULT)
+        return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+    }
+
+    // ========================================
+    // FIN FUNCIONES DE FOTO DE PERFIL
+    // ========================================
 
     private fun togglePasswordVisibility(editText: EditText, button: MaterialButton, isVisible: Boolean) {
         if (isVisible) {
@@ -263,11 +441,12 @@ class EditProfileActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                // Actualizar datos
+                // Actualizar datos (incluye foto si cambió)
                 val updatedUser = usuario.copy(
                     fullname = newFullName,
                     phone = fullPhone,
-                    password = if (changingPassword) newPassword else usuario.password
+                    password = if (changingPassword) newPassword else usuario.password,
+                    fotoBase64 = fotoBase64 ?: usuario.fotoBase64  // Mantener foto existente si no cambió
                 )
 
                 dao.actualizar(updatedUser)

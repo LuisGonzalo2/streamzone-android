@@ -12,6 +12,7 @@ data class UsuarioEntity(
     val phone: String,
     val password: String,
     val confirmPassword: String,
+    val fotoBase64: String? = null,
 
     // campo para control de sincronizacion
     val sincronizado: Boolean = false,

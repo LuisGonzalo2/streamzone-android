@@ -57,7 +57,8 @@ object FirebaseService {
                 "email" to usuario.email,
                 "phone" to usuario.phone,
                 "password" to usuario.password,
-                "confirm_password" to usuario.confirmPassword
+                "confirm_password" to usuario.confirmPassword,
+                "fotoBase64" to usuario.fotoBase64
             )
 
             // Timeout de 10 segundos
@@ -116,6 +117,7 @@ object FirebaseService {
                         phone = doc.getString("phone") ?: "",
                         password = doc.getString("password") ?: "",
                         confirmPassword = doc.getString("confirm_password") ?: "",
+                        fotoBase64 = doc.getString("fotoBase64"),
                         sincronizado = true,
                         firebaseId = doc.id
                     )
@@ -143,6 +145,7 @@ object FirebaseService {
                         phone = doc.getString("phone") ?: "",
                         password = doc.getString("password") ?: "",
                         confirmPassword = doc.getString("confirm_password") ?: "",
+                        fotoBase64 = doc.getString("fotoBase64"),
                         sincronizado = true,
                         firebaseId = doc.id
                     )
@@ -276,7 +279,8 @@ object FirebaseService {
             "fullname" to usuario.fullname,
             "email" to usuario.email,
             "phone" to usuario.phone,
-            "password" to usuario.password
+            "password" to usuario.password,
+            "fotoBase64" to usuario.fotoBase64
         )
 
         db.collection("usuarios")

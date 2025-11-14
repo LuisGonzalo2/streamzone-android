@@ -14,6 +14,9 @@ data class UsuarioEntity(
     val confirmPassword: String,
     val fotoBase64: String? = null,
 
+    // Campo de administración
+    val isAdmin: Boolean = false,
+
     // campo para control de sincronizacion
     val sincronizado: Boolean = false,
 

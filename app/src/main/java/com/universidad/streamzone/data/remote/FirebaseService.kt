@@ -25,7 +25,7 @@ object FirebaseService {
             }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Error al verificar email", e)
-                callback(false) // En caso de error, asumimos que no existe
+                callback(false)
             }
     }
 
@@ -43,7 +43,7 @@ object FirebaseService {
             }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Error al verificar teléfono", e)
-                callback(false) // En caso de error, asumimos que no existe
+                callback(false)
             }
     }
 
@@ -53,12 +53,13 @@ object FirebaseService {
             Log.d(TAG, "Iniciando guardado en Firebase para: ${usuario.email}")
 
             val data = hashMapOf(
-                "nombre" to usuario.fullname,
+                "fullname" to usuario.fullname,
                 "email" to usuario.email,
                 "phone" to usuario.phone,
                 "password" to usuario.password,
-                "confirm_password" to usuario.confirmPassword,
-                "fotoBase64" to usuario.fotoBase64
+                "confirmPassword" to usuario.confirmPassword,
+                "fotoBase64" to usuario.fotoBase64,
+                "isAdmin" to usuario.isAdmin
             )
 
             // Timeout de 10 segundos
@@ -112,12 +113,13 @@ object FirebaseService {
 
                     val usuario = UsuarioEntity(
                         id = 0,
-                        fullname = doc.getString("nombre") ?: "",
+                        fullname = doc.getString("fullname") ?: "",
                         email = doc.getString("email") ?: "",
                         phone = doc.getString("phone") ?: "",
                         password = doc.getString("password") ?: "",
-                        confirmPassword = doc.getString("confirm_password") ?: "",
+                        confirmPassword = doc.getString("confirmPassword") ?: "",
                         fotoBase64 = doc.getString("fotoBase64"),
+                        isAdmin = doc.getBoolean("isAdmin") ?: false,
                         sincronizado = true,
                         firebaseId = doc.id
                     )
@@ -140,12 +142,13 @@ object FirebaseService {
                 val lista = result.map { doc ->
                     UsuarioEntity(
                         id = 0,
-                        fullname = doc.getString("nombre") ?: "",
+                        fullname = doc.getString("fullname") ?: "",
                         email = doc.getString("email") ?: "",
                         phone = doc.getString("phone") ?: "",
                         password = doc.getString("password") ?: "",
-                        confirmPassword = doc.getString("confirm_password") ?: "",
+                        confirmPassword = doc.getString("confirmPassword") ?: "",
                         fotoBase64 = doc.getString("fotoBase64"),
+                        isAdmin = doc.getBoolean("isAdmin") ?: false,
                         sincronizado = true,
                         firebaseId = doc.id
                     )
@@ -240,7 +243,7 @@ object FirebaseService {
                     .addOnSuccessListener { documents ->
                         if (documents.isEmpty) {
                             Log.w(TAG, "Usuario no encontrado en Firebase, creando nuevo...")
-                            // Si no existe, crearlo (adaptar callback)
+                            // Si no existe, crearlo
                             guardarUsuario(
                                 usuario,
                                 onSuccess = { firebaseId ->
@@ -280,7 +283,9 @@ object FirebaseService {
             "email" to usuario.email,
             "phone" to usuario.phone,
             "password" to usuario.password,
-            "fotoBase64" to usuario.fotoBase64
+            "confirmPassword" to usuario.confirmPassword,
+            "fotoBase64" to usuario.fotoBase64,
+            "isAdmin" to usuario.isAdmin
         )
 
         db.collection("usuarios")

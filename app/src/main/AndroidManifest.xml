@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- ====================================== -->
-    <!-- PERMISOS                               -->
+    <!-- PERMISOS -->
     <!-- ====================================== -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Permisos para cámara y galería -->
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> <!-- Permisos para cámara y galería -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
@@ -23,9 +26,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CarpoolAppUniversidad">
-
+        <activity
+            android:name=".ui.admin.users.UserManagerActivity"
+            android:exported="false" />
         <!-- ====================================== -->
-        <!-- PANTALLA DE INICIO (SPLASH)            -->
+        <!-- PANTALLA DE INICIO (SPLASH) -->
         <!-- ====================================== -->
         <activity
             android:name=".ui.splash.SplashActivity"
@@ -33,38 +38,29 @@
             android:theme="@style/Theme.AppCompat.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
+        </activity> <!-- ====================================== -->
+        <!-- AUTENTICACIÓN -->
         <!-- ====================================== -->
-        <!-- AUTENTICACIÓN                          -->
-        <!-- ====================================== -->
-
         <!-- Login de usuarios -->
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <!-- Registro de nuevos usuarios -->
+            android:screenOrientation="portrait" /> <!-- Registro de nuevos usuarios -->
         <activity
             android:name=".ui.auth.RegisterActivity"
             android:exported="false"
             android:parentActivityName=".ui.auth.LoginActivity"
-            android:screenOrientation="portrait" />
-
+            android:screenOrientation="portrait" /> <!-- ====================================== -->
+        <!-- PANTALLAS PRINCIPALES -->
         <!-- ====================================== -->
-        <!-- PANTALLAS PRINCIPALES                  -->
-        <!-- ====================================== -->
-
         <!-- Home: Catálogo de servicios -->
         <activity
             android:name=".ui.home.HomeNativeActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <!-- Reserva de servicios -->
+            android:screenOrientation="portrait" /> <!-- Reserva de servicios -->
         <activity
             android:name=".ui.reserve.ReserveActivity"
             android:exported="false"
@@ -72,30 +68,23 @@
         <activity
             android:name=".ui.home.UserProfileActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
-        <!-- Pantalla de servicios por categoría -->
+            android:screenOrientation="portrait" /> <!-- Pantalla de servicios por categoría -->
         <activity
             android:name=".ui.category.CategoryActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
-        <!-- Editar perfil -->
+            android:screenOrientation="portrait" /> <!-- Editar perfil -->
         <activity
             android:name=".ui.profile.EditProfileActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
-        <!-- Mis Compras -->
+            android:screenOrientation="portrait" /> <!-- Mis Compras -->
         <activity
             android:name=".ui.purchases.PurchaseHistoryActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <!-- Notificaciones -->
+            android:screenOrientation="portrait" /> <!-- Notificaciones -->
         <activity
             android:name=".ui.notifications.NotificationsActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <!-- FileProvider para compartir archivos de la cámara -->
+            android:screenOrientation="portrait" /> <!-- FileProvider para compartir archivos de la cámara -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

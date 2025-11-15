@@ -2,6 +2,7 @@ package com.universidad.streamzone.ui.home
 
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -11,6 +12,8 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ContextThemeWrapper
+import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -164,10 +167,36 @@ class HomeNativeActivity : AppCompatActivity() {
         }
     }
 
-    // NUEVA FUNCIÓN: Abrir menú de admin
+    // Abrir menú de admin
     private fun openAdminMenu() {
-        Toast.makeText(this, "🎉 Panel de Admin - Próximamente", Toast.LENGTH_SHORT).show()
 
+        val popupMenu = PopupMenu(this, fabAdminMenu) // fabAdminMenu es el ancla
+
+        // 2. "Infla" el menú, cargando las opciones desde tu archivo XML
+        popupMenu.menuInflater.inflate(R.menu.admin_fab_menu, popupMenu.menu)
+
+        // 3. Define qué hacer cuando se hace clic en una de las opciones del menú
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) { // Recuerda usar .itemId
+                R.id.menu_admin_view_users -> {
+
+                    showToast("Abriendo 'Ver usuarios'...")
+
+                    true
+                }
+                R.id.menu_admin_view_admins -> {
+                    showToast("Abriendo 'Ver admins'...")
+                    true
+                }
+                R.id.menu_admin_assign_roles -> {
+                    showToast("Abriendo 'Asignar roles'...")
+                    true
+                }
+                else -> false
+            }
+        }
+
+        popupMenu.show()
     }
 
     private fun setupCategoriesRecyclerView() {

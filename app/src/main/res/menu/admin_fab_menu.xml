@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Opción 1: Ver usuarios -->
+    <item
+        android:id="@+id/menu_admin_view_users"
+        android:title="Ver usuarios registrados"
+        />
+
+    <!-- Opción 2: Ver administradores -->
+    <item
+        android:id="@+id/menu_admin_view_admins"
+        android:title="Ver admins"
+       />
+
+    <!-- Opción 3: Asignar roles -->
+    <item
+        android:id="@+id/menu_admin_assign_roles"
+        android:title="Asignar roles"
+         />
+
+</menu>

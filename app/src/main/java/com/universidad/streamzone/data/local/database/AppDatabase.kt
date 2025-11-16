@@ -18,9 +18,10 @@ import com.universidad.streamzone.data.model.*
         RolePermissionEntity::class,
         UserRoleEntity::class,
         ServiceEntity::class,
-        CategoryEntity::class
+        CategoryEntity::class,
+        OfferEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase() {
@@ -31,6 +32,7 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun userRoleDao(): UserRoleDao
     abstract fun serviceDao(): ServiceDao
     abstract fun categoryDao(): CategoryDao
+    abstract fun offerDao(): OfferDao
 
     companion object {
         @Volatile
@@ -216,6 +218,28 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        // Migración de versión 6 a 7 - Agregar tabla de ofertas
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS offers (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        title TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        originalPrice TEXT NOT NULL,
+                        discountPrice TEXT NOT NULL,
+                        serviceIds TEXT NOT NULL,
+                        bannerText TEXT NOT NULL,
+                        startDate INTEGER NOT NULL,
+                        endDate INTEGER NOT NULL,
+                        isActive INTEGER NOT NULL DEFAULT 1,
+                        sincronizado INTEGER NOT NULL DEFAULT 0,
+                        firebaseId TEXT
+                    )
+                """.trimIndent())
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -228,7 +252,8 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_2_3,
                         MIGRATION_3_4,
                         MIGRATION_4_5,
-                        MIGRATION_5_6
+                        MIGRATION_5_6,
+                        MIGRATION_6_7
                     )
                     .fallbackToDestructiveMigration()
                     .build()

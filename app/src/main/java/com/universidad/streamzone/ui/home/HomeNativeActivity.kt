@@ -7,17 +7,14 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ListPopupWindow
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.view.ContextThemeWrapper
-import androidx.appcompat.widget.PopupMenu
-import android.widget.ArrayAdapter
-import android.widget.ListPopupWindow
 import androidx.core.content.ContextCompat
-
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -26,6 +23,7 @@ import com.universidad.streamzone.R
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.model.Category
 import com.universidad.streamzone.data.model.Service
+import com.universidad.streamzone.ui.admin.catalog.CategoriesManagerActivity
 import com.universidad.streamzone.ui.admin.users.UserManagerActivity
 import com.universidad.streamzone.ui.auth.LoginActivity
 import com.universidad.streamzone.ui.category.CategoryActivity
@@ -175,15 +173,15 @@ class HomeNativeActivity : AppCompatActivity() {
 
     // Abrir menú de admin
     private fun openAdminMenu() {
-        // Configuración del menú
-
         val menuOptions = listOf(
             "Ver usuarios registrados",
-            "Ver admins",
-            "Asignar roles"
+            "Gestionar categorías",
+            "Gestionar servicios",
+            "Gestionar ofertas",
+            "Compras pendientes"
         )
+
         val listPopupWindow = ListPopupWindow(this)
-        // Configurar el adapter
         listPopupWindow.anchorView = fabAdminMenu
         val adapter = ArrayAdapter(this, R.layout.item_popup_menu, menuOptions)
         listPopupWindow.setAdapter(adapter)
@@ -191,29 +189,32 @@ class HomeNativeActivity : AppCompatActivity() {
             ContextCompat.getDrawable(this, R.drawable.bg_popup_menu_custom)
         )
         listPopupWindow.isModal = true
-
-        // Ancho
         listPopupWindow.width = (resources.displayMetrics.widthPixels * 0.60).toInt()
-
-        // Posicion vertical
-
         listPopupWindow.verticalOffset = -(listPopupWindow.height * -30)
 
         listPopupWindow.setOnItemClickListener { _, _, position, _ ->
             when (position) {
-                0 -> { // "Ver usuarios registrados"
+                0 -> { // Ver usuarios registrados
                     val intent = Intent(this, UserManagerActivity::class.java)
                     startActivity(intent)
                 }
-                1 -> { // "Ver admins"
-                    showToast("Abriendo 'Ver admins'...")
+                1 -> { // Gestionar categorías
+                    val intent = Intent(this, CategoriesManagerActivity::class.java)
+                    startActivity(intent)
                 }
-
+                2 -> { // Gestionar servicios
+                    showToast("Próximamente: Gestión de servicios")
+                }
+                3 -> { // Gestionar ofertas
+                    showToast("Próximamente: Gestión de ofertas")
+                }
+                4 -> { // Compras pendientes
+                    showToast("Próximamente: Compras pendientes")
+                }
             }
-            listPopupWindow.dismiss() // Cierra el menú.
+            listPopupWindow.dismiss()
         }
 
-        // Muestra el menú.
         listPopupWindow.show()
     }
 

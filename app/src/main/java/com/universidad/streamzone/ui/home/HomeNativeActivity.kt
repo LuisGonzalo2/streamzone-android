@@ -22,6 +22,7 @@ import com.universidad.streamzone.R
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.model.Category
 import com.universidad.streamzone.data.model.Service
+import com.universidad.streamzone.ui.admin.users.UserManagerActivity
 import com.universidad.streamzone.ui.auth.LoginActivity
 import com.universidad.streamzone.ui.category.CategoryActivity
 import com.universidad.streamzone.ui.components.NavbarManager
@@ -170,17 +171,16 @@ class HomeNativeActivity : AppCompatActivity() {
     // Abrir menú de admin
     private fun openAdminMenu() {
 
-        val popupMenu = PopupMenu(this, fabAdminMenu) // fabAdminMenu es el ancla
+        val popupMenu = PopupMenu(this, fabAdminMenu)
 
-        // 2. "Infla" el menú, cargando las opciones desde tu archivo XML
         popupMenu.menuInflater.inflate(R.menu.admin_fab_menu, popupMenu.menu)
 
-        // 3. Define qué hacer cuando se hace clic en una de las opciones del menú
+        // Define qué hacer cuando se hace clic en una de las opciones del menú
         popupMenu.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) { // Recuerda usar .itemId
+            when (menuItem.itemId) {
                 R.id.menu_admin_view_users -> {
-
-                    showToast("Abriendo 'Ver usuarios'...")
+                    val intent = Intent(this, UserManagerActivity::class.java)
+                    startActivity(intent)
 
                     true
                 }

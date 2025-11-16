@@ -15,7 +15,7 @@ data class UsuarioEntity(
     val fotoBase64: String? = null,
 
     // Campo de administración
-    val isAdmin: Boolean = false,
+    var isAdmin: Boolean = false,
 
     // campo para control de sincronizacion
     val sincronizado: Boolean = false,

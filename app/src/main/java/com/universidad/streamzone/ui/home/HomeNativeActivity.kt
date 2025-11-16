@@ -14,6 +14,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.appcompat.widget.PopupMenu
+import android.widget.ArrayAdapter
+import android.widget.ListPopupWindow
+import androidx.core.content.ContextCompat
+
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -33,6 +37,7 @@ import kotlinx.coroutines.launch
 class HomeNativeActivity : AppCompatActivity() {
 
     private lateinit var rvCategories: RecyclerView
+
     private lateinit var tvGreeting: TextView
     private lateinit var sharedPrefs: SharedPreferences
     private lateinit var fabAdminMenu: FloatingActionButton
@@ -170,33 +175,46 @@ class HomeNativeActivity : AppCompatActivity() {
 
     // Abrir menú de admin
     private fun openAdminMenu() {
+        // Configuración del menú
 
-        val popupMenu = PopupMenu(this, fabAdminMenu)
+        val menuOptions = listOf(
+            "Ver usuarios registrados",
+            "Ver admins",
+            "Asignar roles"
+        )
+        val listPopupWindow = ListPopupWindow(this)
+        // Configurar el adapter
+        listPopupWindow.anchorView = fabAdminMenu
+        val adapter = ArrayAdapter(this, R.layout.item_popup_menu, menuOptions)
+        listPopupWindow.setAdapter(adapter)
+        listPopupWindow.setBackgroundDrawable(
+            ContextCompat.getDrawable(this, R.drawable.bg_popup_menu_custom)
+        )
+        listPopupWindow.isModal = true
 
-        popupMenu.menuInflater.inflate(R.menu.admin_fab_menu, popupMenu.menu)
+        // Ancho
+        listPopupWindow.width = (resources.displayMetrics.widthPixels * 0.60).toInt()
 
-        // Define qué hacer cuando se hace clic en una de las opciones del menú
-        popupMenu.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.menu_admin_view_users -> {
+        // Posicion vertical
+
+        listPopupWindow.verticalOffset = -(listPopupWindow.height * -30)
+
+        listPopupWindow.setOnItemClickListener { _, _, position, _ ->
+            when (position) {
+                0 -> { // "Ver usuarios registrados"
                     val intent = Intent(this, UserManagerActivity::class.java)
                     startActivity(intent)
-
-                    true
                 }
-                R.id.menu_admin_view_admins -> {
+                1 -> { // "Ver admins"
                     showToast("Abriendo 'Ver admins'...")
-                    true
                 }
-                R.id.menu_admin_assign_roles -> {
-                    showToast("Abriendo 'Asignar roles'...")
-                    true
-                }
-                else -> false
+
             }
+            listPopupWindow.dismiss() // Cierra el menú.
         }
 
-        popupMenu.show()
+        // Muestra el menú.
+        listPopupWindow.show()
     }
 
     private fun setupCategoriesRecyclerView() {

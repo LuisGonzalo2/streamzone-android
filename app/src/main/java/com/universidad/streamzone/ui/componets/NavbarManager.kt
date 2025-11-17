@@ -7,12 +7,17 @@ import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.universidad.streamzone.R
+import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.ui.home.HomeNativeActivity
 import com.universidad.streamzone.ui.home.UserProfileActivity
 import com.universidad.streamzone.ui.purchases.PurchaseHistoryActivity
 import com.universidad.streamzone.ui.notifications.NotificationsActivity
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class NavbarManager(private val activity: Activity, private val currentScreen: Screen) {
 
@@ -43,6 +48,30 @@ class NavbarManager(private val activity: Activity, private val currentScreen: S
     init {
         setupClickListeners()
         setActiveScreen(currentScreen)
+        startObservingNotifications()
+    }
+
+    /**
+     * Observa el contador de notificaciones no leídas en tiempo real
+     */
+    private fun startObservingNotifications() {
+        if (activity is AppCompatActivity) {
+            activity.lifecycleScope.launch {
+                val db = AppDatabase.getInstance(activity)
+                val notificationDao = db.notificationDao()
+
+                // Obtener el email del usuario actual
+                val sharedPrefs = activity.getSharedPreferences("StreamZoneData", android.content.Context.MODE_PRIVATE)
+                val userEmail = sharedPrefs.getString("USER_EMAIL", "") ?: ""
+
+                if (userEmail.isNotEmpty()) {
+                    // Observar el contador de notificaciones no leídas en tiempo real
+                    notificationDao.getUnreadCountFlow(userEmail).collectLatest { count ->
+                        updateNotificationBadge(count)
+                    }
+                }
+            }
+        }
     }
 
     private fun setupClickListeners() {

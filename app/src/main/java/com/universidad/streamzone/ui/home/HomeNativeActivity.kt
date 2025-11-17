@@ -24,6 +24,7 @@ import com.universidad.streamzone.ui.category.CategoryActivity
 import com.universidad.streamzone.ui.components.NavbarManager
 import com.universidad.streamzone.ui.home.adapter.CategoryCardAdapter
 import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
+import com.universidad.streamzone.util.NotificationPermissionHelper
 import com.universidad.streamzone.util.toCategory
 import com.universidad.streamzone.util.toServiceList
 import kotlinx.coroutines.launch
@@ -79,6 +80,27 @@ class HomeNativeActivity : AppCompatActivity() {
         setupPopularServices()
         setupBottomNavbar()
         checkAdminStatus()
+
+        // Solicitar permisos de notificaciones (Android 13+)
+        NotificationPermissionHelper.requestNotificationPermission(this)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        NotificationPermissionHelper.handlePermissionResult(
+            requestCode,
+            grantResults,
+            onGranted = {
+                Log.d("HomeNative", "Permisos de notificaciones concedidos")
+            },
+            onDenied = {
+                Log.d("HomeNative", "Permisos de notificaciones denegados")
+            }
+        )
     }
 
     private fun setupViews() {
@@ -317,7 +339,6 @@ class HomeNativeActivity : AppCompatActivity() {
 
     private fun setupBottomNavbar() {
         navbarManager = NavbarManager(this, NavbarManager.Screen.HOME)
-        navbarManager.updateNotificationBadge(3)
     }
 
     private fun onCategoryClick(category: Category) {

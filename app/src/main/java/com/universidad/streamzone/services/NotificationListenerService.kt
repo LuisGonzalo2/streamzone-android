@@ -26,12 +26,13 @@ class NotificationListenerService(private val context: Context) {
     private var categoriesListener: ListenerRegistration? = null
     private var servicesListener: ListenerRegistration? = null
     private var offersListener: ListenerRegistration? = null
-    private var rolesListener: ListenerRegistration? = null
+    private var purchasesListener: ListenerRegistration? = null
 
     // Map para rastrear documentos ya vistos (evitar notificaciones en la primera carga)
     private val seenCategories = mutableSetOf<String>()
     private val seenServices = mutableSetOf<String>()
     private val seenOffers = mutableSetOf<String>()
+    private val seenPurchases = mutableSetOf<String>()
     private var isFirstLoad = true
 
     /**
@@ -41,6 +42,7 @@ class NotificationListenerService(private val context: Context) {
         listenToCategories()
         listenToServices()
         listenToOffers()
+        listenToPurchases()
 
         // Marcar que la primera carga ya pasó después de 2 segundos
         serviceScope.launch {
@@ -58,7 +60,7 @@ class NotificationListenerService(private val context: Context) {
         categoriesListener?.remove()
         servicesListener?.remove()
         offersListener?.remove()
-        rolesListener?.remove()
+        purchasesListener?.remove()
 
         Log.d(TAG, "Listeners de notificaciones detenidos")
     }
@@ -187,6 +189,61 @@ class NotificationListenerService(private val context: Context) {
                                 )
                             }
                             seenOffers.add(offerId)
+                        }
+                        else -> {}
+                    }
+                }
+            }
+    }
+
+    /**
+     * Escucha cambios en compras
+     */
+    private fun listenToPurchases() {
+        // Obtener el email del usuario actual desde SharedPreferences
+        val sharedPrefs = context.getSharedPreferences("StreamZoneData", Context.MODE_PRIVATE)
+        val userEmail = sharedPrefs.getString("USER_EMAIL", "") ?: ""
+
+        if (userEmail.isEmpty()) {
+            Log.d(TAG, "No hay usuario logueado, no se escucharán compras")
+            return
+        }
+
+        purchasesListener = db.collection("purchases")
+            .whereEqualTo("userEmail", userEmail)
+            .addSnapshotListener { snapshots, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error al escuchar compras", error)
+                    return@addSnapshotListener
+                }
+
+                snapshots?.documentChanges?.forEach { change ->
+                    val purchaseId = change.document.id
+                    val serviceName = change.document.getString("serviceName") ?: "Servicio"
+                    val status = change.document.getString("status") ?: "pending"
+                    val email = change.document.getString("email")
+                    val password = change.document.getString("password")
+
+                    when (change.type) {
+                        com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
+                            seenPurchases.add(purchaseId)
+                        }
+                        com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
+                            // Notificar cuando se asignan credenciales
+                            if (seenPurchases.contains(purchaseId) &&
+                                status == "completed" &&
+                                !email.isNullOrEmpty() &&
+                                !password.isNullOrEmpty()) {
+                                createNotification(
+                                    title = "¡Credenciales asignadas!",
+                                    message = "Tus credenciales de $serviceName están listas. Ve a 'Mis Compras' para verlas.",
+                                    type = NotificationType.PURCHASE,
+                                    icon = "✅",
+                                    userId = userEmail,
+                                    actionType = "open_purchases",
+                                    actionData = purchaseId
+                                )
+                            }
                         }
                         else -> {}
                     }

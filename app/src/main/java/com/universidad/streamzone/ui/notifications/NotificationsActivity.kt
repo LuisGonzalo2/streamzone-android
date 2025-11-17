@@ -29,7 +29,6 @@ class NotificationsActivity : AppCompatActivity() {
     private lateinit var rvNotifications: RecyclerView
     private lateinit var emptyState: LinearLayout
     private lateinit var notificationAdapter: NotificationAdapter
-    private lateinit var notificationListenerService: NotificationListenerService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,17 +60,8 @@ class NotificationsActivity : AppCompatActivity() {
         // Configurar navbar
         navbarManager = NavbarManager(this, NavbarManager.Screen.NOTIFICATIONS)
 
-        // Iniciar listeners de notificaciones
-        notificationListenerService = NotificationListenerService(this)
-        notificationListenerService.startListening()
-
         initViews()
         loadNotifications()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        notificationListenerService.stopListening()
     }
 
     private fun initViews() {

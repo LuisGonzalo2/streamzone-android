@@ -26,4 +26,15 @@ interface PermissionDao {
         WHERE rp.roleId = :roleId
     """)
     suspend fun obtenerPermisosPorRol(roleId: Int): List<PermissionEntity>
+
+    // Alias para compatibilidad (acepta Long)
+    @Query("""
+        SELECT p.* FROM permissions p
+        INNER JOIN role_permissions rp ON p.id = rp.permissionId
+        WHERE rp.roleId = :roleId
+    """)
+    suspend fun getPermissionsByRole(roleId: Long): List<PermissionEntity>
+
+    @Query("SELECT * FROM permissions ORDER BY name ASC")
+    suspend fun getAll(): List<PermissionEntity>
 }

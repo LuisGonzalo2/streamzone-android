@@ -1,0 +1,246 @@
+package com.universidad.streamzone.ui.admin
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.*
+import androidx.appcompat.widget.SwitchCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.universidad.streamzone.R
+import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.model.PermissionEntity
+import com.universidad.streamzone.data.model.RoleEntity
+import com.universidad.streamzone.data.model.RolePermissionEntity
+import com.universidad.streamzone.util.PermissionManager
+import kotlinx.coroutines.launch
+
+/**
+ * Activity para crear o editar roles del sistema
+ */
+class CreateEditRoleActivity : BaseAdminActivity() {
+
+    override val requiredPermission: String = PermissionManager.MANAGE_ROLES
+
+    private lateinit var btnBack: ImageButton
+    private lateinit var tvTitle: TextView
+    private lateinit var etRoleName: EditText
+    private lateinit var etRoleDescription: EditText
+    private lateinit var switchIsActive: SwitchCompat
+    private lateinit var rvPermissions: RecyclerView
+    private lateinit var btnSaveRole: Button
+
+    private var roleId: Int? = null
+    private var allPermissions = listOf<PermissionEntity>()
+    private val selectedPermissions = mutableSetOf<Int>()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_create_edit_role)
+
+        roleId = intent.getIntExtra("ROLE_ID", -1).takeIf { it != -1 }
+    }
+
+    override fun onPermissionGranted() {
+        initViews()
+        loadPermissions()
+
+        if (roleId != null) {
+            tvTitle.text = "Editar Rol"
+            loadRole(roleId!!)
+        }
+    }
+
+    private fun initViews() {
+        btnBack = findViewById(R.id.btnBack)
+        tvTitle = findViewById(R.id.tvTitle)
+        etRoleName = findViewById(R.id.etRoleName)
+        etRoleDescription = findViewById(R.id.etRoleDescription)
+        switchIsActive = findViewById(R.id.switchIsActive)
+        rvPermissions = findViewById(R.id.rvPermissions)
+        btnSaveRole = findViewById(R.id.btnSaveRole)
+
+        btnBack.setOnClickListener { finish() }
+        btnSaveRole.setOnClickListener { saveRole() }
+
+        // Por defecto, los roles nuevos están activos
+        switchIsActive.isChecked = true
+    }
+
+    private fun loadPermissions() {
+        lifecycleScope.launch {
+            try {
+                val db = AppDatabase.getInstance(this@CreateEditRoleActivity)
+                val permissionDao = db.permissionDao()
+
+                allPermissions = permissionDao.getAll()
+
+                runOnUiThread {
+                    rvPermissions.layoutManager = LinearLayoutManager(this@CreateEditRoleActivity)
+                    rvPermissions.adapter = PermissionAdapter(allPermissions, selectedPermissions)
+                }
+
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@CreateEditRoleActivity,
+                    "Error al cargar permisos: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private fun loadRole(id: Int) {
+        lifecycleScope.launch {
+            try {
+                val db = AppDatabase.getInstance(this@CreateEditRoleActivity)
+                val roleDao = db.roleDao()
+                val permissionDao = db.permissionDao()
+
+                val role = roleDao.obtenerPorId(id)
+                if (role == null) {
+                    Toast.makeText(
+                        this@CreateEditRoleActivity,
+                        "Rol no encontrado",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    finish()
+                    return@launch
+                }
+
+                // Obtener permisos del rol
+                val rolePermissions = permissionDao.obtenerPermisosPorRol(id)
+                selectedPermissions.clear()
+                selectedPermissions.addAll(rolePermissions.map { it.id })
+
+                runOnUiThread {
+                    etRoleName.setText(role.name)
+                    etRoleDescription.setText(role.description)
+                    switchIsActive.isChecked = role.isActive
+
+                    // Actualizar adapter
+                    rvPermissions.adapter?.notifyDataSetChanged()
+                }
+
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@CreateEditRoleActivity,
+                        "Error al cargar rol: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun saveRole() {
+        val name = etRoleName.text.toString().trim()
+        if (name.isEmpty()) {
+            Toast.makeText(this, "El nombre del rol es obligatorio", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val description = etRoleDescription.text.toString().trim()
+        if (description.isEmpty()) {
+            Toast.makeText(this, "La descripción del rol es obligatoria", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (selectedPermissions.isEmpty()) {
+            Toast.makeText(this, "Selecciona al menos un permiso", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        lifecycleScope.launch {
+            try {
+                val db = AppDatabase.getInstance(this@CreateEditRoleActivity)
+                val roleDao = db.roleDao()
+                val rolePermissionDao = db.rolePermissionDao()
+
+                val role = RoleEntity(
+                    id = roleId ?: 0,
+                    name = name,
+                    description = description,
+                    isActive = switchIsActive.isChecked
+                )
+
+                val savedRoleId: Long
+                if (roleId == null) {
+                    // Crear nuevo rol
+                    savedRoleId = roleDao.insertar(role)
+                } else {
+                    // Actualizar rol existente
+                    roleDao.actualizar(role)
+                    savedRoleId = roleId!!.toLong()
+
+                    // Eliminar permisos anteriores
+                    rolePermissionDao.eliminarPermisosPorRol(roleId!!)
+                }
+
+                // Insertar nuevos permisos
+                selectedPermissions.forEach { permissionId ->
+                    val rolePermission = RolePermissionEntity(
+                        roleId = savedRoleId.toInt(),
+                        permissionId = permissionId
+                    )
+                    rolePermissionDao.insertar(rolePermission)
+                }
+
+                runOnUiThread {
+                    Toast.makeText(
+                        this@CreateEditRoleActivity,
+                        "Rol guardado correctamente",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    finish()
+                }
+
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@CreateEditRoleActivity,
+                        "Error al guardar rol: ${e.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    inner class PermissionAdapter(
+        private val permissions: List<PermissionEntity>,
+        private val selectedPermissions: MutableSet<Int>
+    ) : RecyclerView.Adapter<PermissionAdapter.PermissionViewHolder>() {
+
+        inner class PermissionViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val checkBox: CheckBox = view.findViewById(R.id.cbPermission)
+            val tvDescription: TextView = view.findViewById(R.id.tvPermissionDescription)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PermissionViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_permission_checkbox, parent, false)
+            return PermissionViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: PermissionViewHolder, position: Int) {
+            val permission = permissions[position]
+            holder.checkBox.text = permission.name
+            holder.tvDescription.text = permission.description
+            holder.checkBox.isChecked = selectedPermissions.contains(permission.id)
+
+            holder.checkBox.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    selectedPermissions.add(permission.id)
+                } else {
+                    selectedPermissions.remove(permission.id)
+                }
+            }
+        }
+
+        override fun getItemCount() = permissions.size
+    }
+}

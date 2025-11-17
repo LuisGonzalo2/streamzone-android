@@ -95,6 +95,58 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <!-- ====================================== -->
+        <!-- PANEL DE ADMINISTRADOR                 -->
+        <!-- ====================================== -->
+
+        <!-- Menú principal de administrador -->
+        <activity
+            android:name=".ui.admin.AdminMenuActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Gestión de ofertas -->
+        <activity
+            android:name=".ui.admin.OffersManagerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Crear/Editar oferta -->
+        <activity
+            android:name=".ui.admin.CreateEditOfferActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Compras pendientes -->
+        <activity
+            android:name=".ui.admin.PendingPurchasesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Lista de usuarios -->
+        <activity
+            android:name=".ui.admin.UserListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Gestión de roles -->
+        <activity
+            android:name=".ui.admin.RolesManagerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Gestión de servicios -->
+        <activity
+            android:name=".ui.admin.ServicesManagerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Gestión de categorías -->
+        <activity
+            android:name=".ui.admin.CategoriesManagerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <!-- FileProvider para compartir archivos de la cámara -->
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="24dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="@color/white"
+                android:contentDescription="Volver" />
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="Nueva Oferta"
+                android:textSize="20sp"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+        </RelativeLayout>
+
+        <!-- Título de la oferta -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Título de la oferta"
+            android:textSize="14sp"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etOfferTitle"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Ej: Combo Netflix + Spotify"
+            android:textColorHint="#808080"
+            android:textColor="@color/white"
+            android:background="@drawable/bg_card_rounded"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Descripción -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Descripción"
+            android:textSize="14sp"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etOfferDescription"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:hint="Describe la oferta..."
+            android:textColorHint="#808080"
+            android:textColor="@color/white"
+            android:background="@drawable/bg_card_rounded"
+            android:padding="12dp"
+            android:gravity="top"
+            android:inputType="textMultiLine"
+            android:maxLines="3"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Servicios incluidos -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Servicios Incluidos (selecciona al menos 2)"
+            android:textSize="14sp"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvSelectedServices"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ningún servicio seleccionado"
+            android:textSize="13sp"
+            android:textColor="#B0B0B0"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnSelectServices"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Seleccionar Servicios"
+            android:textAllCaps="false"
+            android:backgroundTint="#3B82F6"
+            android:textColor="@color/white"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Precios -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginEnd="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Precio Original (US$)"
+                    android:textSize="14sp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/etOriginalPrice"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="9.38"
+                    android:textColorHint="#808080"
+                    android:textColor="@color/white"
+                    android:background="@drawable/bg_card_rounded"
+                    android:padding="12dp"
+                    android:inputType="numberDecimal" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Precio Combo (US$)"
+                    android:textSize="14sp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/etComboPrice"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="7.50"
+                    android:textColorHint="#808080"
+                    android:textColor="@color/white"
+                    android:background="@drawable/bg_card_rounded"
+                    android:padding="12dp"
+                    android:inputType="numberDecimal" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Descuento calculado -->
+        <TextView
+            android:id="@+id/tvCalculatedDiscount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Descuento: 20%"
+            android:textSize="16sp"
+            android:textColor="#10B981"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Vigencia -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Vigencia"
+            android:textSize="14sp"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/btnStartDate"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="48dp"
+                android:text="Fecha Inicio"
+                android:textAllCaps="false"
+                android:backgroundTint="#2C2C2E"
+                android:textColor="@color/white"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btnEndDate"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="48dp"
+                android:text="Fecha Fin"
+                android:textAllCaps="false"
+                android:backgroundTint="#2C2C2E"
+                android:textColor="@color/white"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+        <!-- Estado activo/inactivo -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="12dp"
+            android:background="@drawable/bg_card_rounded"
+            android:layout_marginBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Estado de la Oferta"
+                    android:textSize="14sp"
+                    android:textColor="@color/white"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Activa las ofertas para que los usuarios puedan verlas"
+                    android:textSize="12sp"
+                    android:textColor="#B0B0B0"
+                    android:layout_marginTop="4dp" />
+
+            </LinearLayout>
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switchIsActive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true" />
+
+        </LinearLayout>
+
+        <!-- Botón Guardar -->
+        <Button
+            android:id="@+id/btnSaveOffer"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Guardar Oferta"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:backgroundTint="#8B5CF6"
+            android:textColor="@color/white" />
+
+    </LinearLayout>
+
+</ScrollView>

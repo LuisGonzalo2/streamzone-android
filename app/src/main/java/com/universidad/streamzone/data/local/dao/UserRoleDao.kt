@@ -36,4 +36,8 @@ interface UserRoleDao {
     // Asignar múltiples roles a un usuario
     @Insert
     suspend fun asignarRoles(userRoles: List<UserRoleEntity>)
+
+    // Obtener IDs de roles de un usuario (para validación de permisos)
+    @Query("SELECT roleId FROM user_roles WHERE userId = :userId")
+    suspend fun getRolesByUserId(userId: Int): List<Long>
 }

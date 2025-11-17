@@ -30,4 +30,11 @@ interface ServiceDao {
 
     @Query("SELECT * FROM services ORDER BY name ASC")
     fun obtenerTodos(): Flow<List<ServiceEntity>>
+
+    // Métodos adicionales para uso en repositorios
+    @Query("SELECT * FROM services WHERE id = :id")
+    suspend fun getById(id: Long): ServiceEntity?
+
+    @Query("SELECT * FROM services ORDER BY name ASC")
+    suspend fun getAll(): List<ServiceEntity>
 }

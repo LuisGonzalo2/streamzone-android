@@ -55,4 +55,10 @@ interface PurchaseDao {
     LIMIT 3
 """)
     suspend fun obtenerServiciosMasPopulares(): List<ServicioPopular>
+
+    // Métodos adicionales para admin
+    @Query("SELECT * FROM purchases ORDER BY purchaseDate DESC")
+    suspend fun getAll(): List<PurchaseEntity>
+
+    suspend fun update(purchase: PurchaseEntity) = actualizar(purchase)
 }

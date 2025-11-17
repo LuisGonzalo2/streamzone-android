@@ -20,6 +20,9 @@ interface UsuarioDao {
     @Query("SELECT * FROM usuarios ORDER BY id DESC")
     fun obtenerTodos(): Flow<List<UsuarioEntity>>
 
+    @Query("SELECT * FROM usuarios ORDER BY fullname ASC")
+    suspend fun getAll(): List<UsuarioEntity>
+
     // Buscar usuario por email
     @Query("SELECT * FROM usuarios WHERE email = :email LIMIT 1")
     suspend fun buscarPorEmail(email: String): UsuarioEntity?

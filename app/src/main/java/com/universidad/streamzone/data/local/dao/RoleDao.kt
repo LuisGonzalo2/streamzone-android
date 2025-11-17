@@ -24,4 +24,7 @@ interface RoleDao {
 
     @Query("SELECT * FROM roles ORDER BY name ASC")
     fun obtenerTodos(): Flow<List<RoleEntity>>
+
+    @Query("SELECT * FROM roles ORDER BY name ASC")
+    suspend fun getAll(): List<RoleEntity>
 }

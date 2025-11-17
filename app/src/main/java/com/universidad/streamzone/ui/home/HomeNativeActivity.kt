@@ -129,7 +129,7 @@ class HomeNativeActivity : AppCompatActivity() {
 
         // Configurar el botón de oferta
         findViewById<Button>(R.id.btnViewOffer).setOnClickListener {
-            showToast("Próximamente: Ofertas especiales")
+            openActiveOffer()
         }
 
         // Configurar FAB de admin
@@ -164,10 +164,49 @@ class HomeNativeActivity : AppCompatActivity() {
         }
     }
 
+    // NUEVA FUNCIÓN: Abrir oferta activa
+    private fun openActiveOffer() {
+        val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
+        if (userEmail.isEmpty()) {
+            showToast("Debes iniciar sesión para ver las ofertas")
+            return
+        }
+
+        lifecycleScope.launch {
+            try {
+                val db = AppDatabase.getInstance(this@HomeNativeActivity)
+                val offerDao = db.offerDao()
+
+                val activeOffer = offerDao.getActiveOffer()
+                if (activeOffer == null) {
+                    runOnUiThread {
+                        showToast("No hay ofertas disponibles en este momento")
+                    }
+                    return@launch
+                }
+
+                runOnUiThread {
+                    val dialog = PurchaseOfferDialogFragment.newInstance(
+                        offerId = activeOffer.id,
+                        userEmail = userEmail,
+                        userName = currentUser
+                    )
+                    dialog.show(supportFragmentManager, "offerDialog")
+                }
+
+            } catch (e: Exception) {
+                Log.e("HomeNative", "Error al cargar oferta", e)
+                runOnUiThread {
+                    showToast("Error al cargar la oferta")
+                }
+            }
+        }
+    }
+
     // NUEVA FUNCIÓN: Abrir menú de admin
     private fun openAdminMenu() {
-        Toast.makeText(this, "🎉 Panel de Admin - Próximamente", Toast.LENGTH_SHORT).show()
-
+        val intent = Intent(this, com.universidad.streamzone.ui.admin.AdminMenuActivity::class.java)
+        startActivity(intent)
     }
 
     private fun setupCategoriesRecyclerView() {

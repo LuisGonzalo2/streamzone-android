@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_dark"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="@color/white"
+                android:contentDescription="Volver" />
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="Crear Servicio"
+                android:textSize="20sp"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+        </RelativeLayout>
+
+        <!-- Formulario -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Nombre del servicio -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilServiceName"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Nombre del servicio"
+                android:layout_marginBottom="16dp"
+                app:boxStrokeColor="#6366F1"
+                app:hintTextColor="#B0B0B0"
+                app:boxStrokeWidth="2dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etServiceName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:textColor="@color/white"
+                    android:textColorHint="#808080"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Precio -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilServicePrice"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Precio (ej: US$ 4,00 /mes)"
+                android:layout_marginBottom="16dp"
+                app:boxStrokeColor="@color/white"
+                app:hintTextColor="@color/white">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etServicePrice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:textColor="@color/white"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Descripción -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilServiceDescription"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Descripción"
+                android:layout_marginBottom="16dp"
+                app:boxStrokeColor="@color/white"
+                app:hintTextColor="@color/white">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etServiceDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine"
+                    android:textColor="@color/white"
+                    android:minLines="3"
+                    android:maxLines="5" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Imagen del servicio -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Imagen del servicio (opcional)"
+                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginBottom="8dp"
+                app:cardBackgroundColor="#2C2C2E"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:id="@+id/ivServicePreview"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
+
+                    <LinearLayout
+                        android:id="@+id/llImagePlaceholder"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="📷"
+                            android:textSize="48sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Toca para seleccionar imagen"
+                            android:textSize="14sp"
+                            android:textColor="#B0B0B0"
+                            android:layout_marginTop="8dp" />
+                    </LinearLayout>
+                </RelativeLayout>
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSelectImage"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Seleccionar imagen"
+                    android:textColor="@color/white"
+                    app:backgroundTint="#6366F1"
+                    app:cornerRadius="8dp"
+                    android:layout_marginEnd="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRemoveImage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Quitar"
+                    android:textColor="@color/white"
+                    app:backgroundTint="#EF4444"
+                    app:cornerRadius="8dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- Categoría -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Categoría"
+                android:textSize="14sp"
+                android:textColor="@color/white"
+                android:layout_marginBottom="8dp" />
+
+            <Spinner
+                android:id="@+id/spinnerCategory"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@android:drawable/edit_text"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Switch para Popular -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Servicio popular"
+                    android:textSize="16sp"
+                    android:textColor="@color/white" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchIsPopular"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- Switch para Activo -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="24dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Servicio activo"
+                    android:textSize="16sp"
+                    android:textColor="@color/white" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchIsActive"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true" />
+            </LinearLayout>
+
+            <!-- Botón Guardar -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSave"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Guardar Servicio"
+                android:textColor="@color/white"
+                app:backgroundTint="#6366F1"
+                app:cornerRadius="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

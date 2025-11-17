@@ -2,6 +2,7 @@ package com.universidad.streamzone.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.io.Serializable
 
 @Entity(tableName = "roles")
 data class RoleEntity(
@@ -12,4 +13,4 @@ data class RoleEntity(
     val isActive: Boolean = true,
     val sincronizado: Boolean = false,
     val firebaseId: String? = null
-)
+) : Serializable

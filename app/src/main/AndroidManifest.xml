@@ -90,6 +90,11 @@
             android:name=".ui.admin.purchases.PendingPurchasesActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <!-- ADMIN: Gestión de roles -->
+        <activity
+            android:name=".ui.admin.roles.RolesManagerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

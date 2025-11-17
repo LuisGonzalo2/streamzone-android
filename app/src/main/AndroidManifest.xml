@@ -85,6 +85,11 @@
             android:name=".ui.notifications.NotificationsActivity"
             android:exported="false"
             android:screenOrientation="portrait" /> <!-- FileProvider para compartir archivos de la cámara -->
+        <!-- ADMIN: Gestión de compras pendientes -->
+        <activity
+            android:name=".ui.admin.purchases.PendingPurchasesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

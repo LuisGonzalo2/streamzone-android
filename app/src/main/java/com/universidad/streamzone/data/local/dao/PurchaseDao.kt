@@ -53,6 +53,14 @@ interface PurchaseDao {
     GROUP BY serviceId
     ORDER BY purchaseCount DESC
     LIMIT 3
-""")
+    """)
     suspend fun obtenerServiciosMasPopulares(): List<ServicioPopular>
+
+    // Obtener todas las compras pendientes (para el admin)
+    @Query("SELECT * FROM purchases WHERE status = 'pending' ORDER BY purchaseDate DESC")
+    fun obtenerComprasPendientes(): Flow<List<PurchaseEntity>>
+
+    // Actualizar credenciales y cambiar estado a active
+    @Query("UPDATE purchases SET email = :email, password = :password, status = 'active' WHERE id = :id")
+    suspend fun asignarCredenciales(id: Int, email: String, password: String)
 }

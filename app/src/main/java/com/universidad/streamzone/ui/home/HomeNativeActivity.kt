@@ -172,13 +172,13 @@ class HomeNativeActivity : AppCompatActivity() {
     }
 
     // Abrir menú de admin
+    // Abrir menú de admin
     private fun openAdminMenu() {
         val menuOptions = listOf(
-            "Ver usuarios registrados",
-            "Gestionar categorías",
-            "Gestionar servicios",
-            "Gestionar ofertas",
-            "Compras pendientes"
+            "👥 Ver usuarios registrados",
+            "👑 Ver admins",
+            "⏳ Compras pendientes",
+            "🎭 Asignar roles"
         )
 
         val listPopupWindow = ListPopupWindow(this)
@@ -198,18 +198,15 @@ class HomeNativeActivity : AppCompatActivity() {
                     val intent = Intent(this, UserManagerActivity::class.java)
                     startActivity(intent)
                 }
-                1 -> { // Gestionar categorías
-                    val intent = Intent(this, CategoriesManagerActivity::class.java)
+                1 -> { // Ver admins
+                    showToast("Próximamente: Ver admins")
+                }
+                2 -> { // Compras pendientes
+                    val intent = Intent(this, com.universidad.streamzone.ui.admin.purchases.PendingPurchasesActivity::class.java)
                     startActivity(intent)
                 }
-                2 -> { // Gestionar servicios
-                    showToast("Próximamente: Gestión de servicios")
-                }
-                3 -> { // Gestionar ofertas
-                    showToast("Próximamente: Gestión de ofertas")
-                }
-                4 -> { // Compras pendientes
-                    showToast("Próximamente: Compras pendientes")
+                3 -> { // Asignar roles
+                    showToast("Próximamente: Asignar roles")
                 }
             }
             listPopupWindow.dismiss()

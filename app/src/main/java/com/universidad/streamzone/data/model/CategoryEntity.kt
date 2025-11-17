@@ -15,5 +15,6 @@ data class CategoryEntity(
     val gradientEnd: String,
     val isActive: Boolean = true,
     val sincronizado: Boolean = false,
+    val order: Int = 0,
     val firebaseId: String? = null
 )

@@ -153,6 +153,11 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <activity
+            android:name=".ui.admin.CreateEditServiceActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <!-- Gestión de categorías -->
         <activity
             android:name=".ui.admin.CategoriesManagerActivity"

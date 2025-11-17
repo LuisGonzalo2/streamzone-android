@@ -61,7 +61,8 @@ class ServicesManagerActivity : BaseAdminActivity() {
         btnBack.setOnClickListener { finish() }
 
         fabAddService.setOnClickListener {
-            Toast.makeText(this, "Función de crear servicio próximamente", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, CreateEditServiceActivity::class.java)
+            startActivity(intent)
         }
     }
 
@@ -69,7 +70,9 @@ class ServicesManagerActivity : BaseAdminActivity() {
         serviceAdapter = ServiceAdminAdapter(
             items = emptyList(),
             onEditClick = { service ->
-                Toast.makeText(this, "Editar: ${service.name}", Toast.LENGTH_SHORT).show()
+                val intent = Intent(this, CreateEditServiceActivity::class.java)
+                intent.putExtra("SERVICE_ID", service.id.toLong())
+                startActivity(intent)
             },
             onToggleClick = { service ->
                 toggleServiceStatus(service)

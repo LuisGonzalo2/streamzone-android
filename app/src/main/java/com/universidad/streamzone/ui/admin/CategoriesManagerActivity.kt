@@ -75,7 +75,7 @@ class CategoriesManagerActivity : BaseAdminActivity() {
     }
 
     private fun loadCategories() {
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val db = AppDatabase.getInstance(this@CategoriesManagerActivity)
                 val categoryDao = db.categoryDao()
@@ -83,7 +83,7 @@ class CategoriesManagerActivity : BaseAdminActivity() {
                 // Obtener TODAS las categorías (activas e inactivas) de forma síncrona
                 val allCategories = categoryDao.obtenerTodasSync()
 
-                runOnUiThread {
+                withContext(Dispatchers.Main) {
                     if (allCategories.isEmpty()) {
                         rvCategories.visibility = View.GONE
                         llEmptyState.visibility = View.VISIBLE
@@ -95,7 +95,7 @@ class CategoriesManagerActivity : BaseAdminActivity() {
                 }
 
             } catch (e: Exception) {
-                runOnUiThread {
+                withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@CategoriesManagerActivity,
                         "Error al cargar categorías: ${e.message}",
@@ -107,7 +107,7 @@ class CategoriesManagerActivity : BaseAdminActivity() {
     }
 
     private fun toggleCategoryStatus(category: CategoryEntity) {
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val db = AppDatabase.getInstance(this@CategoriesManagerActivity)
                 val categoryDao = db.categoryDao()
@@ -115,7 +115,7 @@ class CategoriesManagerActivity : BaseAdminActivity() {
                 val updatedCategory = category.copy(isActive = !category.isActive)
                 categoryDao.actualizar(updatedCategory)
 
-                runOnUiThread {
+                withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@CategoriesManagerActivity,
                         if (updatedCategory.isActive) "Categoría activada" else "Categoría desactivada",
@@ -125,7 +125,7 @@ class CategoriesManagerActivity : BaseAdminActivity() {
                 }
 
             } catch (e: Exception) {
-                runOnUiThread {
+                withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@CategoriesManagerActivity,
                         "Error: ${e.message}",

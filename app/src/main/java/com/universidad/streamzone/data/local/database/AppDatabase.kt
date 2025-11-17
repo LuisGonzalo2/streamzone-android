@@ -22,7 +22,7 @@ import com.universidad.streamzone.data.model.*
         OfferEntity::class,
         AdminMenuOptionEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase() {
@@ -378,6 +378,45 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        // Migración de versión 8 a 9 - Agregar índice único al email
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 1. Crear tabla temporal con el índice único
+                database.execSQL("""
+            CREATE TABLE usuarios_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                fullname TEXT NOT NULL,
+                email TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                password TEXT NOT NULL,
+                confirmPassword TEXT NOT NULL,
+                fotoBase64 TEXT,
+                isAdmin INTEGER NOT NULL DEFAULT 0,
+                sincronizado INTEGER NOT NULL DEFAULT 0,
+                firebaseId TEXT
+            )
+        """.trimIndent())
+
+                // 2. Crear índice único en email
+                database.execSQL("CREATE UNIQUE INDEX index_usuarios_email ON usuarios_new(email)")
+
+                // 3. Copiar datos eliminando duplicados (mantener el más reciente por ID)
+                database.execSQL("""
+            INSERT INTO usuarios_new 
+            SELECT * FROM usuarios 
+            WHERE id IN (
+                SELECT MAX(id) FROM usuarios GROUP BY email
+            )
+        """.trimIndent())
+
+                // 4. Eliminar tabla antigua
+                database.execSQL("DROP TABLE usuarios")
+
+                // 5. Renombrar tabla nueva
+                database.execSQL("ALTER TABLE usuarios_new RENAME TO usuarios")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -392,7 +431,8 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_4_5,
                         MIGRATION_5_6,
                         MIGRATION_6_7,
-                        MIGRATION_7_8
+                        MIGRATION_7_8,
+                        MIGRATION_8_9
                     )
                     .fallbackToDestructiveMigration()
                     .build()

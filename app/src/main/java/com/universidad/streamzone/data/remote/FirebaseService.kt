@@ -271,6 +271,125 @@ object FirebaseService {
             onFailure(e)
         }
     }
+    /**
+     * Obtiene todos los usuarios de Firebase
+     * Útil para sincronizar usuarios al abrir la app desde otro dispositivo
+     */
+    fun obtenerTodosLosUsuarios(callback: (List<UsuarioEntity>) -> Unit) {
+        Log.d(TAG, "Obteniendo todos los usuarios de Firebase...")
+
+        db.collection("usuarios")
+            .get()
+            .addOnSuccessListener { result ->
+                val usuarios = result.documents.mapNotNull { doc ->
+                    try {
+                        UsuarioEntity(
+                            id = 0, // Room asignará el ID
+                            fullname = doc.getString("fullname") ?: "",
+                            email = doc.getString("email") ?: "",
+                            phone = doc.getString("phone") ?: "",
+                            password = doc.getString("password") ?: "",
+                            confirmPassword = doc.getString("confirmPassword") ?: "",
+                            fotoBase64 = doc.getString("fotoBase64"),
+                            isAdmin = doc.getBoolean("isAdmin") ?: false,
+                            sincronizado = true,
+                            firebaseId = doc.id
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error al parsear usuario: ${e.message}")
+                        null
+                    }
+                }
+
+                Log.d(TAG, "✅ ${usuarios.size} usuarios obtenidos de Firebase")
+                callback(usuarios)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error al obtener usuarios de Firebase", e)
+                callback(emptyList())
+            }
+    }
+
+    /**
+     * Sincroniza los roles de un usuario a Firebase
+     * Los guarda como un array de IDs dentro del documento del usuario
+     */
+    fun sincronizarRolesUsuario(
+        userEmail: String,
+        roleIds: List<Int>,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        Log.d(TAG, "Sincronizando roles para $userEmail: $roleIds")
+
+        // Buscar el documento del usuario
+        db.collection("usuarios")
+            .whereEqualTo("email", userEmail)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (documents.isEmpty) {
+                    Log.w(TAG, "Usuario no encontrado en Firebase")
+                    onFailure(Exception("Usuario no encontrado"))
+                    return@addOnSuccessListener
+                }
+
+                val docId = documents.documents[0].id
+
+                // Actualizar el campo roleIds
+                db.collection("usuarios")
+                    .document(docId)
+                    .update("roleIds", roleIds)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "✅ Roles sincronizados para $userEmail")
+                        onSuccess()
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Error al sincronizar roles", e)
+                        onFailure(e)
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error al buscar usuario", e)
+                onFailure(e)
+            }
+    }
+
+    /**
+     * Obtiene los roles de un usuario desde Firebase
+     */
+    fun obtenerRolesUsuario(
+        userEmail: String,
+        onSuccess: (List<Int>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        db.collection("usuarios")
+            .whereEqualTo("email", userEmail)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (documents.isEmpty) {
+                    onSuccess(emptyList())
+                    return@addOnSuccessListener
+                }
+
+                val doc = documents.documents[0]
+                val roleIds = (doc.get("roleIds") as? List<*>)
+                    ?.mapNotNull {
+                        when (it) {
+                            is Long -> it.toInt()
+                            is Int -> it
+                            is String -> it.toIntOrNull()
+                            else -> null
+                        }
+                    } ?: emptyList()
+
+                Log.d(TAG, "Roles obtenidos para $userEmail: $roleIds")
+                onSuccess(roleIds)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error al obtener roles", e)
+                onFailure(e)
+            }
+    }
 
     private fun actualizarUsuarioPorId(
         docId: String,

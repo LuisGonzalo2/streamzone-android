@@ -1,8 +1,12 @@
 package com.universidad.streamzone.data.model
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "usuarios")
+@Entity(
+    tableName = "usuarios",
+    indices = [Index(value = ["email"], unique = true)]
+)
 data class UsuarioEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,

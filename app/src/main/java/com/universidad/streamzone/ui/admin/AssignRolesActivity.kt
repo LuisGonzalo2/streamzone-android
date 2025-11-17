@@ -126,6 +126,7 @@ class AssignRolesActivity : BaseAdminActivity() {
             try {
                 val db = AppDatabase.getInstance(this@AssignRolesActivity)
                 val userRoleDao = db.userRoleDao()
+                val usuarioDao = db.usuarioDao()
 
                 // Eliminar todos los roles actuales del usuario
                 userRoleDao.eliminarRolesPorUsuario(userId)
@@ -139,6 +140,21 @@ class AssignRolesActivity : BaseAdminActivity() {
                         )
                     }
                     userRoleDao.asignarRoles(userRoles)
+                }
+
+                // Sincronizar roles a Firebase
+                val usuario = usuarioDao.buscarPorId(userId)
+                if (usuario != null && isNetworkAvailable()) {
+                    com.universidad.streamzone.data.remote.FirebaseService.sincronizarRolesUsuario(
+                        userEmail = usuario.email,
+                        roleIds = selectedRoles.toList(),
+                        onSuccess = {
+                            android.util.Log.d("AssignRoles", "✅ Roles sincronizados a Firebase")
+                        },
+                        onFailure = { e ->
+                            android.util.Log.e("AssignRoles", "Error al sincronizar roles: ${e.message}")
+                        }
+                    )
                 }
 
                 runOnUiThread {
@@ -159,6 +175,24 @@ class AssignRolesActivity : BaseAdminActivity() {
                     ).show()
                 }
             }
+        }
+    }
+
+    /**
+     * Verifica si hay conexión a internet
+     */
+    private fun isNetworkAvailable(): Boolean {
+        return try {
+            val connectivityManager = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+                    as android.net.ConnectivityManager
+            val network = connectivityManager.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+
+            capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                    capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                    capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
+        } catch (e: Exception) {
+            false
         }
     }
 

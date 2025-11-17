@@ -2,6 +2,7 @@ package com.universidad.streamzone.ui.admin
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -12,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.model.UsuarioEntity
+import com.universidad.streamzone.data.remote.FirebaseService
 import com.universidad.streamzone.ui.admin.adapter.UserAdapter
 import com.universidad.streamzone.util.PermissionManager
 import kotlinx.coroutines.launch
@@ -74,9 +76,15 @@ class UserListActivity : BaseAdminActivity() {
     private fun loadUsers() {
         lifecycleScope.launch {
             try {
+                // Sincronizar usuarios desde Firebase primero
+                if (isNetworkAvailable()) {
+                    Log.d("UserList", "📡 Sincronizando usuarios desde Firebase...")
+                    syncUsersFromFirebase()
+                }
+
+                // Cargar usuarios desde Room (incluye los de Firebase)
                 val db = AppDatabase.getInstance(this@UserListActivity)
                 val usuarioDao = db.usuarioDao()
-
                 val users = usuarioDao.getAll()
                 val adminCount = users.count { it.isAdmin }
 
@@ -84,15 +92,66 @@ class UserListActivity : BaseAdminActivity() {
                     tvTotalUsers.text = users.size.toString()
                     tvAdminUsers.text = adminCount.toString()
                     userAdapter.updateUsers(users)
+
+                    Log.d("UserList", "✅ ${users.size} usuarios cargados")
                 }
 
             } catch (e: Exception) {
+                Log.e("UserList", "❌ Error al cargar usuarios", e)
                 runOnUiThread {
                     Toast.makeText(
                         this@UserListActivity,
                         "Error al cargar usuarios: ${e.message}",
                         Toast.LENGTH_SHORT
                     ).show()
+                }
+            }
+        }
+    }
+
+    /**
+     * Sincroniza usuarios de Firebase a Room
+     */
+    private suspend fun syncUsersFromFirebase() {
+        FirebaseService.obtenerTodosLosUsuarios { firebaseUsers ->
+            lifecycleScope.launch {
+                try {
+                    val db = AppDatabase.getInstance(this@UserListActivity)
+                    val usuarioDao = db.usuarioDao()
+
+                    firebaseUsers.forEach { firebaseUser ->
+                        val localUser = usuarioDao.buscarPorEmail(firebaseUser.email)
+
+                        if (localUser == null) {
+                            // Usuario nuevo → Insertar
+                            usuarioDao.insertar(firebaseUser)
+                            Log.d("UserList", "➕ Insertado: ${firebaseUser.email}")
+                        } else if (localUser.firebaseId != firebaseUser.firebaseId) {
+                            // Actualizar solo si hay cambios
+                            val updated = localUser.copy(
+                                fullname = firebaseUser.fullname,
+                                phone = firebaseUser.phone,
+                                isAdmin = firebaseUser.isAdmin,
+                                firebaseId = firebaseUser.firebaseId,
+                                sincronizado = true
+                            )
+                            usuarioDao.actualizar(updated)
+                            Log.d("UserList", "🔄 Actualizado: ${firebaseUser.email}")
+                        }
+                    }
+
+                    // Recargar después de sincronizar
+                    val users = usuarioDao.getAll()
+                    val adminCount = users.count { it.isAdmin }
+
+                    runOnUiThread {
+                        tvTotalUsers.text = users.size.toString()
+                        tvAdminUsers.text = adminCount.toString()
+                        userAdapter.updateUsers(users)
+                    }
+
+                } catch (e: Exception) {
+                    Log.e("UserList", "❌ Error al guardar usuarios de Firebase", e)
                 }
             }
         }
@@ -122,8 +181,22 @@ class UserListActivity : BaseAdminActivity() {
                 val db = AppDatabase.getInstance(this@UserListActivity)
                 val usuarioDao = db.usuarioDao()
 
+                // Actualizar en Room
                 val updatedUser = user.copy(isAdmin = isAdmin)
                 usuarioDao.actualizar(updatedUser)
+
+                // Actualizar en Firebase
+                if (isNetworkAvailable()) {
+                    FirebaseService.actualizarUsuario(
+                        updatedUser,
+                        onSuccess = {
+                            Log.d("UserList", "✅ Usuario actualizado en Firebase")
+                        },
+                        onFailure = { e ->
+                            Log.e("UserList", "❌ Error Firebase: ${e.message}")
+                        }
+                    )
+                }
 
                 runOnUiThread {
                     val msg = if (isAdmin) "Admin activado" else "Admin desactivado"
@@ -140,6 +213,24 @@ class UserListActivity : BaseAdminActivity() {
                     ).show()
                 }
             }
+        }
+    }
+
+    /**
+     * Verifica si hay conexión a internet
+     */
+    private fun isNetworkAvailable(): Boolean {
+        return try {
+            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+                    as android.net.ConnectivityManager
+            val network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(network) ?: return false
+
+            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
+        } catch (e: Exception) {
+            false
         }
     }
 }

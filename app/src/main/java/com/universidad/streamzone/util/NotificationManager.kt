@@ -59,7 +59,7 @@ object NotificationManager {
 
         // Construir la notificación
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification) // Necesitarás crear este ícono
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("$icon $title")
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))

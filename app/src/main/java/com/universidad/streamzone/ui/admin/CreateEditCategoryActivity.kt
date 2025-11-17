@@ -162,6 +162,21 @@ class CreateEditCategoryActivity : BaseAdminActivity() {
                     categoryDao.insertar(category)
                 }
 
+                // Sincronizar con Firebase
+                com.universidad.streamzone.data.remote.FirebaseService.sincronizarCategoria(
+                    categoryId = category.categoryId,
+                    name = category.name,
+                    icon = category.icon,
+                    isActive = category.isActive,
+                    order = category.order,
+                    onSuccess = {
+                        android.util.Log.d("CreateCategory", "✅ Categoría sincronizada con Firebase")
+                    },
+                    onFailure = { e ->
+                        android.util.Log.e("CreateCategory", "❌ Error al sincronizar: ${e.message}")
+                    }
+                )
+
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@CreateEditCategoryActivity,

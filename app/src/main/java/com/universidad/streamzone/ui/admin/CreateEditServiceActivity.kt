@@ -259,6 +259,25 @@ class CreateEditServiceActivity : BaseAdminActivity() {
                     serviceDao.insertar(service)
                 }
 
+                // Sincronizar con Firebase
+                com.universidad.streamzone.data.remote.FirebaseService.sincronizarServicio(
+                    serviceId = service.serviceId,
+                    name = service.name,
+                    description = service.description,
+                    categoryId = service.categoryId,
+                    price = service.price,
+                    duration = service.duration,
+                    imageUrl = service.imageUrl,
+                    isActive = service.isActive,
+                    isPopular = service.isPopular,
+                    onSuccess = {
+                        android.util.Log.d("CreateService", "✅ Servicio sincronizado con Firebase")
+                    },
+                    onFailure = { e ->
+                        android.util.Log.e("CreateService", "❌ Error al sincronizar: ${e.message}")
+                    }
+                )
+
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@CreateEditServiceActivity,

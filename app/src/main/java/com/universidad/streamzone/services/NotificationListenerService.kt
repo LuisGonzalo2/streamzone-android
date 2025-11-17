@@ -5,8 +5,10 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.model.CategoryEntity
 import com.universidad.streamzone.data.model.NotificationEntity
 import com.universidad.streamzone.data.model.NotificationType
+import com.universidad.streamzone.data.model.ServiceEntity
 import com.universidad.streamzone.util.NotificationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,12 +29,14 @@ class NotificationListenerService(private val context: Context) {
     private var servicesListener: ListenerRegistration? = null
     private var offersListener: ListenerRegistration? = null
     private var purchasesListener: ListenerRegistration? = null
+    private var userRolesListener: ListenerRegistration? = null
 
     // Map para rastrear documentos ya vistos (evitar notificaciones en la primera carga)
     private val seenCategories = mutableSetOf<String>()
     private val seenServices = mutableSetOf<String>()
     private val seenOffers = mutableSetOf<String>()
     private val seenPurchases = mutableSetOf<String>()
+    private val seenUserRoles = mutableSetOf<String>()
     private var isFirstLoad = true
 
     /**
@@ -43,6 +47,7 @@ class NotificationListenerService(private val context: Context) {
         listenToServices()
         listenToOffers()
         listenToPurchases()
+        listenToUserRoles()
 
         // Marcar que la primera carga ya pasó después de 2 segundos
         serviceScope.launch {
@@ -61,6 +66,7 @@ class NotificationListenerService(private val context: Context) {
         servicesListener?.remove()
         offersListener?.remove()
         purchasesListener?.remove()
+        userRolesListener?.remove()
 
         Log.d(TAG, "Listeners de notificaciones detenidos")
     }
@@ -80,9 +86,37 @@ class NotificationListenerService(private val context: Context) {
                     val categoryId = change.document.id
                     val categoryName = change.document.getString("name") ?: "Nueva categoría"
                     val categoryIcon = change.document.getString("icon") ?: "📁"
+                    val isActive = change.document.getBoolean("isActive") ?: true
 
                     when (change.type) {
                         com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
+                            // Sincronizar a base de datos local
+                            serviceScope.launch {
+                                try {
+                                    val appDb = AppDatabase.getInstance(context)
+                                    val categoryDao = appDb.categoryDao()
+
+                                    // Verificar si ya existe
+                                    val existingCategory = categoryDao.obtenerPorCategoryId(categoryId)
+                                    if (existingCategory == null) {
+                                        val newCategory = CategoryEntity(
+                                            id = 0,
+                                            categoryId = categoryId,
+                                            name = categoryName,
+                                            icon = categoryIcon,
+                                            description = "",
+                                            gradientStart = "#1E3A8A",
+                                            gradientEnd = "#3B82F6",
+                                            isActive = isActive
+                                        )
+                                        categoryDao.insertar(newCategory)
+                                        Log.d(TAG, "✅ Categoría sincronizada desde Firebase: $categoryName")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error al sincronizar categoría", e)
+                                }
+                            }
+
                             if (!seenCategories.contains(categoryId) && !isFirstLoad) {
                                 createNotification(
                                     title = "Nueva categoría disponible",
@@ -96,7 +130,26 @@ class NotificationListenerService(private val context: Context) {
                             seenCategories.add(categoryId)
                         }
                         com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
-                            val isActive = change.document.getBoolean("isActive") ?: true
+                            // Actualizar en base de datos local
+                            serviceScope.launch {
+                                try {
+                                    val appDb = AppDatabase.getInstance(context)
+                                    val categoryDao = appDb.categoryDao()
+                                    val existingCategory = categoryDao.obtenerPorCategoryId(categoryId)
+                                    if (existingCategory != null) {
+                                        val updatedCategory = existingCategory.copy(
+                                            name = categoryName,
+                                            icon = categoryIcon,
+                                            isActive = isActive
+                                        )
+                                        categoryDao.actualizar(updatedCategory)
+                                        Log.d(TAG, "✅ Categoría actualizada desde Firebase: $categoryName")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error al actualizar categoría", e)
+                                }
+                            }
+
                             if (seenCategories.contains(categoryId) && isActive) {
                                 createNotification(
                                     title = "Categoría actualizada",
@@ -126,11 +179,44 @@ class NotificationListenerService(private val context: Context) {
                 snapshots?.documentChanges?.forEach { change ->
                     val serviceId = change.document.id
                     val serviceName = change.document.getString("name") ?: "Nuevo servicio"
+                    val serviceDescription = change.document.getString("description") ?: ""
                     val servicePrice = change.document.getString("price") ?: ""
                     val isActive = change.document.getBoolean("isActive") ?: true
+                    val isPopular = change.document.getBoolean("isPopular") ?: false
+                    val categoryId = change.document.getLong("categoryId")?.toInt() ?: 0
 
                     when (change.type) {
                         com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
+                            // Sincronizar a base de datos local
+                            serviceScope.launch {
+                                try {
+                                    val appDb = AppDatabase.getInstance(context)
+                                    val serviceDao = appDb.serviceDao()
+
+                                    // Verificar si ya existe
+                                    val existingService = serviceDao.obtenerPorServiceId(serviceId)
+                                    if (existingService == null) {
+                                        val newService = ServiceEntity(
+                                            id = 0,
+                                            serviceId = serviceId,
+                                            name = serviceName,
+                                            description = serviceDescription,
+                                            price = servicePrice,
+                                            iconDrawable = null,
+                                            iconBase64 = null,
+                                            iconUrl = null,
+                                            categoryId = categoryId,
+                                            isActive = isActive,
+                                            isPopular = isPopular
+                                        )
+                                        serviceDao.insertar(newService)
+                                        Log.d(TAG, "✅ Servicio sincronizado desde Firebase: $serviceName")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error al sincronizar servicio", e)
+                                }
+                            }
+
                             if (!seenServices.contains(serviceId) && !isFirstLoad && isActive) {
                                 createNotification(
                                     title = "Nuevo servicio disponible",
@@ -144,6 +230,28 @@ class NotificationListenerService(private val context: Context) {
                             seenServices.add(serviceId)
                         }
                         com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
+                            // Actualizar en base de datos local
+                            serviceScope.launch {
+                                try {
+                                    val appDb = AppDatabase.getInstance(context)
+                                    val serviceDao = appDb.serviceDao()
+                                    val existingService = serviceDao.obtenerPorServiceId(serviceId)
+                                    if (existingService != null) {
+                                        val updatedService = existingService.copy(
+                                            name = serviceName,
+                                            description = serviceDescription,
+                                            price = servicePrice,
+                                            isActive = isActive,
+                                            isPopular = isPopular
+                                        )
+                                        serviceDao.actualizar(updatedService)
+                                        Log.d(TAG, "✅ Servicio actualizado desde Firebase: $serviceName")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error al actualizar servicio", e)
+                                }
+                            }
+
                             if (seenServices.contains(serviceId) && isActive) {
                                 createNotification(
                                     title = "Servicio actualizado",
@@ -243,6 +351,64 @@ class NotificationListenerService(private val context: Context) {
                                     actionType = "open_purchases",
                                     actionData = purchaseId
                                 )
+                            }
+                        }
+                        else -> {}
+                    }
+                }
+            }
+    }
+
+    /**
+     * Escucha cambios en asignación de roles a usuarios
+     */
+    private fun listenToUserRoles() {
+        // Obtener el email del usuario actual desde SharedPreferences
+        val sharedPrefs = context.getSharedPreferences("StreamZoneData", Context.MODE_PRIVATE)
+        val userEmail = sharedPrefs.getString("USER_EMAIL", "") ?: ""
+
+        if (userEmail.isEmpty()) {
+            Log.d(TAG, "No hay usuario logueado, no se escucharán roles")
+            return
+        }
+
+        userRolesListener = db.collection("user_roles")
+            .whereEqualTo("userEmail", userEmail)
+            .addSnapshotListener { snapshots, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error al escuchar roles de usuario", error)
+                    return@addSnapshotListener
+                }
+
+                snapshots?.documentChanges?.forEach { change ->
+                    val userRoleId = change.document.id
+                    val roleName = change.document.getString("roleName") ?: "Rol"
+
+                    when (change.type) {
+                        com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
+                            if (!seenUserRoles.contains(userRoleId) && !isFirstLoad) {
+                                createNotification(
+                                    title = "¡Nuevo rol asignado!",
+                                    message = "Se te ha asignado el rol de $roleName. Ahora tienes nuevos permisos.",
+                                    type = NotificationType.ROLE,
+                                    icon = "👤",
+                                    userId = userEmail,
+                                    actionType = "refresh_permissions",
+                                    actionData = roleName
+                                )
+                            }
+                            seenUserRoles.add(userRoleId)
+                        }
+                        com.google.firebase.firestore.DocumentChange.Type.REMOVED -> {
+                            if (seenUserRoles.contains(userRoleId)) {
+                                createNotification(
+                                    title = "Rol removido",
+                                    message = "El rol de $roleName ha sido removido de tu cuenta.",
+                                    type = NotificationType.ROLE,
+                                    icon = "⚠️",
+                                    userId = userEmail
+                                )
+                                seenUserRoles.remove(userRoleId)
                             }
                         }
                         else -> {}

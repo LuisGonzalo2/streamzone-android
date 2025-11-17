@@ -6,6 +6,7 @@ import android.util.Log
 import com.universidad.streamzone.data.model.UsuarioEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import com.universidad.streamzone.data.model.PurchaseEntity
+import com.google.firebase.firestore.FieldValue
 
 object FirebaseService {
     private val db = FirebaseFirestore.getInstance()
@@ -433,6 +434,88 @@ object FirebaseService {
                     Log.e(TAG, "Error al actualizar usuario en Firestore", e)
                     onFailure(e)
                 }
+            }
+    }
+
+    // ========================================
+    // SINCRONIZACIÓN DE CATEGORÍAS
+    // ========================================
+
+    /**
+     * Sincroniza una categoría con Firebase (crear o actualizar)
+     */
+    fun sincronizarCategoria(
+        categoryId: String,
+        name: String,
+        icon: String,
+        isActive: Boolean,
+        order: Int,
+        onSuccess: () -> Unit = {},
+        onFailure: (Exception) -> Unit = {}
+    ) {
+        val data = hashMapOf(
+            "name" to name,
+            "icon" to icon,
+            "isActive" to isActive,
+            "order" to order,
+            "timestamp" to FieldValue.serverTimestamp()
+        )
+
+        db.collection("categories")
+            .document(categoryId)
+            .set(data)
+            .addOnSuccessListener {
+                Log.d(TAG, "✅ Categoría sincronizada: $name")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al sincronizar categoría", e)
+                onFailure(e)
+            }
+    }
+
+    // ========================================
+    // SINCRONIZACIÓN DE SERVICIOS
+    // ========================================
+
+    /**
+     * Sincroniza un servicio con Firebase (crear o actualizar)
+     */
+    fun sincronizarServicio(
+        serviceId: String,
+        name: String,
+        description: String,
+        categoryId: Int,
+        price: String,
+        duration: String,
+        imageUrl: String?,
+        isActive: Boolean,
+        isPopular: Boolean,
+        onSuccess: () -> Unit = {},
+        onFailure: (Exception) -> Unit = {}
+    ) {
+        val data = hashMapOf(
+            "name" to name,
+            "description" to description,
+            "categoryId" to categoryId,
+            "price" to price,
+            "duration" to duration,
+            "imageUrl" to imageUrl,
+            "isActive" to isActive,
+            "isPopular" to isPopular,
+            "timestamp" to FieldValue.serverTimestamp()
+        )
+
+        db.collection("services")
+            .document(serviceId)
+            .set(data)
+            .addOnSuccessListener {
+                Log.d(TAG, "✅ Servicio sincronizado: $name")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al sincronizar servicio", e)
+                onFailure(e)
             }
     }
 }

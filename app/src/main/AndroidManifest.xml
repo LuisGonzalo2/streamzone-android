@@ -169,6 +169,10 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <activity
+            android:name=".ui.admin.AssignRolesActivity"
+            android:screenOrientation="portrait" />
+
         <!-- FileProvider para compartir archivos de la cámara -->
         <provider
             android:name="androidx.core.content.FileProvider"

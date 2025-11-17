@@ -107,15 +107,20 @@ class HomeNativeActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val dao = AppDatabase.getInstance(this@HomeNativeActivity).usuarioDao()
-                val usuario = dao.buscarPorEmail(userEmail)
+                val db = AppDatabase.getInstance(this@HomeNativeActivity)
+                val usuarioDao = db.usuarioDao()
+                val usuario = usuarioDao.buscarPorEmail(userEmail)
 
                 usuario?.let { user ->
                     currentUserId = user.id
-                    if (user.isAdmin) {
+
+                    // Verificar si el usuario es admin O tiene algún permiso
+                    val hasAnyPermission = checkIfUserHasAnyPermission(user.id)
+
+                    if (user.isAdmin || hasAnyPermission) {
                         runOnUiThread {
                             fabAdminMenu.visibility = View.VISIBLE
-                            Log.d("HomeNative", "Usuario es admin - FAB visible")
+                            Log.d("HomeNative", "Usuario tiene acceso al panel admin")
                         }
                     }
                 }
@@ -125,7 +130,33 @@ class HomeNativeActivity : AppCompatActivity() {
         }
     }
 
-    // NUEVA FUNCIÓN: Abrir oferta activa
+    // Verificar si el usuario tiene algún permiso asignado
+    private suspend fun checkIfUserHasAnyPermission(userId: Int): Boolean {
+        return try {
+            val db = AppDatabase.getInstance(this@HomeNativeActivity)
+            val userRoleDao = db.userRoleDao()
+            val rolePermissionDao = db.rolePermissionDao()
+
+            // Obtener roles del usuario
+            val userRoleIds = userRoleDao.getRolesByUserId(userId)
+
+            // Si tiene roles, verificar si alguno tiene permisos
+            if (userRoleIds.isNotEmpty()) {
+                // Verificar si algún rol tiene permisos asignados
+                userRoleIds.any { roleId ->
+                    val permissions = rolePermissionDao.obtenerPermisosPorRol(roleId.toInt())
+                    permissions.isNotEmpty()
+                }
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("HomeNative", "Error al verificar permisos", e)
+            false
+        }
+    }
+
+    // Abrir oferta activa
     private fun openActiveOffer() {
         val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
         if (userEmail.isEmpty()) {

@@ -77,10 +77,12 @@ abstract class BaseAdminActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                // Verificar si es admin
+                // Verificar si es admin O tiene algún rol
                 val isAdmin = permissionManager.isAdmin(currentUserEmail)
+                val hasAnyRole = hasAnyRole(currentUserEmail)
 
-                if (!isAdmin) {
+                // Si no es admin NO tiene roles, denegar acceso
+                if (!isAdmin && !hasAnyRole) {
                     runOnUiThread {
                         showAccessDenied("No tienes permisos de administrador")
                         finish()
@@ -89,15 +91,18 @@ abstract class BaseAdminActivity : AppCompatActivity() {
                 }
 
                 // Si hay un permiso específico requerido, verificarlo
+                // (solo si NO es admin, porque los admin tienen todos los permisos)
                 requiredPermission?.let { permission ->
-                    val hasPermission = permissionManager.hasPermission(currentUserEmail, permission)
+                    if (!isAdmin) {
+                        val hasPermission = permissionManager.hasPermission(currentUserEmail, permission)
 
-                    if (!hasPermission) {
-                        runOnUiThread {
-                            showAccessDenied("No tienes permisos para acceder a esta función")
-                            finish()
+                        if (!hasPermission) {
+                            runOnUiThread {
+                                showAccessDenied("No tienes permisos para acceder a esta función")
+                                finish()
+                            }
+                            return@launch
                         }
-                        return@launch
                     }
                 }
 
@@ -112,6 +117,22 @@ abstract class BaseAdminActivity : AppCompatActivity() {
                     finish()
                 }
             }
+        }
+    }
+
+    //Verificar si el usuario tiene algún rol asignado
+    private suspend fun hasAnyRole(userEmail: String): Boolean {
+        return try {
+            val db = com.universidad.streamzone.data.local.database.AppDatabase.getInstance(this)
+            val usuarioDao = db.usuarioDao()
+            val userRoleDao = db.userRoleDao()
+
+            val usuario = usuarioDao.buscarPorEmail(userEmail) ?: return false
+            val roles = userRoleDao.getRolesByUserId(usuario.id)
+
+            roles.isNotEmpty()
+        } catch (e: Exception) {
+            false
         }
     }
 

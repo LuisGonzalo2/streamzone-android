@@ -55,7 +55,7 @@ class UserListActivity : BaseAdminActivity() {
                 toggleAdminStatus(user)
             },
             onManageRoles = { user ->
-                val intent = Intent(this, RolesManagerActivity::class.java)
+                val intent = Intent(this, AssignRolesActivity::class.java)
                 intent.putExtra("USER_ID", user.id)
                 intent.putExtra("USER_NAME", user.fullname)
                 startActivity(intent)

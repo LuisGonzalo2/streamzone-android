@@ -25,6 +25,12 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE isActive = 1 ORDER BY name ASC")
     fun obtenerCategoriasActivas(): Flow<List<CategoryEntity>>
 
+    @Query("SELECT * FROM categories WHERE isActive = 1 ORDER BY name ASC")
+    suspend fun obtenerCategoriasActivasSync(): List<CategoryEntity>
+
     @Query("SELECT * FROM categories ORDER BY name ASC")
     fun obtenerTodas(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories ORDER BY name ASC")
+    suspend fun obtenerTodasSync(): List<CategoryEntity>
 }

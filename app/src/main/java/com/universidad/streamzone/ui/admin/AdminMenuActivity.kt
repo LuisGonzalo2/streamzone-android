@@ -2,9 +2,13 @@ package com.universidad.streamzone.ui.admin
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageButton
 import androidx.cardview.widget.CardView
+import androidx.lifecycle.lifecycleScope
 import com.universidad.streamzone.R
+import com.universidad.streamzone.util.PermissionManager
+import kotlinx.coroutines.launch
 
 class AdminMenuActivity : BaseAdminActivity() {
 
@@ -22,9 +26,12 @@ class AdminMenuActivity : BaseAdminActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin_menu)
+    }
 
+    override fun onPermissionGranted() {
         initViews()
         setupListeners()
+        loadUserPermissions()
     }
 
     private fun initViews() {
@@ -35,6 +42,50 @@ class AdminMenuActivity : BaseAdminActivity() {
         cardManageRoles = findViewById(R.id.cardManageRoles)
         cardManageServices = findViewById(R.id.cardManageServices)
         cardManageCategories = findViewById(R.id.cardManageCategories)
+
+        // Ocultar todas las opciones por defecto
+        cardManagePurchases.visibility = View.GONE
+        cardManageOffers.visibility = View.GONE
+        cardManageUsers.visibility = View.GONE
+        cardManageRoles.visibility = View.GONE
+        cardManageServices.visibility = View.GONE
+        cardManageCategories.visibility = View.GONE
+    }
+
+    private fun loadUserPermissions() {
+        lifecycleScope.launch {
+            try {
+                val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
+
+                // Verificar cada permiso y mostrar la opción correspondiente
+                if (permissionManager.hasPermission(userEmail, PermissionManager.MANAGE_PURCHASES)) {
+                    cardManagePurchases.visibility = View.VISIBLE
+                }
+
+                if (permissionManager.hasPermission(userEmail, PermissionManager.MANAGE_OFFERS)) {
+                    cardManageOffers.visibility = View.VISIBLE
+                }
+
+                if (permissionManager.hasPermission(userEmail, PermissionManager.MANAGE_USERS)) {
+                    cardManageUsers.visibility = View.VISIBLE
+                }
+
+                if (permissionManager.hasPermission(userEmail, PermissionManager.MANAGE_ROLES)) {
+                    cardManageRoles.visibility = View.VISIBLE
+                }
+
+                if (permissionManager.hasPermission(userEmail, PermissionManager.MANAGE_SERVICES)) {
+                    cardManageServices.visibility = View.VISIBLE
+                }
+
+                if (permissionManager.hasPermission(userEmail, PermissionManager.MANAGE_CATEGORIES)) {
+                    cardManageCategories.visibility = View.VISIBLE
+                }
+
+            } catch (e: Exception) {
+                // En caso de error, no mostrar nada
+            }
+        }
     }
 
     private fun setupListeners() {

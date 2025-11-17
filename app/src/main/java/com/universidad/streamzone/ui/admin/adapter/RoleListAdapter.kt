@@ -3,7 +3,6 @@ package com.universidad.streamzone.ui.admin.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.universidad.streamzone.R
@@ -19,8 +18,8 @@ class RoleListAdapter(
         val tvRoleName: TextView = view.findViewById(R.id.tvRoleName)
         val tvRoleDescription: TextView = view.findViewById(R.id.tvRoleDescription)
         val tvRoleStatus: TextView = view.findViewById(R.id.tvRoleStatus)
-        val btnEditRole: Button = view.findViewById(R.id.btnEditRole)
-        val btnDeleteRole: Button = view.findViewById(R.id.btnDeleteRole)
+        val btnEditRole: TextView = view.findViewById(R.id.btnEditRole)
+        val btnDeleteRole: TextView = view.findViewById(R.id.btnDeleteRole)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RoleViewHolder {

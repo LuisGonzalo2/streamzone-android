@@ -8,18 +8,20 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.universidad.streamzone.R
+import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.model.Service
 import com.universidad.streamzone.ui.auth.LoginActivity
 import com.universidad.streamzone.ui.components.NavbarManager
-import com.universidad.streamzone.ui.home.HomeNativeActivity
 import com.universidad.streamzone.ui.home.PurchaseDialogFragment
-import com.universidad.streamzone.ui.home.UserProfileActivity
 import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
 import com.universidad.streamzone.ui.home.adapter.ServiceAdapter
+import com.universidad.streamzone.util.toServiceList
+import kotlinx.coroutines.launch
 
 class CategoryActivity : AppCompatActivity() {
 
@@ -28,35 +30,6 @@ class CategoryActivity : AppCompatActivity() {
     private lateinit var tvCategorySubtitle: TextView
     private lateinit var tvCategoryIcon: TextView
     private lateinit var btnBack: MaterialButton
-
-    // Lista completa de todos los servicios
-    private val allServices = listOf(
-        // Streaming
-        Service("netflix", "Netflix", "US$ 4,00 /mes", "Acceso inmediato", R.drawable.rounded_square_netflix),
-        Service("disney_plus_premium", "Disney+ Premium", "US$ 3,75 /mes", "Acceso inmediato", R.drawable.rounded_square_disney_premium),
-        Service("disney_plus_standard", "Disney+ Standard", "US$ 3,25 /mes", "Acceso inmediato", R.drawable.rounded_square_disney_standard),
-        Service("max", "Max", "US$ 3,00 /mes", "Acceso inmediato", R.drawable.rounded_square_max),
-        Service("vix", "ViX", "US$ 2,50 /mes", "Acceso inmediato", R.drawable.rounded_square_vix),
-        Service("prime", "Prime Video", "US$ 3,00 /mes", "Acceso inmediato", R.drawable.rounded_square_prime),
-        Service("paramount", "Paramount+", "US$ 2,75 /mes", "Acceso inmediato", R.drawable.rounded_square_paramount),
-        Service("appletv", "Apple TV+", "US$ 3,50 /mes", "Acceso inmediato", R.drawable.rounded_square_appletv),
-        Service("crunchyroll", "Crunchyroll", "US$ 2,50 /mes", "Acceso inmediato", R.drawable.rounded_square_crunchyroll),
-
-        // Música
-        Service("spotify", "Spotify", "US$ 3,50 /mes", "Acceso inmediato", R.drawable.rounded_square_spotify),
-        Service("deezer", "Deezer", "US$ 3,00 /mes", "Acceso inmediato", R.drawable.rounded_square_deezer),
-        Service("youtube_premium", "YouTube Premium", "US$ 3,35 /mes", "Acceso inmediato", R.drawable.rounded_square_yt),
-
-        // Diseño
-        Service("canva", "Canva Pro", "US$ 2,00 /mes", "Acceso inmediato", R.drawable.rounded_square_canva),
-        Service("canva_year", "Canva Pro (1 año)", "US$ 17,50 /año", "Licencia anual", R.drawable.rounded_square_canva),
-        Service("m365_year", "Microsoft 365 (M365)", "US$ 15,00 /año", "Licencia anual", R.drawable.rounded_square_m365),
-        Service("office365_year", "Office 365 (O365)", "US$ 15,00 /año", "Licencia anual", R.drawable.rounded_square_office365),
-        Service("autodesk_year", "Autodesk (AD)", "US$ 12,50 /año", "Licencia anual", R.drawable.rounded_square_autodesk),
-
-        // IA
-        Service("chatgpt", "ChatGPT", "US$ 4,00 /mes", "Acceso inmediato", R.drawable.rounded_square_chatgpt)
-    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,19 +80,20 @@ class CategoryActivity : AppCompatActivity() {
         // Obtener datos de la categoría desde el Intent
         val categoryName = intent.getStringExtra("CATEGORY_NAME") ?: "Categoría"
         val categoryIcon = intent.getStringExtra("CATEGORY_ICON") ?: "📦"
-        val serviceIds = intent.getStringArrayListExtra("SERVICE_IDS") ?: arrayListOf()
 
         // Actualizar UI
         tvCategoryTitle.text = categoryName
         tvCategoryIcon.text = categoryIcon
-        tvCategorySubtitle.text = "${serviceIds.size} servicios disponibles"
     }
 
     private fun setupRecyclerView() {
-        // Filtrar servicios según los IDs recibidos
-        val serviceIds = intent.getStringArrayListExtra("SERVICE_IDS") ?: arrayListOf()
-        val filteredServices = allServices.filter { service ->
-            serviceIds.contains(service.id)
+        // Obtener el ID de la categoría desde el Intent
+        val categoryId = intent.getIntExtra("CATEGORY_ID", -1)
+
+        if (categoryId == -1) {
+            showToast("Error: Categoría no encontrada")
+            finish()
+            return
         }
 
         // Configurar RecyclerView
@@ -127,10 +101,32 @@ class CategoryActivity : AppCompatActivity() {
         val spacingPx = (resources.displayMetrics.density * 12).toInt()
         rvServices.addItemDecoration(GridSpacingItemDecoration(2, spacingPx, true))
 
-        val adapter = ServiceAdapter(filteredServices) { service ->
-            onServiceClick(service)
+        // Cargar servicios desde la BD
+        lifecycleScope.launch {
+            try {
+                val db = AppDatabase.getInstance(this@CategoryActivity)
+                val serviceDao = db.serviceDao()
+
+                // Obtener servicios de la categoría
+                val serviceEntities = serviceDao.obtenerServiciosPorCategoriaSync(categoryId)
+                val services = serviceEntities.toServiceList()
+
+                // Actualizar UI en el hilo principal
+                runOnUiThread {
+                    tvCategorySubtitle.text = "${services.size} servicios disponibles"
+
+                    val adapter = ServiceAdapter(services) { service ->
+                        onServiceClick(service)
+                    }
+                    rvServices.adapter = adapter
+                }
+
+            } catch (e: Exception) {
+                runOnUiThread {
+                    showToast("Error al cargar servicios: ${e.message}")
+                }
+            }
         }
-        rvServices.adapter = adapter
     }
 
     private lateinit var navbarManager: NavbarManager

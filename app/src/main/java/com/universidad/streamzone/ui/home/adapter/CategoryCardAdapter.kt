@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.model.Category
@@ -42,11 +41,12 @@ class CategoryCardAdapter(
             serviceCount.text = "${category.serviceCount} servicios"
 
             // Aplicar gradiente al fondo
+            // Los colores ya vienen parseados desde la BD, no son resource IDs
             val gradientDrawable = GradientDrawable(
                 GradientDrawable.Orientation.TL_BR,
                 intArrayOf(
-                    ContextCompat.getColor(itemView.context, category.gradientStart),
-                    ContextCompat.getColor(itemView.context, category.gradientEnd)
+                    category.gradientStart,  // Ya es un Int con el color parseado
+                    category.gradientEnd     // Ya es un Int con el color parseado
                 )
             )
             gradientDrawable.cornerRadius = 20f * itemView.context.resources.displayMetrics.density

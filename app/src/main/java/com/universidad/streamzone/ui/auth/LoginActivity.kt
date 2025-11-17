@@ -157,6 +157,9 @@ class LoginActivity : AppCompatActivity() {
                     return@launch
                 }
 
+                // Asignar rol Super Admin si el usuario es admin
+                assignSuperAdminRoleIfNeeded(usuarioLocal)
+
                 // SIEMPRE sincronizar con Firebase al hacer login (si hay internet)
                 if (isNetworkAvailable()) {
                     Log.d("LoginActivity", "Sincronizando usuario con Firebase...")
@@ -229,6 +232,10 @@ class LoginActivity : AppCompatActivity() {
                                 lifecycleScope.launch {
                                     dao.insertar(usuarioFirebase)
                                     Log.d("LoginActivity", "Usuario guardado en Room desde Firebase")
+
+                                    // Asignar rol Super Admin si el usuario es admin
+                                    assignSuperAdminRoleIfNeeded(usuarioFirebase)
+
                                     runOnUiThread {
                                         loginExitoso(usuarioFirebase.fullname, email)
                                     }
@@ -457,5 +464,51 @@ class LoginActivity : AppCompatActivity() {
             }
         }
         networkCallback = null
+    }
+
+    /**
+     * Asigna automáticamente el rol "Super Admin" a usuarios con isAdmin=true
+     */
+    private fun assignSuperAdminRoleIfNeeded(usuario: com.universidad.streamzone.data.model.UsuarioEntity) {
+        lifecycleScope.launch {
+            try {
+                // Solo procesar si el usuario es admin
+                if (!usuario.isAdmin) {
+                    Log.d("LoginActivity", "Usuario ${usuario.email} no es admin, saltando asignación de rol")
+                    return@launch
+                }
+
+                val db = AppDatabase.getInstance(this@LoginActivity)
+                val roleDao = db.roleDao()
+                val userRoleDao = db.userRoleDao()
+
+                // Buscar el rol "Super Admin"
+                val allRoles = roleDao.getAll()
+                val superAdminRole = allRoles.find { it.name == "Super Admin" }
+
+                if (superAdminRole == null) {
+                    Log.e("LoginActivity", "⚠️ Rol 'Super Admin' no encontrado en la base de datos")
+                    return@launch
+                }
+
+                // Verificar si el usuario ya tiene el rol asignado
+                val hasRole = userRoleDao.tieneRol(usuario.id, superAdminRole.id) > 0
+
+                if (hasRole) {
+                    Log.d("LoginActivity", "Usuario ${usuario.email} ya tiene rol Super Admin asignado")
+                } else {
+                    // Asignar el rol Super Admin
+                    val userRole = com.universidad.streamzone.data.model.UserRoleEntity(
+                        userId = usuario.id,
+                        roleId = superAdminRole.id
+                    )
+                    userRoleDao.insertar(userRole)
+                    Log.d("LoginActivity", "✅ Rol Super Admin asignado automáticamente a ${usuario.email}")
+                }
+
+            } catch (e: Exception) {
+                Log.e("LoginActivity", "❌ Error al asignar rol Super Admin: ${e.message}", e)
+            }
+        }
     }
 }

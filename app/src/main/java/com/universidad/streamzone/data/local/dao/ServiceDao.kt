@@ -28,6 +28,12 @@ interface ServiceDao {
     @Query("SELECT * FROM services WHERE categoryId = :categoryId AND isActive = 1")
     fun obtenerServiciosPorCategoria(categoryId: Int): Flow<List<ServiceEntity>>
 
+    @Query("SELECT * FROM services WHERE categoryId = :categoryId AND isActive = 1")
+    suspend fun obtenerServiciosPorCategoriaSync(categoryId: Int): List<ServiceEntity>
+
+    @Query("SELECT * FROM services WHERE isPopular = 1 AND isActive = 1 ORDER BY name ASC")
+    suspend fun obtenerServiciosPopulares(): List<ServiceEntity>
+
     @Query("SELECT * FROM services ORDER BY name ASC")
     fun obtenerTodos(): Flow<List<ServiceEntity>>
 

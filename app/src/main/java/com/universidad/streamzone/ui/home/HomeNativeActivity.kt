@@ -24,6 +24,8 @@ import com.universidad.streamzone.ui.category.CategoryActivity
 import com.universidad.streamzone.ui.components.NavbarManager
 import com.universidad.streamzone.ui.home.adapter.CategoryCardAdapter
 import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
+import com.universidad.streamzone.util.toCategory
+import com.universidad.streamzone.util.toServiceList
 import kotlinx.coroutines.launch
 
 class HomeNativeActivity : AppCompatActivity() {
@@ -35,49 +37,8 @@ class HomeNativeActivity : AppCompatActivity() {
     private var currentUser: String = ""
     private var currentUserId: Int = 0
 
-    // Definir las categorías
-    private val categories = listOf(
-        Category(
-            id = "streaming",
-            name = "Streaming",
-            icon = "📺",
-            description = "Netflix, Disney+, Max y más",
-            serviceCount = 8,
-            gradientStart = R.color.category_streaming_start,
-            gradientEnd = R.color.category_streaming_end,
-            serviceIds = listOf("netflix", "disney_plus_premium", "disney_plus_standard", "max", "vix", "prime", "paramount", "appletv", "crunchyroll")
-        ),
-        Category(
-            id = "music",
-            name = "Música",
-            icon = "🎵",
-            description = "Spotify, Deezer, YouTube Music",
-            serviceCount = 3,
-            gradientStart = R.color.category_music_start,
-            gradientEnd = R.color.category_music_end,
-            serviceIds = listOf("spotify", "deezer", "youtube_premium")
-        ),
-        Category(
-            id = "design",
-            name = "Diseño",
-            icon = "🎨",
-            description = "Canva, Office, Autodesk",
-            serviceCount = 5,
-            gradientStart = R.color.category_design_start,
-            gradientEnd = R.color.category_design_end,
-            serviceIds = listOf("canva", "canva_year", "m365_year", "office365_year", "autodesk_year")
-        ),
-        Category(
-            id = "ai",
-            name = "IA",
-            icon = "🤖",
-            description = "ChatGPT y más",
-            serviceCount = 1,
-            gradientStart = R.color.category_ai_start,
-            gradientEnd = R.color.category_ai_end,
-            serviceIds = listOf("chatgpt")
-        )
-    )
+    // Mapa para guardar categoryId (String -> Int) para pasarlo al Intent
+    private val categoryIdMap = mutableMapOf<String, Int>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -220,35 +181,92 @@ class HomeNativeActivity : AppCompatActivity() {
         val spacingPx = (resources.displayMetrics.density * 8).toInt()
         rvCategories.addItemDecoration(GridSpacingItemDecoration(2, spacingPx, true))
 
-        val adapter = CategoryCardAdapter(categories) { category ->
-            onCategoryClick(category)
+        // Cargar categorías desde la BD
+        lifecycleScope.launch {
+            try {
+                val db = AppDatabase.getInstance(this@HomeNativeActivity)
+                val categoryDao = db.categoryDao()
+                val serviceDao = db.serviceDao()
+
+                // Obtener categorías activas
+                val categoryEntities = categoryDao.obtenerCategoriasActivasSync()
+
+                // Calcular el conteo de servicios por categoría
+                val serviceCounts = mutableMapOf<Int, Int>()
+                categoryEntities.forEach { categoryEntity ->
+                    val count = serviceDao.obtenerServiciosPorCategoriaSync(categoryEntity.id).size
+                    serviceCounts[categoryEntity.id] = count
+                }
+
+                // Convertir a modelo de UI y guardar mapeo de IDs
+                val categories = categoryEntities.map { categoryEntity ->
+                    categoryIdMap[categoryEntity.categoryId] = categoryEntity.id
+                    categoryEntity.toCategory(serviceCounts[categoryEntity.id] ?: 0)
+                }
+
+                // Actualizar UI en el hilo principal
+                runOnUiThread {
+                    val adapter = CategoryCardAdapter(categories) { category ->
+                        onCategoryClick(category)
+                    }
+                    rvCategories.adapter = adapter
+                }
+
+            } catch (e: Exception) {
+                Log.e("HomeNative", "Error al cargar categorías", e)
+                runOnUiThread {
+                    showToast("Error al cargar categorías")
+                }
+            }
         }
-        rvCategories.adapter = adapter
     }
 
     private fun setupPopularServices() {
-        // Servicios por defecto
-        val netflix = Service("netflix", "Netflix", "US$ 4,00 /mes", "Acceso inmediato", R.drawable.rounded_square_netflix)
-        val spotify = Service("spotify", "Spotify", "US$ 3,50 /mes", "Acceso inmediato", R.drawable.rounded_square_spotify)
-        val disney = Service("disney_plus_premium", "Disney+ Premium", "US$ 3,75 /mes", "Acceso inmediato", R.drawable.rounded_square_disney_premium)
+        // Cargar servicios populares desde la BD
+        lifecycleScope.launch {
+            try {
+                val db = AppDatabase.getInstance(this@HomeNativeActivity)
+                val serviceDao = db.serviceDao()
 
-        // Configurar clicks directamente
-        findViewById<View>(R.id.card_popular_netflix).setOnClickListener {
-            Log.d("HomeNative", "Click en Netflix")
-            openPurchaseDialog(netflix)
+                // Obtener servicios marcados como populares
+                val popularServiceEntities = serviceDao.obtenerServiciosPopulares()
+                val popularServices = popularServiceEntities.toServiceList()
+
+                // Si no hay servicios populares en la BD, no hacer nada
+                if (popularServices.isEmpty()) {
+                    Log.w("HomeNative", "No hay servicios populares en la BD")
+                    return@launch
+                }
+
+                // Actualizar UI en el hilo principal
+                runOnUiThread {
+                    // Asignar listeners dinámicamente según los servicios populares
+                    // Nota: Los IDs de las cards están hardcodeados en el XML (card_popular_netflix, etc.)
+                    // Para hacerlo completamente dinámico, sería mejor usar un RecyclerView
+
+                    // Por ahora, asignar basado en el serviceId
+                    popularServices.forEachIndexed { index, service ->
+                        val cardView = when (service.id) {
+                            "netflix" -> findViewById<View>(R.id.card_popular_netflix)
+                            "spotify" -> findViewById<View>(R.id.card_popular_spotify)
+                            "disney_plus_premium" -> findViewById<View>(R.id.card_popular_disney)
+                            "chatgpt" -> findViewById<View>(R.id.card_popular_disney) // Reusa una card existente
+                            else -> null
+                        }
+
+                        cardView?.setOnClickListener {
+                            Log.d("HomeNative", "Click en ${service.title}")
+                            openPurchaseDialog(service)
+                        }
+                    }
+
+                    Log.d("HomeNative", "Listeners configurados para ${popularServices.size} servicios populares")
+                }
+
+            } catch (e: Exception) {
+                Log.e("HomeNative", "Error al cargar servicios populares", e)
+            }
         }
-
-        findViewById<View>(R.id.card_popular_spotify).setOnClickListener {
-            Log.d("HomeNative", "Click en Spotify")
-            openPurchaseDialog(spotify)
-        }
-
-        findViewById<View>(R.id.card_popular_disney).setOnClickListener {
-            Log.d("HomeNative", "Click en Disney")
-            openPurchaseDialog(disney)
-        }
-
-        Log.d("HomeNative", "Listeners configurados para servicios populares")
     }
 
     private fun openPurchaseDialog(service: Service) {
@@ -275,7 +293,11 @@ class HomeNativeActivity : AppCompatActivity() {
         val intent = Intent(this, CategoryActivity::class.java)
         intent.putExtra("CATEGORY_NAME", category.name)
         intent.putExtra("CATEGORY_ICON", category.icon)
-        intent.putStringArrayListExtra("SERVICE_IDS", ArrayList(category.serviceIds))
+
+        // Obtener el ID numérico de la categoría desde el mapa
+        val categoryId = categoryIdMap[category.id] ?: -1
+        intent.putExtra("CATEGORY_ID", categoryId)
+
         startActivity(intent)
     }
 

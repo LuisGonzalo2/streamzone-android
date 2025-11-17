@@ -5,7 +5,6 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-
 android {
     namespace = "com.universidad.streamzone"
     compileSdk = 36
@@ -29,16 +28,27 @@ android {
             )
         }
     }
+
+    // --- CAMBIO IMPORTANTE AQUÍ ---
+    // Actualizado a Java 17, que es el estándar para las herramientas de Android más recientes.
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
+    // Alinear la versión de la JVM de Kotlin con la de Java.
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
+    }
+
+    buildFeatures {
+         viewBinding = true
     }
 }
 
 dependencies {
+    // Tus dependencias se ven bastante actualizadas y bien estructuradas
+    // usando el BOM de Firebase y el catálogo de versiones (libs).
+    // No se necesitan cambios urgentes aquí.
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -78,5 +88,4 @@ dependencies {
 
     // ExifInterface para corregir rotación de imágenes
     implementation("androidx.exifinterface:exifinterface:1.3.7")
-
 }

@@ -135,6 +135,18 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <!-- Lista de roles -->
+        <activity
+            android:name=".ui.admin.RoleListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Crear/Editar rol -->
+        <activity
+            android:name=".ui.admin.CreateEditRoleActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <!-- Gestión de servicios -->
         <activity
             android:name=".ui.admin.ServicesManagerActivity"

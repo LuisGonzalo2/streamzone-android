@@ -1,7 +1,9 @@
 package com.universidad.streamzone.ui.admin
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -16,6 +18,7 @@ import kotlinx.coroutines.launch
 abstract class BaseAdminActivity : AppCompatActivity() {
 
     protected lateinit var permissionManager: PermissionManager
+    protected lateinit var sharedPrefs: SharedPreferences
     protected var currentUserEmail: String = ""
 
     /**
@@ -28,14 +31,41 @@ abstract class BaseAdminActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Configurar edge-to-edge con padding dinámico para el notch
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(false)
+        }
+
         permissionManager = PermissionManager(this)
 
         // Obtener email del usuario logueado
-        val sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
+        sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
         currentUserEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
         // Validar sesión y permisos
         validateAccess()
+    }
+
+    override fun setContentView(layoutResID: Int) {
+        super.setContentView(layoutResID)
+        applyNotchPadding()
+    }
+
+    /**
+     * Aplica padding superior para evitar que el contenido se superponga con el notch
+     */
+    private fun applyNotchPadding() {
+        val rootView = findViewById<View>(android.R.id.content)
+        rootView?.setOnApplyWindowInsetsListener { view, insets ->
+            val systemBars = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                insets.getInsets(android.view.WindowInsets.Type.systemBars())
+            } else {
+                @Suppress("DEPRECATION")
+                android.graphics.Insets.of(0, insets.systemWindowInsetTop, 0, 0)
+            }
+            view.setPadding(0, systemBars.top, 0, 0)
+            insets
+        }
     }
 
     private fun validateAccess() {

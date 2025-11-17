@@ -68,6 +68,7 @@ dependencies {
     // Firebase productos (las versiones las maneja el BOM)
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
 
     // Room Database
     implementation(libs.room.runtime)

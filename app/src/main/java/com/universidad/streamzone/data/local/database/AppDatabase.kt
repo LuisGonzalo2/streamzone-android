@@ -20,9 +20,10 @@ import com.universidad.streamzone.data.model.*
         ServiceEntity::class,
         CategoryEntity::class,
         OfferEntity::class,
-        AdminMenuOptionEntity::class
+        AdminMenuOptionEntity::class,
+        NotificationEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase() {
@@ -36,6 +37,7 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun offerDao(): OfferDao
     abstract fun adminMenuOptionDao(): AdminMenuOptionDao
+    abstract fun notificationDao(): NotificationDao
 
     companion object {
         @Volatile
@@ -402,8 +404,8 @@ abstract class AppDatabase: RoomDatabase() {
 
                 // 3. Copiar datos eliminando duplicados (mantener el más reciente por ID)
                 database.execSQL("""
-            INSERT INTO usuarios_new 
-            SELECT * FROM usuarios 
+            INSERT INTO usuarios_new
+            SELECT * FROM usuarios
             WHERE id IN (
                 SELECT MAX(id) FROM usuarios GROUP BY email
             )
@@ -414,6 +416,31 @@ abstract class AppDatabase: RoomDatabase() {
 
                 // 5. Renombrar tabla nueva
                 database.execSQL("ALTER TABLE usuarios_new RENAME TO usuarios")
+            }
+        }
+
+        // Migración de versión 9 a 10 - Agregar tabla de notificaciones
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS notifications (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        title TEXT NOT NULL,
+                        message TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        isRead INTEGER NOT NULL DEFAULT 0,
+                        userId TEXT,
+                        actionType TEXT,
+                        actionData TEXT,
+                        icon TEXT NOT NULL
+                    )
+                """.trimIndent())
+
+                // Crear índice para consultas por usuario y estado de lectura
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_notifications_userId ON notifications(userId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_notifications_isRead ON notifications(isRead)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_notifications_timestamp ON notifications(timestamp)")
             }
         }
 
@@ -432,7 +459,8 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_5_6,
                         MIGRATION_6_7,
                         MIGRATION_7_8,
-                        MIGRATION_8_9
+                        MIGRATION_8_9,
+                        MIGRATION_9_10
                     )
                     .fallbackToDestructiveMigration()
                     .build()

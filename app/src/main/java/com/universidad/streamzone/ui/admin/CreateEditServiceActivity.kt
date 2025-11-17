@@ -266,8 +266,8 @@ class CreateEditServiceActivity : BaseAdminActivity() {
                     description = service.description,
                     categoryId = service.categoryId,
                     price = service.price,
-                    duration = service.duration,
-                    imageUrl = service.imageUrl,
+                    duration = "",
+                    imageUrl = service.iconUrl,
                     isActive = service.isActive,
                     isPopular = service.isPopular,
                     onSuccess = {

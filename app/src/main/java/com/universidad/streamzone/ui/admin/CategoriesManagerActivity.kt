@@ -1,5 +1,6 @@
 package com.universidad.streamzone.ui.admin
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -50,7 +51,8 @@ class CategoriesManagerActivity : BaseAdminActivity() {
         btnBack.setOnClickListener { finish() }
 
         fabAddCategory.setOnClickListener {
-            Toast.makeText(this, "Función de crear categoría próximamente", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, CreateEditCategoryActivity::class.java)
+            startActivity(intent)
         }
     }
 
@@ -58,7 +60,9 @@ class CategoriesManagerActivity : BaseAdminActivity() {
         categoryAdapter = CategoryAdminAdapter(
             categories = emptyList(),
             onEditClick = { category ->
-                Toast.makeText(this, "Editar: ${category.name}", Toast.LENGTH_SHORT).show()
+                val intent = Intent(this, CreateEditCategoryActivity::class.java)
+                intent.putExtra("CATEGORY_ID", category.id.toLong())
+                startActivity(intent)
             },
             onToggleClick = { category ->
                 toggleCategoryStatus(category)
@@ -96,11 +100,11 @@ class CategoriesManagerActivity : BaseAdminActivity() {
 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@CategoriesManagerActivity,
-                        "Error al cargar categorías: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    //Toast.makeText(
+                       // this@CategoriesManagerActivity,
+                       // "Error al cargar categorías: ${e.message}",
+                       // Toast.LENGTH_SHORT
+                    //).show()
                 }
             }
         }

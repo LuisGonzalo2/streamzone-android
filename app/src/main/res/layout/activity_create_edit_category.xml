@@ -33,7 +33,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:text="Crear Servicio"
+                android:text="Crear Categoría"
                 android:textSize="20sp"
                 android:textColor="@color/white"
                 android:textStyle="bold" />
@@ -47,42 +47,43 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Nombre del servicio -->
+            <!-- Icono (Emoji) -->
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilServiceName"
+                android:id="@+id/tilCategoryIcon"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Nombre del servicio"
+                android:hint="Icono (emoji, ej: 📺, 🎵, 🎨)"
                 android:layout_marginBottom="16dp"
                 app:boxStrokeColor="#6366F1"
                 app:hintTextColor="#B0B0B0"
                 app:boxStrokeWidth="2dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etServiceName"
+                    android:id="@+id/etCategoryIcon"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
                     android:textColor="@color/white"
                     android:textColorHint="#808080"
-                    android:maxLines="1" />
+                    android:maxLines="1"
+                    android:textSize="24sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Precio -->
+            <!-- Nombre -->
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilServicePrice"
+                android:id="@+id/tilCategoryName"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Precio (ej: US$ 4,00 /mes)"
+                android:hint="Nombre de la categoría"
                 android:layout_marginBottom="16dp"
                 app:boxStrokeColor="#6366F1"
                 app:hintTextColor="#B0B0B0"
                 app:boxStrokeWidth="2dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etServicePrice"
+                    android:id="@+id/etCategoryName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
@@ -93,7 +94,7 @@
 
             <!-- Descripción -->
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilServiceDescription"
+                android:id="@+id/tilCategoryDescription"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -104,7 +105,7 @@
                 app:boxStrokeWidth="2dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etServiceDescription"
+                    android:id="@+id/etCategoryDescription"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textMultiLine"
@@ -114,124 +115,49 @@
                     android:maxLines="5" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Imagen del servicio -->
-            <TextView
+            <!-- Color inicial del gradiente -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilGradientStart"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Imagen del servicio (opcional)"
-                android:textSize="14sp"
-                android:textColor="@color/white"
-                android:layout_marginBottom="8dp" />
+                android:hint="Color inicial (ej: #FF5733)"
+                android:layout_marginBottom="16dp"
+                app:boxStrokeColor="#6366F1"
+                app:hintTextColor="#B0B0B0"
+                app:boxStrokeWidth="2dp">
 
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_marginBottom="8dp"
-                app:cardBackgroundColor="#2C2C2E"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp">
-
-                <RelativeLayout
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etGradientStart"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent">
-
-                    <ImageView
-                        android:id="@+id/ivServicePreview"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
-                        android:visibility="gone" />
-
-                    <LinearLayout
-                        android:id="@+id/llImagePlaceholder"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="📷"
-                            android:textSize="48sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Toca para seleccionar imagen"
-                            android:textSize="14sp"
-                            android:textColor="#B0B0B0"
-                            android:layout_marginTop="8dp" />
-                    </LinearLayout>
-                </RelativeLayout>
-            </androidx.cardview.widget.CardView>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSelectImage"
-                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Seleccionar imagen"
+                    android:inputType="text"
                     android:textColor="@color/white"
-                    app:backgroundTint="#6366F1"
-                    app:cornerRadius="8dp"
-                    android:layout_marginEnd="8dp" />
+                    android:textColorHint="#808080"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRemoveImage"
-                    android:layout_width="wrap_content"
+            <!-- Color final del gradiente -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilGradientEnd"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Color final (ej: #C70039)"
+                android:layout_marginBottom="16dp"
+                app:boxStrokeColor="#6366F1"
+                app:hintTextColor="#B0B0B0"
+                app:boxStrokeWidth="2dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etGradientEnd"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Quitar"
+                    android:inputType="text"
                     android:textColor="@color/white"
-                    app:backgroundTint="#EF4444"
-                    app:cornerRadius="8dp"
-                    android:visibility="gone" />
-            </LinearLayout>
-
-            <!-- Categoría -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Categoría"
-                android:textSize="14sp"
-                android:textColor="@color/white"
-                android:layout_marginBottom="8dp" />
-
-            <Spinner
-                android:id="@+id/spinnerCategory"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:background="@android:drawable/edit_text"
-                android:padding="12dp"
-                android:layout_marginBottom="16dp" />
-
-            <!-- Switch para Popular -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Servicio popular"
-                    android:textSize="16sp"
-                    android:textColor="@color/white" />
-
-                <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/switchIsPopular"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                    android:textColorHint="#808080"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Switch para Activo -->
             <LinearLayout
@@ -245,7 +171,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Servicio activo"
+                    android:text="Categoría activa"
                     android:textSize="16sp"
                     android:textColor="@color/white" />
 
@@ -261,7 +187,7 @@
                 android:id="@+id/btnSave"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Guardar Servicio"
+                android:text="Guardar Categoría"
                 android:textColor="@color/white"
                 app:backgroundTint="#6366F1"
                 app:cornerRadius="8dp" />

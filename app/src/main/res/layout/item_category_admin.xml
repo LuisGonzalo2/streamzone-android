@@ -5,60 +5,76 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="16dp"
-    app:cardElevation="4dp"
-    app:cardBackgroundColor="@android:color/transparent">
+    app:cardElevation="4dp">
 
     <LinearLayout
-        android:id="@+id/category_preview_container"
+        android:id="@+id/category_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical">
 
-        <!-- Header con emoji y acciones -->
+        <!-- Icono -->
+        <TextView
+            android:id="@+id/tv_category_icon"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:text="📺"
+            android:textSize="36sp"
+            android:gravity="center"
+            android:background="@drawable/rounded_circle"
+            android:layout_marginEnd="16dp" />
+
+        <!-- Info -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="12dp">
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/tv_category_icon_preview"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:text="📺"
-                android:textSize="32sp"
-                android:gravity="center"
-                android:background="@drawable/rounded_circle"
-                android:backgroundTint="#33FFFFFF" />
-
-            <LinearLayout
-                android:layout_width="0dp"
+                android:id="@+id/tv_category_name"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:layout_marginStart="12dp">
+                android:text="Streaming"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tv_category_name_admin"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Streaming"
-                    android:textColor="@color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+            <TextView
+                android:id="@+id/tv_category_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ID: streaming"
+                android:textColor="#E0E0E0"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
 
-                <TextView
-                    android:id="@+id/tv_category_service_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="8 servicios"
-                    android:textColor="#E0E0E0"
-                    android:textSize="12sp"
-                    android:layout_marginTop="2dp" />
+            <TextView
+                android:id="@+id/tv_category_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✅ Activa"
+                android:textSize="11sp"
+                android:layout_marginTop="4dp" />
 
-            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Botones -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btn_edit_category"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_menu_edit"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Editar"
+                app:tint="@color/brand_blue" />
 
             <ImageButton
                 android:id="@+id/btn_delete_category"
@@ -66,55 +82,8 @@
                 android:layout_height="40dp"
                 android:src="@android:drawable/ic_menu_delete"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                app:tint="@color/white"
-                android:contentDescription="Eliminar" />
-
-        </LinearLayout>
-
-        <!-- Descripción -->
-        <TextView
-            android:id="@+id/tv_category_description_admin"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Netflix, Disney+, Max y más"
-            android:textColor="#E0E0E0"
-            android:textSize="14sp"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Divisor -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#33FFFFFF"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Footer con switch y botón editar -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/switch_category_active"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Activa"
-                android:textColor="@color/white"
-                android:checked="true"
-                app:thumbTint="@color/white"
-                app:trackTint="@color/purple_accent" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_edit_category"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:text="Editar"
-                android:textColor="@color/white"
-                android:textSize="12sp"
-                app:backgroundTint="@color/purple_accent"
-                app:cornerRadius="20dp" />
+                android:contentDescription="Eliminar"
+                app:tint="@color/close_red" />
 
         </LinearLayout>
 

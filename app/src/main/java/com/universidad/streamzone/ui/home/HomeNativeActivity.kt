@@ -206,7 +206,8 @@ class HomeNativeActivity : AppCompatActivity() {
                     startActivity(intent)
                 }
                 3 -> { // Asignar roles
-                    showToast("Próximamente: Asignar roles")
+                    val intent = Intent(this, com.universidad.streamzone.ui.admin.roles.RolesManagerActivity::class.java)
+                    startActivity(intent)
                 }
             }
             listPopupWindow.dismiss()

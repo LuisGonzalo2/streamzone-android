@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/categories_main_container"
+    android:id="@+id/categories_manager_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/dark_gradient_background">
+    android:background="@drawable/dark_gradient_background"
+    android:paddingTop="16dp">
 
     <!-- Header -->
     <LinearLayout
@@ -24,44 +25,37 @@
             android:insetBottom="0dp"
             app:icon="@drawable/ic_arrow_back"
             app:iconTint="@color/white"
-            app:backgroundTint="@color/dark_card_background"
             app:iconGravity="textStart"
             app:iconPadding="0dp"
-            app:cornerRadius="12dp"
-            app:strokeColor="@color/purple_accent"
-            app:strokeWidth="2dp" />
+            app:backgroundTint="#334155"
+            app:cornerRadius="12dp" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Gestionar Categorías"
+            android:text="📁 Gestión de Categorías"
             android:textColor="@color/white"
-            android:textSize="20sp"
+            android:textSize="24sp"
             android:textStyle="bold"
-            android:gravity="center"
             android:layout_marginStart="16dp" />
-
-        <View
-            android:layout_width="48dp"
-            android:layout_height="48dp" />
 
     </LinearLayout>
 
-    <!-- Lista de categorías -->
+    <!-- RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_categories"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
-        android:padding="8dp"
+        android:layout_marginTop="16dp"
+        android:padding="16dp"
         android:clipToPadding="false"
         app:layout_constraintTop_toBottomOf="@id/header_layout"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Estado vacío -->
+    <!-- Empty State -->
     <LinearLayout
         android:id="@+id/empty_state_categories"
         android:layout_width="wrap_content"
@@ -77,14 +71,14 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="📂"
+            android:text="📁"
             android:textSize="80sp"
             android:layout_marginBottom="16dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="No hay categorías"
+            android:text="Sin categorías"
             android:textColor="@color/white"
             android:textSize="20sp"
             android:textStyle="bold"
@@ -93,26 +87,24 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Crea tu primera categoría con el botón +"
+            android:text="Presiona + para crear una categoría"
             android:textColor="@color/text_secondary"
-            android:textSize="14sp"
-            android:gravity="center"
-            android:paddingHorizontal="32dp" />
+            android:textSize="14sp" />
 
     </LinearLayout>
 
-    <!-- FAB para agregar -->
+    <!-- FAB -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add_category"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
         android:src="@android:drawable/ic_input_add"
         app:tint="@color/white"
         app:backgroundTint="@color/purple_accent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:contentDescription="Agregar categoría" />
+        android:contentDescription="Crear categoría" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

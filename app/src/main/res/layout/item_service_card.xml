@@ -55,16 +55,31 @@
                 android:paddingTop="8dp">
 
                 <!-- Icono circular/rounded-square centrado -->
-                <TextView
-                    android:id="@+id/tvServiceIcon"
+                <FrameLayout
                     android:layout_width="72dp"
-                    android:layout_height="72dp"
-                    android:background="@drawable/rounded_square"
-                    android:gravity="center"
-                    android:text="@string/service_icon"
-                    android:textSize="28sp"
-                    android:textColor="@color/white"
-                    android:textStyle="bold" />
+                    android:layout_height="72dp">
+
+                    <!-- ImageView para imágenes base64 -->
+                    <ImageView
+                        android:id="@+id/ivServiceIcon"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:background="@drawable/rounded_square"
+                        android:visibility="gone" />
+
+                    <!-- TextView para emojis/fallback -->
+                    <TextView
+                        android:id="@+id/tvServiceIcon"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/rounded_square"
+                        android:gravity="center"
+                        android:text="@string/service_icon"
+                        android:textSize="28sp"
+                        android:textColor="@color/white"
+                        android:textStyle="bold" />
+                </FrameLayout>
 
                 <!-- Título centrado -->
                 <TextView

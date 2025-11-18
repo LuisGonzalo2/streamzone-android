@@ -16,7 +16,8 @@ fun ServiceEntity.toService(): Service {
         title = this.name,
         price = this.price,
         desc = this.description,
-        iconRes = this.iconDrawable
+        iconRes = this.iconDrawable,
+        iconBase64 = this.iconBase64
     )
 }
 

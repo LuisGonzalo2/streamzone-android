@@ -313,15 +313,15 @@ object FirebaseService {
 
     /**
      * Sincroniza los roles de un usuario a Firebase
-     * Los guarda como un array de IDs dentro del documento del usuario
+     * Usa firebaseIds de roles en lugar de IDs locales para sincronización multi-dispositivo
      */
     fun sincronizarRolesUsuario(
         userEmail: String,
-        roleIds: List<Int>,
+        roleFirebaseIds: List<String>,
         onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
-        Log.d(TAG, "Sincronizando roles para $userEmail: $roleIds")
+        Log.d(TAG, "Sincronizando roles para $userEmail: $roleFirebaseIds")
 
         // Buscar el documento del usuario
         db.collection("usuarios")
@@ -336,10 +336,10 @@ object FirebaseService {
 
                 val docId = documents.documents[0].id
 
-                // Actualizar el campo roleIds
+                // Actualizar el campo roleFirebaseIds
                 db.collection("usuarios")
                     .document(docId)
-                    .update("roleIds", roleIds)
+                    .update("roleFirebaseIds", roleFirebaseIds)
                     .addOnSuccessListener {
                         Log.d(TAG, "✅ Roles sincronizados para $userEmail")
                         onSuccess()
@@ -357,10 +357,11 @@ object FirebaseService {
 
     /**
      * Obtiene los roles de un usuario desde Firebase
+     * Retorna firebaseIds de roles para sincronización multi-dispositivo
      */
     fun obtenerRolesUsuario(
         userEmail: String,
-        onSuccess: (List<Int>) -> Unit,
+        onSuccess: (List<String>) -> Unit,
         onFailure: (Exception) -> Unit
     ) {
         db.collection("usuarios")
@@ -373,18 +374,12 @@ object FirebaseService {
                 }
 
                 val doc = documents.documents[0]
-                val roleIds = (doc.get("roleIds") as? List<*>)
-                    ?.mapNotNull {
-                        when (it) {
-                            is Long -> it.toInt()
-                            is Int -> it
-                            is String -> it.toIntOrNull()
-                            else -> null
-                        }
-                    } ?: emptyList()
+                val roleFirebaseIds = (doc.get("roleFirebaseIds") as? List<*>)
+                    ?.mapNotNull { it as? String }
+                    ?: emptyList()
 
-                Log.d(TAG, "Roles obtenidos para $userEmail: $roleIds")
-                onSuccess(roleIds)
+                Log.d(TAG, "Roles obtenidos para $userEmail: $roleFirebaseIds")
+                onSuccess(roleFirebaseIds)
             }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Error al obtener roles", e)
@@ -751,18 +746,19 @@ object FirebaseService {
 
     /**
      * Sincronizar permisos de un rol a Firebase
+     * Usa códigos de permisos en lugar de IDs locales para sincronización multi-dispositivo
      */
     fun sincronizarPermisosRol(
         roleId: Int,
         roleFirebaseId: String,
-        permissionIds: List<Int>,
+        permissionCodes: List<String>,
         onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
-        Log.d(TAG, "Sincronizando permisos del rol $roleId: $permissionIds")
+        Log.d(TAG, "Sincronizando permisos del rol $roleId: $permissionCodes")
 
         val data = hashMapOf(
-            "permissionIds" to permissionIds,
+            "permissionCodes" to permissionCodes,
             "timestamp" to FieldValue.serverTimestamp()
         )
 
@@ -781,10 +777,11 @@ object FirebaseService {
 
     /**
      * Obtener permisos de un rol desde Firebase
+     * Retorna códigos de permisos para sincronización multi-dispositivo
      */
     fun obtenerPermisosRol(
         roleFirebaseId: String,
-        onSuccess: (List<Int>) -> Unit,
+        onSuccess: (List<String>) -> Unit,
         onFailure: (Exception) -> Unit
     ) {
         db.collection("role_permissions")
@@ -792,18 +789,12 @@ object FirebaseService {
             .get()
             .addOnSuccessListener { doc ->
                 if (doc.exists()) {
-                    val permissionIds = (doc.get("permissionIds") as? List<*>)
-                        ?.mapNotNull {
-                            when (it) {
-                                is Long -> it.toInt()
-                                is Int -> it
-                                is String -> it.toIntOrNull()
-                                else -> null
-                            }
-                        } ?: emptyList()
+                    val permissionCodes = (doc.get("permissionCodes") as? List<*>)
+                        ?.mapNotNull { it as? String }
+                        ?: emptyList()
 
-                    Log.d(TAG, "Permisos obtenidos para rol $roleFirebaseId: $permissionIds")
-                    onSuccess(permissionIds)
+                    Log.d(TAG, "Permisos obtenidos para rol $roleFirebaseId: $permissionCodes")
+                    onSuccess(permissionCodes)
                 } else {
                     onSuccess(emptyList())
                 }

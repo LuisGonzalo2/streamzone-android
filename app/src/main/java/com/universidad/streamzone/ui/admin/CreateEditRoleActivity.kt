@@ -218,11 +218,17 @@ class CreateEditRoleActivity : BaseAdminActivity() {
                                     ))
                                 }
 
-                                // Sincronizar permisos del rol
+                                // Convertir IDs de permisos a códigos de permisos
+                                val permissionDao = db.permissionDao()
+                                val permissionCodes = selectedPermissions.mapNotNull { permId ->
+                                    allPermissions.find { it.id == permId }?.code
+                                }
+
+                                // Sincronizar permisos del rol usando códigos
                                 com.universidad.streamzone.data.remote.FirebaseService.sincronizarPermisosRol(
                                     roleId = savedRoleId.toInt(),
                                     roleFirebaseId = newFirebaseId,
-                                    permissionIds = selectedPermissions.toList(),
+                                    permissionCodes = permissionCodes,
                                     onSuccess = {
                                         android.util.Log.d("CreateEditRole", "✅ Permisos sincronizados")
                                     },

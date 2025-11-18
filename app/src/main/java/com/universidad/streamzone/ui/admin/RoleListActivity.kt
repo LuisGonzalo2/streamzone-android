@@ -125,20 +125,61 @@ class RoleListActivity : BaseAdminActivity() {
                 try {
                     val db = AppDatabase.getInstance(this@RoleListActivity)
                     val roleDao = db.roleDao()
+                    val permissionDao = db.permissionDao()
+                    val rolePermissionDao = db.rolePermissionDao()
 
                     firebaseRoles.forEach { firebaseRole ->
                         val localRole = roleDao.getAll()
                             .find { it.firebaseId == firebaseRole.firebaseId }
 
-                        if (localRole == null) {
+                        val roleLocalId = if (localRole == null) {
                             // Rol nuevo → Insertar
-                            roleDao.insertar(firebaseRole)
+                            val newId = roleDao.insertar(firebaseRole).toInt()
                             Log.d("RoleList", "➕ Rol insertado: ${firebaseRole.name}")
+                            newId
                         } else {
                             // Rol existe → Actualizar
                             val updated = firebaseRole.copy(id = localRole.id)
                             roleDao.actualizar(updated)
                             Log.d("RoleList", "🔄 Rol actualizado: ${firebaseRole.name}")
+                            localRole.id
+                        }
+
+                        // Sincronizar permisos del rol desde Firebase
+                        if (firebaseRole.firebaseId != null) {
+                            FirebaseService.obtenerPermisosRol(
+                                roleFirebaseId = firebaseRole.firebaseId!!,
+                                onSuccess = { permissionCodes ->
+                                    lifecycleScope.launch {
+                                        try {
+                                            // Eliminar permisos anteriores del rol
+                                            rolePermissionDao.eliminarPermisosPorRol(roleLocalId)
+
+                                            // Obtener todos los permisos locales
+                                            val allPermissions = permissionDao.getAll()
+
+                                            // Convertir códigos a IDs y asignar permisos
+                                            permissionCodes.forEach { code ->
+                                                val permission = allPermissions.find { it.code == code }
+                                                if (permission != null) {
+                                                    rolePermissionDao.insertar(
+                                                        com.universidad.streamzone.data.model.RolePermissionEntity(
+                                                            roleId = roleLocalId,
+                                                            permissionId = permission.id
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                            Log.d("RoleList", "✅ Permisos sincronizados para rol: ${firebaseRole.name}")
+                                        } catch (e: Exception) {
+                                            Log.e("RoleList", "❌ Error al sincronizar permisos del rol: ${e.message}")
+                                        }
+                                    }
+                                },
+                                onFailure = { e ->
+                                    Log.e("RoleList", "❌ Error al obtener permisos del rol: ${e.message}")
+                                }
+                            )
                         }
                     }
 

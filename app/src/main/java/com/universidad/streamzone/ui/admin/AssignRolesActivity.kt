@@ -145,9 +145,16 @@ class AssignRolesActivity : BaseAdminActivity() {
                 // Sincronizar roles a Firebase
                 val usuario = usuarioDao.buscarPorId(userId)
                 if (usuario != null && isNetworkAvailable()) {
+                    val roleDao = db.roleDao()
+
+                    // Convertir IDs de roles locales a firebaseIds
+                    val roleFirebaseIds = selectedRoles.mapNotNull { roleId ->
+                        allRoles.find { it.id == roleId }?.firebaseId
+                    }
+
                     com.universidad.streamzone.data.remote.FirebaseService.sincronizarRolesUsuario(
                         userEmail = usuario.email,
-                        roleIds = selectedRoles.toList(),
+                        roleFirebaseIds = roleFirebaseIds,
                         onSuccess = {
                             android.util.Log.d("AssignRoles", "✅ Roles sincronizados a Firebase")
                         },

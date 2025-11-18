@@ -206,9 +206,15 @@ class CreateEditRoleActivity : BaseAdminActivity() {
                         role
                     }
 
+                    android.util.Log.d("CreateEditRole", "🔄 Iniciando sincronización de rol: ${roleToSync.name}")
+                    android.util.Log.d("CreateEditRole", "   FirebaseId: ${roleToSync.firebaseId}")
+                    android.util.Log.d("CreateEditRole", "   Permisos seleccionados: ${selectedPermissions.size}")
+
                     com.universidad.streamzone.data.remote.FirebaseService.sincronizarRol(
                         role = roleToSync,
                         onSuccess = { newFirebaseId ->
+                            android.util.Log.d("CreateEditRole", "✅ Rol sincronizado. FirebaseId: $newFirebaseId")
+
                             lifecycleScope.launch {
                                 // Actualizar firebaseId en Room si es nuevo
                                 if (firebaseId == null) {
@@ -216,6 +222,7 @@ class CreateEditRoleActivity : BaseAdminActivity() {
                                         firebaseId = newFirebaseId,
                                         sincronizado = true
                                     ))
+                                    android.util.Log.d("CreateEditRole", "✅ FirebaseId guardado en Room")
                                 }
 
                                 // Convertir IDs de permisos a códigos de permisos
@@ -224,26 +231,58 @@ class CreateEditRoleActivity : BaseAdminActivity() {
                                     allPermissions.find { it.id == permId }?.code
                                 }
 
+                                android.util.Log.d("CreateEditRole", "🔄 Sincronizando permisos...")
+                                android.util.Log.d("CreateEditRole", "   Códigos: $permissionCodes")
+                                android.util.Log.d("CreateEditRole", "   FirebaseId del rol: $newFirebaseId")
+
                                 // Sincronizar permisos del rol usando códigos
                                 com.universidad.streamzone.data.remote.FirebaseService.sincronizarPermisosRol(
                                     roleId = savedRoleId.toInt(),
                                     roleFirebaseId = newFirebaseId,
                                     permissionCodes = permissionCodes,
                                     onSuccess = {
-                                        android.util.Log.d("CreateEditRole", "✅ Permisos sincronizados")
+                                        android.util.Log.d("CreateEditRole", "✅ Permisos sincronizados exitosamente")
+                                        runOnUiThread {
+                                            Toast.makeText(
+                                                this@CreateEditRoleActivity,
+                                                "Rol y permisos sincronizados con Firebase",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
                                     },
                                     onFailure = { e ->
-                                        android.util.Log.e("CreateEditRole", "❌ Error permisos: ${e.message}")
+                                        android.util.Log.e("CreateEditRole", "❌ Error al sincronizar permisos", e)
+                                        runOnUiThread {
+                                            Toast.makeText(
+                                                this@CreateEditRoleActivity,
+                                                "Error al sincronizar permisos: ${e.message}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
                                     }
                                 )
-
-                                android.util.Log.d("CreateEditRole", "✅ Rol sincronizado con Firebase")
                             }
                         },
                         onFailure = { e ->
-                            android.util.Log.e("CreateEditRole", "❌ Error Firebase: ${e.message}")
+                            android.util.Log.e("CreateEditRole", "❌ Error al sincronizar rol", e)
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this@CreateEditRoleActivity,
+                                    "Error al sincronizar rol: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
                         }
                     )
+                } else {
+                    android.util.Log.w("CreateEditRole", "⚠️ No hay conexión a internet. Rol guardado solo localmente")
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@CreateEditRoleActivity,
+                            "Rol guardado localmente (sin conexión)",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
 
                 runOnUiThread {

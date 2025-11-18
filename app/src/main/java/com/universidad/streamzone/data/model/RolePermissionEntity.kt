@@ -23,7 +23,8 @@ import androidx.room.PrimaryKey
     ],
     indices = [
         Index(value = ["roleId"]),
-        Index(value = ["permissionId"])
+        Index(value = ["permissionId"]),
+        Index(value = ["roleId", "permissionId"], unique = true)
     ]
 )
 data class RolePermissionEntity(

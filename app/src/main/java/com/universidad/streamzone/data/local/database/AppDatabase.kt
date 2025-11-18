@@ -23,7 +23,7 @@ import com.universidad.streamzone.data.model.*
         AdminMenuOptionEntity::class,
         NotificationEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase() {
@@ -444,6 +444,69 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        // Migración de versión 10 a 11 - Agregar índices UNIQUE a user_roles y role_permissions
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 1. Recrear tabla user_roles con índice UNIQUE
+                database.execSQL("""
+                    CREATE TABLE user_roles_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        userId INTEGER NOT NULL,
+                        roleId INTEGER NOT NULL,
+                        FOREIGN KEY(userId) REFERENCES usuarios(id) ON DELETE CASCADE,
+                        FOREIGN KEY(roleId) REFERENCES roles(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+
+                // Crear índices incluyendo el UNIQUE
+                database.execSQL("CREATE INDEX index_user_roles_userId ON user_roles_new(userId)")
+                database.execSQL("CREATE INDEX index_user_roles_roleId ON user_roles_new(roleId)")
+                database.execSQL("CREATE UNIQUE INDEX index_user_roles_userId_roleId ON user_roles_new(userId, roleId)")
+
+                // Copiar datos eliminando duplicados
+                database.execSQL("""
+                    INSERT INTO user_roles_new (id, userId, roleId)
+                    SELECT id, userId, roleId FROM user_roles
+                    WHERE id IN (
+                        SELECT MIN(id) FROM user_roles GROUP BY userId, roleId
+                    )
+                """.trimIndent())
+
+                // Eliminar tabla antigua y renombrar
+                database.execSQL("DROP TABLE user_roles")
+                database.execSQL("ALTER TABLE user_roles_new RENAME TO user_roles")
+
+                // 2. Recrear tabla role_permissions con índice UNIQUE
+                database.execSQL("""
+                    CREATE TABLE role_permissions_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        roleId INTEGER NOT NULL,
+                        permissionId INTEGER NOT NULL,
+                        FOREIGN KEY(roleId) REFERENCES roles(id) ON DELETE CASCADE,
+                        FOREIGN KEY(permissionId) REFERENCES permissions(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+
+                // Crear índices incluyendo el UNIQUE
+                database.execSQL("CREATE INDEX index_role_permissions_roleId ON role_permissions_new(roleId)")
+                database.execSQL("CREATE INDEX index_role_permissions_permissionId ON role_permissions_new(permissionId)")
+                database.execSQL("CREATE UNIQUE INDEX index_role_permissions_roleId_permissionId ON role_permissions_new(roleId, permissionId)")
+
+                // Copiar datos eliminando duplicados
+                database.execSQL("""
+                    INSERT INTO role_permissions_new (id, roleId, permissionId)
+                    SELECT id, roleId, permissionId FROM role_permissions
+                    WHERE id IN (
+                        SELECT MIN(id) FROM role_permissions GROUP BY roleId, permissionId
+                    )
+                """.trimIndent())
+
+                // Eliminar tabla antigua y renombrar
+                database.execSQL("DROP TABLE role_permissions")
+                database.execSQL("ALTER TABLE role_permissions_new RENAME TO role_permissions")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -460,7 +523,8 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_6_7,
                         MIGRATION_7_8,
                         MIGRATION_8_9,
-                        MIGRATION_9_10
+                        MIGRATION_9_10,
+                        MIGRATION_10_11
                     )
                     .fallbackToDestructiveMigration()
                     .build()

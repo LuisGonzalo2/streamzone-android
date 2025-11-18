@@ -33,6 +33,10 @@ class RoleListActivity : BaseAdminActivity() {
     private lateinit var fabAddRole: FloatingActionButton
     private lateinit var roleAdapter: RoleListAdapter
 
+    // Control de sincronización para evitar duplicados
+    private var lastSyncTimestamp: Long = 0
+    private val SYNC_COOLDOWN_MS = 30000 // 30 segundos
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_role_list)
@@ -85,8 +89,10 @@ class RoleListActivity : BaseAdminActivity() {
                 val db = AppDatabase.getInstance(this@RoleListActivity)
                 val roleDao = db.roleDao()
 
-                // Sincronizar desde Firebase primero
-                if (isNetworkAvailable()) {
+                // Sincronizar desde Firebase solo si pasó el tiempo de cooldown
+                val currentTime = System.currentTimeMillis()
+                if (isNetworkAvailable() && (currentTime - lastSyncTimestamp) > SYNC_COOLDOWN_MS) {
+                    lastSyncTimestamp = currentTime
                     syncRolesFromFirebase()
                 }
 

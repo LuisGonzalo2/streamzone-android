@@ -6,7 +6,7 @@ import com.universidad.streamzone.data.model.RolePermissionEntity
 @Dao
 interface RolePermissionDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertar(rolePermission: RolePermissionEntity): Long
 
     @Delete
@@ -21,6 +21,6 @@ interface RolePermissionDao {
     suspend fun eliminarPermisosPorRol(roleId: Int)
 
     // Asignar múltiples permisos a un rol
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun asignarRoles(rolePermissions: List<RolePermissionEntity>)
 }

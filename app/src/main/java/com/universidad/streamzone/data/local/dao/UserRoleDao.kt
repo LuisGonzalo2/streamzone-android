@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface UserRoleDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertar(userRole: UserRoleEntity): Long
 
     @Delete
@@ -34,7 +34,7 @@ interface UserRoleDao {
     suspend fun eliminarRolesPorUsuario(userId: Int)
 
     // Asignar múltiples roles a un usuario
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun asignarRoles(userRoles: List<UserRoleEntity>)
 
     // Obtener IDs de roles de un usuario (para validación de permisos)

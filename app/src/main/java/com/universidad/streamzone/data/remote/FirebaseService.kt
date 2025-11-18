@@ -518,4 +518,125 @@ object FirebaseService {
                 onFailure(e)
             }
     }
+    // ========================================
+    // SINCRONIZACIÓN DE OFERTAS
+    // ========================================
+
+    /**
+     * Guardar/actualizar una oferta en Firebase
+     */
+    fun sincronizarOferta(
+        offer: com.universidad.streamzone.data.model.OfferEntity,
+        onSuccess: (String) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        try {
+            Log.d(TAG, "Sincronizando oferta: ${offer.title}")
+
+            val data = hashMapOf(
+                "title" to offer.title,
+                "description" to offer.description,
+                "serviceIds" to offer.serviceIds,
+                "originalPrice" to offer.originalPrice,
+                "comboPrice" to offer.comboPrice,
+                "discountPercent" to offer.discountPercent,
+                "startDate" to offer.startDate,
+                "endDate" to offer.endDate,
+                "isActive" to offer.isActive,
+                "timestamp" to FieldValue.serverTimestamp()
+            )
+
+            if (offer.firebaseId.isNullOrEmpty()) {
+                // Crear nueva oferta
+                db.collection("offers")
+                    .add(data)
+                    .addOnSuccessListener { documentReference ->
+                        Log.d(TAG, "✅ Oferta creada con ID: ${documentReference.id}")
+                        onSuccess(documentReference.id)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "❌ Error al crear oferta", e)
+                        onFailure(e)
+                    }
+            } else {
+                // Actualizar oferta existente
+                db.collection("offers")
+                    .document(offer.firebaseId!!)
+                    .set(data)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "✅ Oferta actualizada: ${offer.firebaseId}")
+                        onSuccess(offer.firebaseId!!)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "❌ Error al actualizar oferta", e)
+                        onFailure(e)
+                    }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Excepción al sincronizar oferta", e)
+            onFailure(e)
+        }
+    }
+
+    /**
+     * Obtener todas las ofertas de Firebase
+     */
+    fun obtenerTodasLasOfertas(callback: (List<com.universidad.streamzone.data.model.OfferEntity>) -> Unit) {
+        Log.d(TAG, "Obteniendo ofertas de Firebase...")
+
+        db.collection("offers")
+            .get()
+            .addOnSuccessListener { result ->
+                val ofertas = result.documents.mapNotNull { doc ->
+                    try {
+                        com.universidad.streamzone.data.model.OfferEntity(
+                            id = 0, // Room asignará el ID
+                            title = doc.getString("title") ?: "",
+                            description = doc.getString("description") ?: "",
+                            serviceIds = doc.getString("serviceIds") ?: "",
+                            originalPrice = doc.getDouble("originalPrice") ?: 0.0,
+                            comboPrice = doc.getDouble("comboPrice") ?: 0.0,
+                            discountPercent = doc.getLong("discountPercent")?.toInt() ?: 0,
+                            startDate = doc.getLong("startDate") ?: 0L,
+                            endDate = doc.getLong("endDate") ?: 0L,
+                            isActive = doc.getBoolean("isActive") ?: false,
+                            sincronizado = true,
+                            firebaseId = doc.id
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error al parsear oferta: ${e.message}")
+                        null
+                    }
+                }
+
+                Log.d(TAG, "✅ ${ofertas.size} ofertas obtenidas de Firebase")
+                callback(ofertas)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al obtener ofertas de Firebase", e)
+                callback(emptyList())
+            }
+    }
+
+    /**
+     * Eliminar una oferta de Firebase
+     */
+    fun eliminarOferta(
+        firebaseId: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        db.collection("offers")
+            .document(firebaseId)
+            .delete()
+            .addOnSuccessListener {
+                Log.d(TAG, "✅ Oferta eliminada de Firebase")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al eliminar oferta", e)
+                onFailure(e)
+            }
+    }
 }

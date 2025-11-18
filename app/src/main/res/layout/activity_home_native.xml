@@ -26,6 +26,7 @@
 
         <!-- Hero Card: Oferta del mes - DINÁMICO -->
         <androidx.cardview.widget.CardView
+            android:id="@+id/cardHeroOffer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
@@ -49,6 +50,7 @@
                     android:layout_marginBottom="6dp" />
 
                 <TextView
+                    android:id="@+id/tvOfferTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Combo: Netflix + Spotify"
@@ -58,6 +60,7 @@
                     android:layout_marginBottom="2dp" />
 
                 <TextView
+                    android:id="@+id/tvOfferPrice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="US$ 7,50/mes (ahorra 20%)"
@@ -81,6 +84,7 @@
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>
+
         <!-- Título Categorías -->
         <TextView
             android:layout_width="match_parent"
@@ -99,6 +103,7 @@
             android:nestedScrollingEnabled="false"
             android:clipToPadding="false"
             android:paddingBottom="24dp" />
+
         <!-- Divisor -->
         <View
             android:layout_width="match_parent"

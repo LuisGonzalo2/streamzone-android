@@ -67,6 +67,8 @@ class PurchaseOfferDialogFragment : DialogFragment() {
     private lateinit var btnPurchaseOffer: Button
     private lateinit var btnClose: ImageButton
 
+    private lateinit var tvTotalPrice: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NORMAL, R.style.FullScreenDialog)
@@ -109,6 +111,7 @@ class PurchaseOfferDialogFragment : DialogFragment() {
         btnDuration6 = view.findViewById(R.id.btnDuration6)
         btnPurchaseOffer = view.findViewById(R.id.btnPurchaseOffer)
         btnClose = view.findViewById(R.id.btnClose)
+        tvTotalPrice = view.findViewById(R.id.tvTotalPrice)
     }
 
     private fun loadOffer() {
@@ -118,19 +121,33 @@ class PurchaseOfferDialogFragment : DialogFragment() {
                 val offerDao = db.offerDao()
                 val serviceDao = db.serviceDao()
 
+                // ✅ LOG 1: Ver qué oferta se está cargando
+                android.util.Log.d("OfferDialog", "🔍 Buscando oferta con ID: $offerId")
+
                 val offer = offerDao.getById(offerId)
                 if (offer == null) {
+                    // ✅ LOG 2: Si no encuentra la oferta
+                    android.util.Log.e("OfferDialog", "❌ Oferta no encontrada con ID: $offerId")
                     Toast.makeText(requireContext(), "Oferta no encontrada", Toast.LENGTH_SHORT).show()
                     dismiss()
                     return@launch
                 }
 
+                // ✅ LOG 3: Ver datos de la oferta
+                android.util.Log.d("OfferDialog", "✅ Oferta encontrada: ${offer.title}")
+                android.util.Log.d("OfferDialog", "   serviceIds: ${offer.serviceIds}")
+                android.util.Log.d("OfferDialog", "   precio: ${offer.comboPrice}")
+
                 // Obtener servicios del combo
                 val serviceIds = offer.serviceIds.split(",")
-                    .mapNotNull { it.trim().toIntOrNull() }
+                    .mapNotNull { it.trim().toLongOrNull() }
+
+                // ✅ LOG 4: Ver IDs parseados
+                android.util.Log.d("OfferDialog", "   IDs parseados: $serviceIds")
 
                 val services = serviceIds.mapNotNull { id ->
-                    serviceDao.getById(id.toLong())?.let { entity ->
+                    serviceDao.getById(id)?.let { entity ->
+                        android.util.Log.d("OfferDialog", "   ✅ Servicio cargado: ${entity.name}")
                         Service(
                             id = entity.serviceId,
                             title = entity.name,
@@ -141,10 +158,15 @@ class PurchaseOfferDialogFragment : DialogFragment() {
                     }
                 }
 
+                // ✅ LOG 5: Ver cuántos servicios se cargaron
+                android.util.Log.d("OfferDialog", "   Total servicios: ${services.size}")
+
                 offerWithServices = OfferWithServices(offer, services)
                 displayOffer()
 
             } catch (e: Exception) {
+                // ✅ LOG 6: Ver el error exacto
+                android.util.Log.e("OfferDialog", "❌ Error completo: ${e.message}", e)
                 Toast.makeText(requireContext(), "Error al cargar oferta: ${e.message}", Toast.LENGTH_SHORT).show()
                 dismiss()
             }
@@ -165,7 +187,7 @@ class PurchaseOfferDialogFragment : DialogFragment() {
         tvComboPrice.text = "US$ %.2f".format(offerData.offer.comboPrice)
 
         val savings = offerData.offer.originalPrice - offerData.offer.comboPrice
-        tvSavings.text = "Ahorras ${offerData.offer.discountPercent}% (US$ %.2f/mes)".format(savings)
+        tvSavings.text = "Ahorras ${offerData.offer.discountPercent}% (US$ ${"%.2f".format(savings)}/mes)"
 
         // Vigencia
         val dateFormat = SimpleDateFormat("dd 'de' MMMM", Locale("es", "ES"))
@@ -177,6 +199,13 @@ class PurchaseOfferDialogFragment : DialogFragment() {
         offerData.services.forEach { service ->
             addServiceItem(service)
         }
+        updateTotalPrice()
+    }
+
+    private fun updateTotalPrice() {
+        val offer = offerWithServices ?: return
+        val totalPrice = offer.offer.comboPrice * selectedDuration
+        tvTotalPrice.text = "US$ %.2f".format(totalPrice)
     }
 
     private fun addServiceItem(service: Service) {
@@ -221,10 +250,14 @@ class PurchaseOfferDialogFragment : DialogFragment() {
 
         // Activar el seleccionado
         button.setBackgroundColor(0xFF6366F1.toInt())
+        // Actualizar precio total
+        updateTotalPrice()
     }
 
     private fun purchaseCombo() {
         val offer = offerWithServices ?: return
+        android.util.Log.d("OfferDialog", "userEmail: '$userEmail'")
+        android.util.Log.d("OfferDialog", "userName: '$userName'")
 
         if (userEmail.isEmpty() || userName.isEmpty()) {
             Toast.makeText(requireContext(), "Error: usuario no identificado", Toast.LENGTH_SHORT).show()
@@ -242,30 +275,26 @@ class PurchaseOfferDialogFragment : DialogFragment() {
                 calendar.add(Calendar.MONTH, selectedDuration)
                 val expirationDate = calendar.timeInMillis
 
-                // Crear una compra por cada servicio del combo
-                var successCount = 0
-                offer.services.forEach { service ->
-                    val purchase = PurchaseEntity(
-                        userEmail = userEmail,
-                        userName = userName,
-                        serviceId = service.id,
-                        serviceName = service.title,
-                        servicePrice = "US$ %.2f".format(offer.offer.comboPrice / offer.services.size),
-                        serviceDuration = "$selectedDuration ${if (selectedDuration == 1) "mes" else "meses"}",
-                        email = null,
-                        password = null,
-                        purchaseDate = now,
-                        expirationDate = expirationDate,
-                        status = "pending"
-                    )
+                // Crear UNA sola compra para el combo completo
+                val purchase = PurchaseEntity(
+                    userEmail = userEmail,
+                    userName = userName,
+                    serviceId = "combo_${offer.offer.id}",  // ID único del combo
+                    serviceName = offer.offer.title,  // "Combo: Netflix + Spotify"
+                    servicePrice = "US$ %.2f".format(offer.offer.comboPrice * selectedDuration),
+                    serviceDuration = "$selectedDuration ${if (selectedDuration == 1) "mes" else "meses"}",
+                    email = null,
+                    password = null,
+                    purchaseDate = now,
+                    expirationDate = expirationDate,
+                    status = "pending"
+                )
 
-                    purchaseDao.insertar(purchase)
-                    successCount++
-                }
+                purchaseDao.insertar(purchase)
 
                 // Mostrar diálogo de éxito
                 dismiss()
-                showSuccessDialog(successCount, selectedDuration, offer.offer.comboPrice)
+                showSuccessDialog(offer.services.size, selectedDuration, offer.offer.comboPrice)
 
             } catch (e: Exception) {
                 Toast.makeText(

@@ -81,6 +81,11 @@ class OffersManagerActivity : BaseAdminActivity() {
                 val db = AppDatabase.getInstance(this@OffersManagerActivity)
                 val offerDao = db.offerDao()
 
+                // Sincronizar desde Firebase primero
+                if (isNetworkAvailable()) {
+                    syncOffersFromFirebase()
+                }
+
                 val offers = offerDao.getAll()
 
                 runOnUiThread {
@@ -106,6 +111,55 @@ class OffersManagerActivity : BaseAdminActivity() {
         }
     }
 
+    /**
+     * Sincronizar ofertas desde Firebase
+     */
+    private suspend fun syncOffersFromFirebase() {
+        com.universidad.streamzone.data.remote.FirebaseService.obtenerTodasLasOfertas { firebaseOffers ->
+            lifecycleScope.launch {
+                try {
+                    val db = AppDatabase.getInstance(this@OffersManagerActivity)
+                    val offerDao = db.offerDao()
+
+                    firebaseOffers.forEach { firebaseOffer ->
+                        val localOffer = offerDao.getAll()
+                            .find { it.firebaseId == firebaseOffer.firebaseId }
+
+                        if (localOffer == null) {
+                            offerDao.insert(firebaseOffer)
+                            android.util.Log.d("OffersManager", "➕ Oferta insertada: ${firebaseOffer.title}")
+                        } else {
+                            val updated = firebaseOffer.copy(id = localOffer.id)
+                            offerDao.update(updated)
+                            android.util.Log.d("OffersManager", "🔄 Oferta actualizada: ${firebaseOffer.title}")
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    android.util.Log.e("OffersManager", "❌ Error al sincronizar ofertas", e)
+                }
+            }
+        }
+    }
+
+    /**
+     * Verificar conectividad
+     */
+    private fun isNetworkAvailable(): Boolean {
+        return try {
+            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+                    as android.net.ConnectivityManager
+            val network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(network) ?: return false
+
+            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private fun showDeleteConfirmation(offerId: Long, offerTitle: String) {
         AlertDialog.Builder(this)
             .setTitle("Eliminar Oferta")
@@ -123,7 +177,24 @@ class OffersManagerActivity : BaseAdminActivity() {
                 val db = AppDatabase.getInstance(this@OffersManagerActivity)
                 val offerDao = db.offerDao()
 
+                // Obtener oferta antes de eliminar (para tener el firebaseId)
+                val offer = offerDao.getById(offerId)
+
+                // Eliminar de Room
                 offerDao.deleteById(offerId)
+
+                // Eliminar de Firebase si tiene firebaseId
+                if (offer?.firebaseId != null && isNetworkAvailable()) {
+                    com.universidad.streamzone.data.remote.FirebaseService.eliminarOferta(
+                        firebaseId = offer.firebaseId!!,
+                        onSuccess = {
+                            android.util.Log.d("OffersManager", "✅ Oferta eliminada de Firebase")
+                        },
+                        onFailure = { e ->
+                            android.util.Log.e("OffersManager", "❌ Error Firebase: ${e.message}")
+                        }
+                    )
+                }
 
                 runOnUiThread {
                     Toast.makeText(

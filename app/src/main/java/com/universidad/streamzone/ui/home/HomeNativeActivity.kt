@@ -38,6 +38,10 @@ class HomeNativeActivity : AppCompatActivity() {
     private var currentUser: String = ""
     private var currentUserId: Int = 0
 
+    private lateinit var cardHeroOffer: View
+    private lateinit var tvOfferTitle: TextView
+    private lateinit var tvOfferPrice: TextView
+
     // Mapa para guardar categoryId (String -> Int) para pasarlo al Intent
     private val categoryIdMap = mutableMapOf<String, Int>()
 
@@ -107,13 +111,16 @@ class HomeNativeActivity : AppCompatActivity() {
         tvGreeting = findViewById(R.id.tvGreeting)
         fabAdminMenu = findViewById(R.id.fab_admin_menu)
 
+        //Referencias al Hero Card
+        cardHeroOffer = findViewById(R.id.cardHeroOffer)
+        tvOfferTitle = findViewById(R.id.tvOfferTitle)
+        tvOfferPrice = findViewById(R.id.tvOfferPrice)
+
         currentUser = intent.getStringExtra("USER_FULLNAME") ?: ""
         tvGreeting.text = if (currentUser.isNotEmpty()) "Bienvenido, $currentUser" else "Bienvenido"
 
-        // Configurar el botón de oferta
-        findViewById<Button>(R.id.btnViewOffer).setOnClickListener {
-            openActiveOffer()
-        }
+        // Cargar oferta dinámica
+        loadActiveOfferCard()
 
         // Configurar FAB de admin
         fabAdminMenu.setOnClickListener {
@@ -181,6 +188,10 @@ class HomeNativeActivity : AppCompatActivity() {
     // Abrir oferta activa
     private fun openActiveOffer() {
         val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
+
+        // ✅ AGREGAR ESTE LOG PARA DEBUG
+        android.util.Log.d("HomeNative", "Email: '$userEmail', User: '$currentUser'")
+
         if (userEmail.isEmpty()) {
             showToast("Debes iniciar sesión para ver las ofertas")
             return
@@ -216,6 +227,7 @@ class HomeNativeActivity : AppCompatActivity() {
             }
         }
     }
+
 
     // NUEVA FUNCIÓN: Abrir menú de admin
     private fun openAdminMenu() {
@@ -371,5 +383,105 @@ class HomeNativeActivity : AppCompatActivity() {
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+    /**
+     * Cargar oferta activa y mostrarla en el Hero Card
+     */
+    private fun loadActiveOfferCard() {
+        lifecycleScope.launch {
+            try {
+                val db = AppDatabase.getInstance(this@HomeNativeActivity)
+                val offerDao = db.offerDao()
+
+                // ✅ NUEVO: Sincronizar ofertas desde Firebase
+                if (isNetworkAvailable()) {
+                    syncOffersFromFirebase()
+                }
+
+                val activeOffer = offerDao.getActiveOffer()
+
+                runOnUiThread {
+                    if (activeOffer != null) {
+                        // Mostrar oferta en el Hero Card
+                        cardHeroOffer.visibility = View.VISIBLE
+                        tvOfferTitle.text = activeOffer.title
+                        tvOfferPrice.text = "US$ %.2f/mes (ahorra ${activeOffer.discountPercent}%%)"
+                            .format(activeOffer.comboPrice)
+
+                        findViewById<Button>(R.id.btnViewOffer).setOnClickListener {
+                            openActiveOffer()
+                        }
+
+                        Log.d("HomeNative", "✅ Oferta cargada: ${activeOffer.title}")
+                    } else {
+                        // No hay oferta activa, ocultar el Hero Card
+                        cardHeroOffer.visibility = View.GONE
+                        Log.d("HomeNative", "⚠️ No hay ofertas activas")
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("HomeNative", "❌ Error al cargar oferta", e)
+                runOnUiThread {
+                    cardHeroOffer.visibility = View.GONE
+                }
+            }
+        }
+    }
+    /**
+     * ✅ NUEVA FUNCIÓN: Sincronizar ofertas desde Firebase
+     */
+    private suspend fun syncOffersFromFirebase() {
+        com.universidad.streamzone.data.remote.FirebaseService.obtenerTodasLasOfertas { firebaseOffers ->
+            lifecycleScope.launch {
+                try {
+                    val db = AppDatabase.getInstance(this@HomeNativeActivity)
+                    val offerDao = db.offerDao()
+
+                    firebaseOffers.forEach { firebaseOffer ->
+                        // Buscar si ya existe localmente
+                        val localOffer = offerDao.getAll()
+                            .find { it.firebaseId == firebaseOffer.firebaseId }
+
+                        if (localOffer == null) {
+                            // Nueva oferta → Insertar
+                            offerDao.insert(firebaseOffer)
+                            Log.d("HomeNative", "➕ Oferta insertada: ${firebaseOffer.title}")
+                        } else {
+                            // Oferta existe → Actualizar
+                            val updated = firebaseOffer.copy(id = localOffer.id)
+                            offerDao.update(updated)
+                            Log.d("HomeNative", "🔄 Oferta actualizada: ${firebaseOffer.title}")
+                        }
+                    }
+
+                    // Recargar oferta activa
+                    runOnUiThread {
+                        loadActiveOfferCard()
+                    }
+
+                } catch (e: Exception) {
+                    Log.e("HomeNative", "❌ Error al guardar ofertas de Firebase", e)
+                }
+            }
+        }
+    }
+
+    /**
+     * Verificar conectividad
+     */
+    private fun isNetworkAvailable(): Boolean {
+        return try {
+            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+                    as android.net.ConnectivityManager
+            val network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(network) ?: return false
+
+            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
+        } catch (e: Exception) {
+            false
+        }
     }
 }

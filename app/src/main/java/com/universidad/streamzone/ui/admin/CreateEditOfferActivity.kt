@@ -313,6 +313,13 @@ class CreateEditOfferActivity : BaseAdminActivity() {
                 val db = AppDatabase.getInstance(this@CreateEditOfferActivity)
                 val offerDao = db.offerDao()
 
+                // Obtener firebaseId si es edición
+                var firebaseId: String? = null
+                if (offerId != null) {
+                    val existingOffer = offerDao.getById(offerId!!)
+                    firebaseId = existingOffer?.firebaseId
+                }
+
                 val offer = OfferEntity(
                     id = offerId ?: 0,
                     title = title,
@@ -323,13 +330,44 @@ class CreateEditOfferActivity : BaseAdminActivity() {
                     discountPercent = discount,
                     startDate = startDateMillis,
                     endDate = endDateMillis,
-                    isActive = switchIsActive.isChecked
+                    isActive = switchIsActive.isChecked,
+                    firebaseId = firebaseId
                 )
 
-                if (offerId == null) {
+                // Guardar en Room
+                val savedId = if (offerId == null) {
                     offerDao.insert(offer)
                 } else {
                     offerDao.update(offer)
+                    offerId!!
+                }
+
+                // Sincronizar con Firebase
+                if (isNetworkAvailable()) {
+                    val offerToSync = if (offerId == null) {
+                        offer.copy(id = savedId)
+                    } else {
+                        offer
+                    }
+
+                    com.universidad.streamzone.data.remote.FirebaseService.sincronizarOferta(
+                        offer = offerToSync,
+                        onSuccess = { newFirebaseId ->
+                            lifecycleScope.launch {
+                                // Actualizar firebaseId en Room si es nueva
+                                if (firebaseId == null) {
+                                    offerDao.update(offerToSync.copy(
+                                        firebaseId = newFirebaseId,
+                                        sincronizado = true
+                                    ))
+                                }
+                                android.util.Log.d("CreateEditOffer", "✅ Oferta sincronizada con Firebase")
+                            }
+                        },
+                        onFailure = { e ->
+                            android.util.Log.e("CreateEditOffer", "❌ Error al sincronizar con Firebase: ${e.message}")
+                        }
+                    )
                 }
 
                 runOnUiThread {
@@ -350,6 +388,24 @@ class CreateEditOfferActivity : BaseAdminActivity() {
                     ).show()
                 }
             }
+        }
+    }
+
+    /**
+     * Verificar conectividad
+     */
+    private fun isNetworkAvailable(): Boolean {
+        return try {
+            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+                    as android.net.ConnectivityManager
+            val network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(network) ?: return false
+
+            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
+        } catch (e: Exception) {
+            false
         }
     }
 }

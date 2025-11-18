@@ -160,13 +160,22 @@ class CreateEditRoleActivity : BaseAdminActivity() {
                 val roleDao = db.roleDao()
                 val rolePermissionDao = db.rolePermissionDao()
 
+                // Obtener firebaseId si es edición
+                var firebaseId: String? = null
+                if (roleId != null) {
+                    val existingRole = roleDao.obtenerPorId(roleId!!)
+                    firebaseId = existingRole?.firebaseId
+                }
+
                 val role = RoleEntity(
                     id = roleId ?: 0,
                     name = name,
                     description = description,
-                    isActive = switchIsActive.isChecked
+                    isActive = switchIsActive.isChecked,
+                    firebaseId = firebaseId
                 )
 
+                // Guardar en Room
                 val savedRoleId: Long
                 if (roleId == null) {
                     // Crear nuevo rol
@@ -189,6 +198,48 @@ class CreateEditRoleActivity : BaseAdminActivity() {
                     rolePermissionDao.insertar(rolePermission)
                 }
 
+                // Sincronizar con Firebase
+                if (isNetworkAvailable()) {
+                    val roleToSync = if (roleId == null) {
+                        role.copy(id = savedRoleId.toInt())
+                    } else {
+                        role
+                    }
+
+                    com.universidad.streamzone.data.remote.FirebaseService.sincronizarRol(
+                        role = roleToSync,
+                        onSuccess = { newFirebaseId ->
+                            lifecycleScope.launch {
+                                // Actualizar firebaseId en Room si es nuevo
+                                if (firebaseId == null) {
+                                    roleDao.actualizar(roleToSync.copy(
+                                        firebaseId = newFirebaseId,
+                                        sincronizado = true
+                                    ))
+                                }
+
+                                // Sincronizar permisos del rol
+                                com.universidad.streamzone.data.remote.FirebaseService.sincronizarPermisosRol(
+                                    roleId = savedRoleId.toInt(),
+                                    roleFirebaseId = newFirebaseId,
+                                    permissionIds = selectedPermissions.toList(),
+                                    onSuccess = {
+                                        android.util.Log.d("CreateEditRole", "✅ Permisos sincronizados")
+                                    },
+                                    onFailure = { e ->
+                                        android.util.Log.e("CreateEditRole", "❌ Error permisos: ${e.message}")
+                                    }
+                                )
+
+                                android.util.Log.d("CreateEditRole", "✅ Rol sincronizado con Firebase")
+                            }
+                        },
+                        onFailure = { e ->
+                            android.util.Log.e("CreateEditRole", "❌ Error Firebase: ${e.message}")
+                        }
+                    )
+                }
+
                 runOnUiThread {
                     Toast.makeText(
                         this@CreateEditRoleActivity,
@@ -207,6 +258,24 @@ class CreateEditRoleActivity : BaseAdminActivity() {
                     ).show()
                 }
             }
+        }
+    }
+
+    /**
+     * Verificar conectividad
+     */
+    private fun isNetworkAvailable(): Boolean {
+        return try {
+            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+                    as android.net.ConnectivityManager
+            val network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(network) ?: return false
+
+            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
+        } catch (e: Exception) {
+            false
         }
     }
 

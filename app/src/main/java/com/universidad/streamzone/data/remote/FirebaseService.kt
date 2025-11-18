@@ -639,4 +639,211 @@ object FirebaseService {
                 onFailure(e)
             }
     }
+    // ========================================
+// SINCRONIZACIÓN DE ROLES Y PERMISOS
+// ========================================
+
+    /**
+     * Sincronizar un rol a Firebase
+     */
+    fun sincronizarRol(
+        role: com.universidad.streamzone.data.model.RoleEntity,
+        onSuccess: (String) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        try {
+            Log.d(TAG, "Sincronizando rol: ${role.name}")
+
+            val data = hashMapOf(
+                "name" to role.name,
+                "description" to role.description,
+                "isActive" to role.isActive,
+                "timestamp" to FieldValue.serverTimestamp()
+            )
+
+            if (role.firebaseId.isNullOrEmpty()) {
+                // Crear nuevo rol
+                db.collection("roles")
+                    .add(data)
+                    .addOnSuccessListener { documentReference ->
+                        Log.d(TAG, "✅ Rol creado con ID: ${documentReference.id}")
+                        onSuccess(documentReference.id)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "❌ Error al crear rol", e)
+                        onFailure(e)
+                    }
+            } else {
+                // Actualizar rol existente
+                db.collection("roles")
+                    .document(role.firebaseId!!)
+                    .set(data)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "✅ Rol actualizado: ${role.firebaseId}")
+                        onSuccess(role.firebaseId!!)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "❌ Error al actualizar rol", e)
+                        onFailure(e)
+                    }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Excepción al sincronizar rol", e)
+            onFailure(e)
+        }
+    }
+
+    /**
+     * Obtener todos los roles de Firebase
+     */
+    fun obtenerTodosLosRoles(callback: (List<com.universidad.streamzone.data.model.RoleEntity>) -> Unit) {
+        Log.d(TAG, "Obteniendo roles de Firebase...")
+
+        db.collection("roles")
+            .get()
+            .addOnSuccessListener { result ->
+                val roles = result.documents.mapNotNull { doc ->
+                    try {
+                        com.universidad.streamzone.data.model.RoleEntity(
+                            id = 0, // Room asignará el ID
+                            name = doc.getString("name") ?: "",
+                            description = doc.getString("description") ?: "",
+                            isActive = doc.getBoolean("isActive") ?: true,
+                            sincronizado = true,
+                            firebaseId = doc.id
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error al parsear rol: ${e.message}")
+                        null
+                    }
+                }
+
+                Log.d(TAG, "✅ ${roles.size} roles obtenidos de Firebase")
+                callback(roles)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al obtener roles de Firebase", e)
+                callback(emptyList())
+            }
+    }
+
+    /**
+     * Eliminar un rol de Firebase
+     */
+    fun eliminarRol(
+        firebaseId: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        db.collection("roles")
+            .document(firebaseId)
+            .delete()
+            .addOnSuccessListener {
+                Log.d(TAG, "✅ Rol eliminado de Firebase")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al eliminar rol", e)
+                onFailure(e)
+            }
+    }
+
+    /**
+     * Sincronizar permisos de un rol a Firebase
+     */
+    fun sincronizarPermisosRol(
+        roleId: Int,
+        roleFirebaseId: String,
+        permissionIds: List<Int>,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        Log.d(TAG, "Sincronizando permisos del rol $roleId: $permissionIds")
+
+        val data = hashMapOf(
+            "permissionIds" to permissionIds,
+            "timestamp" to FieldValue.serverTimestamp()
+        )
+
+        db.collection("role_permissions")
+            .document(roleFirebaseId)
+            .set(data)
+            .addOnSuccessListener {
+                Log.d(TAG, "✅ Permisos del rol sincronizados")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al sincronizar permisos del rol", e)
+                onFailure(e)
+            }
+    }
+
+    /**
+     * Obtener permisos de un rol desde Firebase
+     */
+    fun obtenerPermisosRol(
+        roleFirebaseId: String,
+        onSuccess: (List<Int>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        db.collection("role_permissions")
+            .document(roleFirebaseId)
+            .get()
+            .addOnSuccessListener { doc ->
+                if (doc.exists()) {
+                    val permissionIds = (doc.get("permissionIds") as? List<*>)
+                        ?.mapNotNull {
+                            when (it) {
+                                is Long -> it.toInt()
+                                is Int -> it
+                                is String -> it.toIntOrNull()
+                                else -> null
+                            }
+                        } ?: emptyList()
+
+                    Log.d(TAG, "Permisos obtenidos para rol $roleFirebaseId: $permissionIds")
+                    onSuccess(permissionIds)
+                } else {
+                    onSuccess(emptyList())
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error al obtener permisos del rol", e)
+                onFailure(e)
+            }
+    }
+
+    /**
+     * Sincronizar todos los permisos del sistema a Firebase
+     * (Solo necesario una vez o cuando agregues nuevos permisos)
+     */
+    fun sincronizarPermisos(
+        permissions: List<com.universidad.streamzone.data.model.PermissionEntity>,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        val batch = db.batch()
+
+        permissions.forEach { permission ->
+            val docRef = db.collection("permissions").document(permission.id.toString())
+            val data = hashMapOf(
+                "id" to permission.id,
+                "code" to permission.code,
+                "name" to permission.name,
+                "description" to permission.description
+            )
+            batch.set(docRef, data)
+        }
+
+        batch.commit()
+            .addOnSuccessListener {
+                Log.d(TAG, "✅ ${permissions.size} permisos sincronizados")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al sincronizar permisos", e)
+                onFailure(e)
+            }
+    }
 }

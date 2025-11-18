@@ -2,6 +2,7 @@ package com.universidad.streamzone.ui.admin
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -14,6 +15,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.model.RoleEntity
+import com.universidad.streamzone.data.remote.FirebaseService
 import com.universidad.streamzone.ui.admin.adapter.RoleListAdapter
 import com.universidad.streamzone.util.PermissionManager
 import kotlinx.coroutines.launch
@@ -50,7 +52,6 @@ class RoleListActivity : BaseAdminActivity() {
 
         btnBack.setOnClickListener { finish() }
         fabAddRole.setOnClickListener {
-            // Navegar a crear rol
             val intent = Intent(this, CreateEditRoleActivity::class.java)
             startActivity(intent)
         }
@@ -84,6 +85,11 @@ class RoleListActivity : BaseAdminActivity() {
                 val db = AppDatabase.getInstance(this@RoleListActivity)
                 val roleDao = db.roleDao()
 
+                // Sincronizar desde Firebase primero
+                if (isNetworkAvailable()) {
+                    syncRolesFromFirebase()
+                }
+
                 val roles = roleDao.getAll()
 
                 runOnUiThread {
@@ -98,12 +104,46 @@ class RoleListActivity : BaseAdminActivity() {
                 }
 
             } catch (e: Exception) {
+                Log.e("RoleList", "❌ Error al cargar roles", e)
                 runOnUiThread {
                     Toast.makeText(
                         this@RoleListActivity,
                         "Error al cargar roles: ${e.message}",
                         Toast.LENGTH_SHORT
                     ).show()
+                }
+            }
+        }
+    }
+
+    /**
+     * Sincronizar roles desde Firebase
+     */
+    private suspend fun syncRolesFromFirebase() {
+        FirebaseService.obtenerTodosLosRoles { firebaseRoles ->
+            lifecycleScope.launch {
+                try {
+                    val db = AppDatabase.getInstance(this@RoleListActivity)
+                    val roleDao = db.roleDao()
+
+                    firebaseRoles.forEach { firebaseRole ->
+                        val localRole = roleDao.getAll()
+                            .find { it.firebaseId == firebaseRole.firebaseId }
+
+                        if (localRole == null) {
+                            // Rol nuevo → Insertar
+                            roleDao.insertar(firebaseRole)
+                            Log.d("RoleList", "➕ Rol insertado: ${firebaseRole.name}")
+                        } else {
+                            // Rol existe → Actualizar
+                            val updated = firebaseRole.copy(id = localRole.id)
+                            roleDao.actualizar(updated)
+                            Log.d("RoleList", "🔄 Rol actualizado: ${firebaseRole.name}")
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    Log.e("RoleList", "❌ Error al sincronizar roles", e)
                 }
             }
         }
@@ -126,7 +166,21 @@ class RoleListActivity : BaseAdminActivity() {
                 val db = AppDatabase.getInstance(this@RoleListActivity)
                 val roleDao = db.roleDao()
 
+                // Eliminar de Room
                 roleDao.eliminar(role)
+
+                // Eliminar de Firebase si tiene firebaseId
+                if (role.firebaseId != null && isNetworkAvailable()) {
+                    FirebaseService.eliminarRol(
+                        firebaseId = role.firebaseId!!,
+                        onSuccess = {
+                            Log.d("RoleList", "✅ Rol eliminado de Firebase")
+                        },
+                        onFailure = { e ->
+                            Log.e("RoleList", "❌ Error Firebase: ${e.message}")
+                        }
+                    )
+                }
 
                 runOnUiThread {
                     Toast.makeText(
@@ -138,6 +192,7 @@ class RoleListActivity : BaseAdminActivity() {
                 }
 
             } catch (e: Exception) {
+                Log.e("RoleList", "❌ Error al eliminar rol", e)
                 runOnUiThread {
                     Toast.makeText(
                         this@RoleListActivity,
@@ -146,6 +201,24 @@ class RoleListActivity : BaseAdminActivity() {
                     ).show()
                 }
             }
+        }
+    }
+
+    /**
+     * Verificar conectividad
+     */
+    private fun isNetworkAvailable(): Boolean {
+        return try {
+            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+                    as android.net.ConnectivityManager
+            val network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(network) ?: return false
+
+            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
+        } catch (e: Exception) {
+            false
         }
     }
 }

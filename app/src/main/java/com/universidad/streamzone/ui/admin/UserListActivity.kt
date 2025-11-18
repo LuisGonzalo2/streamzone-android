@@ -103,11 +103,6 @@ class UserListActivity : BaseAdminActivity() {
             } catch (e: Exception) {
                 Log.e("UserList", "❌ Error al cargar usuarios", e)
                 runOnUiThread {
-                    Toast.makeText(
-                        this@UserListActivity,
-                        "Error al cargar usuarios: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             }
         }

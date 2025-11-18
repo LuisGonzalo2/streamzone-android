@@ -1,6 +1,7 @@
 package com.universidad.streamzone.ui.admin
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
@@ -8,9 +9,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.firestore.ListenerRegistration
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.local.database.AppDatabase
 import com.universidad.streamzone.data.model.PurchaseEntity
+import com.universidad.streamzone.data.remote.FirebaseService
 import com.universidad.streamzone.ui.admin.adapter.AdminPurchaseAdapter
 import com.universidad.streamzone.util.PermissionManager
 import kotlinx.coroutines.launch
@@ -30,6 +33,11 @@ class PendingPurchasesActivity : BaseAdminActivity() {
     private lateinit var purchaseAdapter: AdminPurchaseAdapter
 
     private var currentFilter = "pending"
+    private var purchasesListener: ListenerRegistration? = null
+
+    companion object {
+        private const val TAG = "PendingPurchases"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,43 +115,76 @@ class PendingPurchasesActivity : BaseAdminActivity() {
     }
 
     private fun loadPurchases() {
-        lifecycleScope.launch {
-            try {
-                val db = AppDatabase.getInstance(this@PendingPurchasesActivity)
-                val purchaseDao = db.purchaseDao()
+        Log.d(TAG, "Iniciando listener de compras en tiempo real")
 
-                val allPurchases = purchaseDao.getAll()
+        // Limpiar listener anterior si existe
+        purchasesListener?.remove()
 
-                // Filtrar según el filtro actual
-                val filteredPurchases = when (currentFilter) {
-                    "pending" -> allPurchases.filter { it.status == "pending" }
-                    "active" -> allPurchases.filter { it.status == "active" }
-                    else -> allPurchases
-                }
+        // Iniciar listener en tiempo real de Firebase
+        purchasesListener = FirebaseService.escucharTodasLasCompras { purchasesFromFirebase ->
+            Log.d(TAG, "Compras recibidas de Firebase: ${purchasesFromFirebase.size}")
 
-                // Contar pendientes
-                val pendingCount = allPurchases.count { it.status == "pending" }
+            lifecycleScope.launch {
+                try {
+                    val db = AppDatabase.getInstance(this@PendingPurchasesActivity)
+                    val purchaseDao = db.purchaseDao()
 
-                runOnUiThread {
-                    tvPendingCount.text = "$pendingCount compras pendientes"
+                    // Sincronizar compras de Firebase a Room
+                    purchasesFromFirebase.forEach { firebasePurchase ->
+                        // Buscar si ya existe en Room por firebaseId
+                        val existingPurchase = purchaseDao.getAll()
+                            .find { it.firebaseId == firebasePurchase.firebaseId }
 
-                    if (filteredPurchases.isEmpty()) {
-                        rvPurchases.visibility = View.GONE
-                        llEmptyState.visibility = View.VISIBLE
-                    } else {
-                        rvPurchases.visibility = View.VISIBLE
-                        llEmptyState.visibility = View.GONE
-                        purchaseAdapter.updatePurchases(filteredPurchases)
+                        if (existingPurchase != null) {
+                            // Actualizar compra existente
+                            val updated = existingPurchase.copy(
+                                email = firebasePurchase.email,
+                                password = firebasePurchase.password,
+                                status = firebasePurchase.status,
+                                sincronizado = true
+                            )
+                            purchaseDao.update(updated)
+                        } else {
+                            // Insertar nueva compra
+                            purchaseDao.insertar(firebasePurchase)
+                        }
                     }
-                }
 
-            } catch (e: Exception) {
-                runOnUiThread {
-                    Toast.makeText(
-                        this@PendingPurchasesActivity,
-                        "Error al cargar compras: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    // Obtener todas las compras actualizadas de Room
+                    val allPurchases = purchaseDao.getAll()
+
+                    // Filtrar según el filtro actual
+                    val filteredPurchases = when (currentFilter) {
+                        "pending" -> allPurchases.filter { it.status == "pending" }
+                        "active" -> allPurchases.filter { it.status == "active" }
+                        else -> allPurchases
+                    }
+
+                    // Contar pendientes
+                    val pendingCount = allPurchases.count { it.status == "pending" }
+
+                    runOnUiThread {
+                        tvPendingCount.text = "$pendingCount compras pendientes"
+
+                        if (filteredPurchases.isEmpty()) {
+                            rvPurchases.visibility = View.GONE
+                            llEmptyState.visibility = View.VISIBLE
+                        } else {
+                            rvPurchases.visibility = View.VISIBLE
+                            llEmptyState.visibility = View.GONE
+                            purchaseAdapter.updatePurchases(filteredPurchases)
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error al sincronizar compras", e)
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@PendingPurchasesActivity,
+                            "Error al cargar compras: ${e.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
         }
@@ -205,7 +246,24 @@ class PendingPurchasesActivity : BaseAdminActivity() {
                     status = "active"
                 )
 
+                // Actualizar en Room
                 purchaseDao.update(updatedPurchase)
+
+                // Actualizar en Firebase si tiene firebaseId
+                if (!purchase.firebaseId.isNullOrEmpty()) {
+                    FirebaseService.actualizarCompra(
+                        firebaseId = purchase.firebaseId!!,
+                        email = email,
+                        password = password,
+                        status = "active",
+                        onSuccess = {
+                            Log.d(TAG, "Compra actualizada en Firebase")
+                        },
+                        onFailure = { e ->
+                            Log.e(TAG, "Error al actualizar en Firebase", e)
+                        }
+                    )
+                }
 
                 runOnUiThread {
                     Toast.makeText(
@@ -213,10 +271,12 @@ class PendingPurchasesActivity : BaseAdminActivity() {
                         "Credenciales asignadas correctamente",
                         Toast.LENGTH_SHORT
                     ).show()
-                    loadPurchases()
+                    // No es necesario llamar a loadPurchases() porque el listener
+                    // detectará automáticamente el cambio en Firebase
                 }
 
             } catch (e: Exception) {
+                Log.e(TAG, "Error al asignar credenciales", e)
                 runOnUiThread {
                     Toast.makeText(
                         this@PendingPurchasesActivity,
@@ -226,5 +286,12 @@ class PendingPurchasesActivity : BaseAdminActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Limpiar listener de Firebase al destruir la actividad
+        purchasesListener?.remove()
+        Log.d(TAG, "Listener de compras removido")
     }
 }

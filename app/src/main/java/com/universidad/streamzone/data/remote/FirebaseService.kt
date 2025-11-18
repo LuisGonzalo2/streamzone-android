@@ -233,6 +233,135 @@ object FirebaseService {
             }
     }
 
+    /**
+     * Actualizar una compra existente en Firebase
+     * Se usa cuando el admin asigna credenciales o cambia el estado
+     */
+    fun actualizarCompra(
+        firebaseId: String,
+        email: String?,
+        password: String?,
+        status: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        try {
+            Log.d(TAG, "Actualizando compra en Firebase: $firebaseId")
+
+            val data = hashMapOf<String, Any?>(
+                "email" to email,
+                "password" to password,
+                "status" to status
+            )
+
+            db.collection("purchases")
+                .document(firebaseId)
+                .update(data)
+                .addOnSuccessListener {
+                    Log.d(TAG, "✅ Compra actualizada en Firebase: $firebaseId")
+                    onSuccess()
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "❌ Error al actualizar compra en Firebase", e)
+                    onFailure(e)
+                }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Excepción al actualizar compra", e)
+            onFailure(e)
+        }
+    }
+
+    /**
+     * Escuchar cambios en todas las compras en tiempo real
+     * Útil para la pantalla del administrador
+     */
+    fun escucharTodasLasCompras(callback: (List<PurchaseEntity>) -> Unit): com.google.firebase.firestore.ListenerRegistration {
+        Log.d(TAG, "🔄 Iniciando listener en tiempo real para todas las compras")
+
+        return db.collection("purchases")
+            .orderBy("purchaseDate", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshots, error ->
+                if (error != null) {
+                    Log.e(TAG, "❌ Error en listener de compras", error)
+                    callback(emptyList())
+                    return@addSnapshotListener
+                }
+
+                if (snapshots != null) {
+                    val compras = snapshots.documents.map { doc ->
+                        PurchaseEntity(
+                            id = 0,
+                            userEmail = doc.getString("userEmail") ?: "",
+                            userName = doc.getString("userName") ?: "",
+                            serviceId = doc.getString("serviceId") ?: "",
+                            serviceName = doc.getString("serviceName") ?: "",
+                            servicePrice = doc.getString("servicePrice") ?: "",
+                            serviceDuration = doc.getString("serviceDuration") ?: "",
+                            email = doc.getString("email"),
+                            password = doc.getString("password"),
+                            purchaseDate = doc.getLong("purchaseDate") ?: 0L,
+                            expirationDate = doc.getLong("expirationDate") ?: 0L,
+                            status = doc.getString("status") ?: "pending",
+                            sincronizado = true,
+                            firebaseId = doc.id
+                        )
+                    }
+
+                    Log.d(TAG, "✅ Listener: ${compras.size} compras recibidas")
+                    callback(compras)
+                } else {
+                    callback(emptyList())
+                }
+            }
+    }
+
+    /**
+     * Escuchar cambios en las compras de un usuario específico en tiempo real
+     */
+    fun escucharComprasPorUsuario(
+        email: String,
+        callback: (List<PurchaseEntity>) -> Unit
+    ): com.google.firebase.firestore.ListenerRegistration {
+        Log.d(TAG, "🔄 Iniciando listener para compras de: $email")
+
+        return db.collection("purchases")
+            .whereEqualTo("userEmail", email)
+            .orderBy("purchaseDate", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshots, error ->
+                if (error != null) {
+                    Log.e(TAG, "❌ Error en listener de compras del usuario", error)
+                    callback(emptyList())
+                    return@addSnapshotListener
+                }
+
+                if (snapshots != null) {
+                    val compras = snapshots.documents.map { doc ->
+                        PurchaseEntity(
+                            id = 0,
+                            userEmail = doc.getString("userEmail") ?: "",
+                            userName = doc.getString("userName") ?: "",
+                            serviceId = doc.getString("serviceId") ?: "",
+                            serviceName = doc.getString("serviceName") ?: "",
+                            servicePrice = doc.getString("servicePrice") ?: "",
+                            serviceDuration = doc.getString("serviceDuration") ?: "",
+                            email = doc.getString("email"),
+                            password = doc.getString("password"),
+                            purchaseDate = doc.getLong("purchaseDate") ?: 0L,
+                            expirationDate = doc.getLong("expirationDate") ?: 0L,
+                            status = doc.getString("status") ?: "pending",
+                            sincronizado = true,
+                            firebaseId = doc.id
+                        )
+                    }
+
+                    Log.d(TAG, "✅ Listener usuario: ${compras.size} compras recibidas")
+                    callback(compras)
+                } else {
+                    callback(emptyList())
+                }
+            }
+    }
+
     // ACTUALIZAR USUARIO
     fun actualizarUsuario(usuario: UsuarioEntity, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         try {
@@ -1012,6 +1141,53 @@ object FirebaseService {
             .addOnFailureListener { e ->
                 Log.e(TAG, "Error al obtener permisos del rol $roleFirebaseId", e)
                 callback(emptyList())
+            }
+    }
+    /**
+     * Sincronización SOLO de descarga - Nunca escribe en Firebase
+     */
+    fun sincronizarDatosUsuarioSoloLectura(
+        userEmail: String,
+        onSuccess: (usuario: UsuarioEntity?, roles: List<String>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        Log.d(TAG, "🔄 Sincronización SOLO LECTURA para: $userEmail")
+
+        // Buscar usuario en Firebase
+        db.collection("usuarios")
+            .whereEqualTo("email", userEmail)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (documents.isEmpty) {
+                    onSuccess(null, emptyList())
+                    return@addOnSuccessListener
+                }
+
+                val doc = documents.documents[0]
+                val usuario = UsuarioEntity(
+                    id = 0,
+                    fullname = doc.getString("fullname") ?: "",
+                    email = doc.getString("email") ?: "",
+                    phone = doc.getString("phone") ?: "",
+                    password = doc.getString("password") ?: "",
+                    confirmPassword = doc.getString("confirmPassword") ?: "",
+                    fotoBase64 = doc.getString("fotoBase64"),
+                    isAdmin = doc.getBoolean("isAdmin") ?: false,
+                    sincronizado = true,
+                    firebaseId = doc.id
+                )
+
+                // Obtener roles del usuario
+                val roleFirebaseIds = (doc.get("roleFirebaseIds") as? List<*>)
+                    ?.mapNotNull { it as? String }
+                    ?: emptyList()
+
+                Log.d(TAG, "✅ Sincronización solo-lectura exitosa")
+                onSuccess(usuario, roleFirebaseIds)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error en sincronización solo-lectura", e)
+                onFailure(e)
             }
     }
 }

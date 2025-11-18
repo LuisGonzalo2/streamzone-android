@@ -128,11 +128,6 @@ class RoleListActivity : BaseAdminActivity() {
             } catch (e: Exception) {
                 Log.e("RoleList", "❌ Error al cargar roles", e)
                 runOnUiThread {
-                    Toast.makeText(
-                        this@RoleListActivity,
-                        "Error al cargar roles: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             }
         }

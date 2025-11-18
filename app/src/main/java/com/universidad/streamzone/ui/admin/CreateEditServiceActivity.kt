@@ -201,11 +201,6 @@ class CreateEditServiceActivity : BaseAdminActivity() {
 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@CreateEditServiceActivity,
-                        "Error al cargar servicio: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             }
         }
@@ -289,11 +284,6 @@ class CreateEditServiceActivity : BaseAdminActivity() {
 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@CreateEditServiceActivity,
-                        "Error al guardar: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             }
         }

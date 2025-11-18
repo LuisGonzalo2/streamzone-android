@@ -164,35 +164,6 @@ class LoginActivity : AppCompatActivity() {
                 // SIEMPRE sincronizar con Firebase al hacer login (si hay internet)
                 if (isNetworkAvailable()) {
                     Log.d("LoginActivity", "Sincronizando usuario con Firebase...")
-
-                    if (usuarioLocal.firebaseId.isNullOrEmpty()) {
-                        // Usuario NO tiene firebaseId -> Crearlo en Firebase
-                        Log.d("LoginActivity", "Usuario sin firebaseId - Creando en Firebase...")
-                        FirebaseService.guardarUsuario(
-                            usuarioLocal,
-                            onSuccess = { firebaseId ->
-                                lifecycleScope.launch {
-                                    dao.marcarComoSincronizado(usuarioLocal.id, firebaseId)
-                                    Log.d("LoginActivity", "Usuario creado en Firebase con ID: $firebaseId")
-                                }
-                            },
-                            onFailure = { e ->
-                                Log.e("LoginActivity", "Error al crear usuario en Firebase: ${e.message}")
-                            }
-                        )
-                    } else {
-                        // Usuario SÍ tiene firebaseId -> Actualizarlo en Firebase
-                        Log.d("LoginActivity", "Usuario tiene firebaseId: ${usuarioLocal.firebaseId} - Actualizando en Firebase...")
-                        FirebaseService.actualizarUsuario(
-                            usuarioLocal,
-                            onSuccess = {
-                                Log.d("LoginActivity", "Usuario actualizado en Firebase exitosamente")
-                            },
-                            onFailure = { e ->
-                                Log.e("LoginActivity", "Error al actualizar usuario en Firebase: ${e.message}")
-                            }
-                        )
-                    }
                 } else {
                     Log.d("LoginActivity", "Sin conexión a internet - Login offline")
                 }

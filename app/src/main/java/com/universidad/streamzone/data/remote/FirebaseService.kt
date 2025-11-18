@@ -690,6 +690,7 @@ object FirebaseService {
         price: String,
         duration: String,
         imageUrl: String?,
+        iconBase64: String?,
         isActive: Boolean,
         isPopular: Boolean,
         onSuccess: () -> Unit = {},
@@ -702,6 +703,7 @@ object FirebaseService {
             "price" to price,
             "duration" to duration,
             "imageUrl" to imageUrl,
+            "iconBase64" to iconBase64,
             "isActive" to isActive,
             "isPopular" to isPopular,
             "timestamp" to FieldValue.serverTimestamp()

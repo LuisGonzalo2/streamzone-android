@@ -203,14 +203,14 @@ class NotificationListenerService(private val context: Context) {
                                             description = serviceDescription,
                                             price = servicePrice,
                                             iconDrawable = null,
-                                            iconBase64 = null,
-                                            iconUrl = null,
+                                            iconBase64 = change.document.getString("iconBase64"),
+                                            iconUrl = change.document.getString("imageUrl"),
                                             categoryId = categoryId,
                                             isActive = isActive,
                                             isPopular = isPopular
                                         )
                                         serviceDao.insertar(newService)
-                                        Log.d(TAG, "✅ Servicio sincronizado desde Firebase: $serviceName")
+                                        Log.d(TAG, "✅ Servicio sincronizado desde Firebase: $serviceName (con imagen)")
                                     }
                                 } catch (e: Exception) {
                                     Log.e(TAG, "Error al sincronizar servicio", e)
@@ -241,11 +241,13 @@ class NotificationListenerService(private val context: Context) {
                                             name = serviceName,
                                             description = serviceDescription,
                                             price = servicePrice,
+                                            iconBase64 = change.document.getString("iconBase64"),
+                                            iconUrl = change.document.getString("imageUrl"),
                                             isActive = isActive,
                                             isPopular = isPopular
                                         )
                                         serviceDao.actualizar(updatedService)
-                                        Log.d(TAG, "✅ Servicio actualizado desde Firebase: $serviceName")
+                                        Log.d(TAG, "✅ Servicio actualizado desde Firebase: $serviceName (con imagen)")
                                     }
                                 } catch (e: Exception) {
                                     Log.e(TAG, "Error al actualizar servicio", e)

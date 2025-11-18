@@ -263,10 +263,11 @@ class CreateEditServiceActivity : BaseAdminActivity() {
                     price = service.price,
                     duration = "",
                     imageUrl = service.iconUrl,
+                    iconBase64 = service.iconBase64,
                     isActive = service.isActive,
                     isPopular = service.isPopular,
                     onSuccess = {
-                        android.util.Log.d("CreateService", "✅ Servicio sincronizado con Firebase")
+                        android.util.Log.d("CreateService", "✅ Servicio sincronizado con Firebase (incluye imagen)")
                     },
                     onFailure = { e ->
                         android.util.Log.e("CreateService", "❌ Error al sincronizar: ${e.message}")

@@ -198,18 +198,6 @@
                 android:background="@drawable/button_gradient_blue"
                 app:cornerRadius="28dp"
                 android:textAllCaps="false" />
-
-            <!-- ¿Olvidaste contraseña? -->
-            <TextView
-                android:id="@+id/tv_forgot_password"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="¿Olvidaste tu contraseña?"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                android:layout_marginBottom="24dp"
-                android:padding="8dp" />
-
             <!-- ¿No tienes cuenta? -->
             <TextView
                 android:layout_width="wrap_content"

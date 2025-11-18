@@ -27,6 +27,7 @@ import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
 import com.universidad.streamzone.util.NotificationPermissionHelper
 import com.universidad.streamzone.util.toCategory
 import com.universidad.streamzone.util.toServiceList
+import com.universidad.streamzone.services.NotificationListenerService
 import kotlinx.coroutines.launch
 
 class HomeNativeActivity : AppCompatActivity() {
@@ -41,6 +42,9 @@ class HomeNativeActivity : AppCompatActivity() {
     private lateinit var cardHeroOffer: View
     private lateinit var tvOfferTitle: TextView
     private lateinit var tvOfferPrice: TextView
+
+    // Servicio de notificaciones en tiempo real
+    private var notificationService: NotificationListenerService? = null
 
     // Mapa para guardar categoryId (String -> Int) para pasarlo al Intent
     private val categoryIdMap = mutableMapOf<String, Int>()
@@ -87,6 +91,27 @@ class HomeNativeActivity : AppCompatActivity() {
 
         // Solicitar permisos de notificaciones (Android 13+)
         NotificationPermissionHelper.requestNotificationPermission(this)
+
+        // Iniciar servicio de notificaciones en tiempo real
+        startNotificationService()
+    }
+
+    /**
+     * Iniciar el servicio de notificaciones en tiempo real
+     */
+    private fun startNotificationService() {
+        Log.d("HomeNative", "🔔 Inicializando NotificationListenerService...")
+        notificationService = NotificationListenerService(applicationContext)
+        notificationService?.startListening()
+        Log.d("HomeNative", "✅ NotificationListenerService iniciado")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Detener el servicio de notificaciones
+        notificationService?.stopListening()
+        notificationService = null
+        Log.d("HomeNative", "🛑 NotificationListenerService detenido")
     }
 
     override fun onRequestPermissionsResult(

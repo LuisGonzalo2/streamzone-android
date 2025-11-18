@@ -9,8 +9,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.firestore.ListenerRegistration
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.remote.FirebaseService
 import com.universidad.streamzone.ui.components.NavbarManager
 import com.universidad.streamzone.ui.profile.adapter.PurchaseCardAdapter
 import kotlinx.coroutines.flow.collectLatest
@@ -21,6 +23,11 @@ class PurchaseHistoryActivity : AppCompatActivity() {
     private lateinit var navbarManager: NavbarManager
     private lateinit var rvPurchases: RecyclerView
     private lateinit var emptyState: LinearLayout
+    private var purchasesListener: ListenerRegistration? = null
+
+    companion object {
+        private const val TAG = "PurchaseHistory"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,27 +73,71 @@ class PurchaseHistoryActivity : AppCompatActivity() {
         val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
         if (userEmail.isEmpty()) {
+            Log.d(TAG, "❌ No hay email de usuario")
             showEmptyState()
             return
         }
 
-        lifecycleScope.launch {
-            try {
-                val dao = AppDatabase.getInstance(this@PurchaseHistoryActivity).purchaseDao()
+        Log.d(TAG, "🔄 Iniciando listener de compras para: $userEmail")
 
-                dao.obtenerComprasPorUsuario(userEmail).collectLatest { purchases ->
-                    runOnUiThread {
-                        if (purchases.isEmpty()) {
-                            showEmptyState()
-                        } else {
-                            showPurchases(purchases)
+        // Limpiar listener anterior si existe
+        purchasesListener?.remove()
+
+        // Escuchar compras del usuario en tiempo real desde Firebase
+        purchasesListener = FirebaseService.escucharComprasPorUsuario(userEmail) { purchasesFromFirebase ->
+            Log.d(TAG, "📦 Compras recibidas de Firebase: ${purchasesFromFirebase.size}")
+
+            purchasesFromFirebase.forEachIndexed { index, purchase ->
+                Log.d(TAG, "  [$index] ${purchase.serviceName} - ${purchase.status} - Credenciales: ${if (purchase.email != null) "✅" else "❌"}")
+            }
+
+            lifecycleScope.launch {
+                try {
+                    // Sincronizar a Room en segundo plano
+                    val dao = AppDatabase.getInstance(this@PurchaseHistoryActivity).purchaseDao()
+
+                    purchasesFromFirebase.forEach { firebasePurchase ->
+                        try {
+                            val existingPurchase = dao.getAll()
+                                .find { it.firebaseId == firebasePurchase.firebaseId }
+
+                            if (existingPurchase != null) {
+                                val updated = existingPurchase.copy(
+                                    email = firebasePurchase.email,
+                                    password = firebasePurchase.password,
+                                    status = firebasePurchase.status,
+                                    sincronizado = true
+                                )
+                                dao.update(updated)
+                            } else {
+                                dao.insertar(firebasePurchase)
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error al sincronizar compra: ${firebasePurchase.serviceName}", e)
                         }
                     }
-                }
-            } catch (e: Exception) {
-                Log.e("PurchaseHistory", "Error al cargar compras", e)
-                runOnUiThread {
-                    showEmptyState()
+
+                    // Mostrar compras directamente desde Firebase
+                    runOnUiThread {
+                        if (purchasesFromFirebase.isEmpty()) {
+                            Log.d(TAG, "❌ No hay compras para mostrar")
+                            showEmptyState()
+                        } else {
+                            Log.d(TAG, "✅ Mostrando ${purchasesFromFirebase.size} compras")
+                            showPurchases(purchasesFromFirebase)
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Error al procesar compras", e)
+                    runOnUiThread {
+                        showEmptyState()
+                        Toast.makeText(
+                            this@PurchaseHistoryActivity,
+                            "Error al cargar compras: ${e.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
         }
@@ -106,5 +157,12 @@ class PurchaseHistoryActivity : AppCompatActivity() {
     private fun showEmptyState() {
         rvPurchases.visibility = View.GONE
         emptyState.visibility = View.VISIBLE
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Limpiar listener de Firebase
+        purchasesListener?.remove()
+        Log.d(TAG, "Listener de compras removido")
     }
 }

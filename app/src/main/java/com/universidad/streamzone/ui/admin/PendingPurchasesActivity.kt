@@ -115,69 +115,80 @@ class PendingPurchasesActivity : BaseAdminActivity() {
     }
 
     private fun loadPurchases() {
-        Log.d(TAG, "Iniciando listener de compras en tiempo real")
+        Log.d(TAG, "🔄 Iniciando listener de compras en tiempo real")
 
         // Limpiar listener anterior si existe
         purchasesListener?.remove()
 
         // Iniciar listener en tiempo real de Firebase
         purchasesListener = FirebaseService.escucharTodasLasCompras { purchasesFromFirebase ->
-            Log.d(TAG, "Compras recibidas de Firebase: ${purchasesFromFirebase.size}")
+            Log.d(TAG, "📦 Compras recibidas de Firebase: ${purchasesFromFirebase.size}")
 
+            // Mostrar directamente las compras de Firebase (más rápido)
+            // Sincronizar a Room en segundo plano
             lifecycleScope.launch {
                 try {
-                    val db = AppDatabase.getInstance(this@PendingPurchasesActivity)
-                    val purchaseDao = db.purchaseDao()
-
-                    // Sincronizar compras de Firebase a Room
-                    purchasesFromFirebase.forEach { firebasePurchase ->
-                        // Buscar si ya existe en Room por firebaseId
-                        val existingPurchase = purchaseDao.getAll()
-                            .find { it.firebaseId == firebasePurchase.firebaseId }
-
-                        if (existingPurchase != null) {
-                            // Actualizar compra existente
-                            val updated = existingPurchase.copy(
-                                email = firebasePurchase.email,
-                                password = firebasePurchase.password,
-                                status = firebasePurchase.status,
-                                sincronizado = true
-                            )
-                            purchaseDao.update(updated)
-                        } else {
-                            // Insertar nueva compra
-                            purchaseDao.insertar(firebasePurchase)
-                        }
-                    }
-
-                    // Obtener todas las compras actualizadas de Room
-                    val allPurchases = purchaseDao.getAll()
-
-                    // Filtrar según el filtro actual
+                    // Filtrar las compras según el filtro actual
                     val filteredPurchases = when (currentFilter) {
-                        "pending" -> allPurchases.filter { it.status == "pending" }
-                        "active" -> allPurchases.filter { it.status == "active" }
-                        else -> allPurchases
+                        "pending" -> purchasesFromFirebase.filter { it.status == "pending" }
+                        "active" -> purchasesFromFirebase.filter { it.status == "active" }
+                        else -> purchasesFromFirebase
                     }
 
                     // Contar pendientes
-                    val pendingCount = allPurchases.count { it.status == "pending" }
+                    val pendingCount = purchasesFromFirebase.count { it.status == "pending" }
+
+                    Log.d(TAG, "📊 Total: ${purchasesFromFirebase.size}, Filtradas: ${filteredPurchases.size}, Pendientes: $pendingCount")
+
+                    filteredPurchases.forEachIndexed { index, purchase ->
+                        Log.d(TAG, "  [$index] ${purchase.serviceName} - ${purchase.status} - ${purchase.userName}")
+                    }
 
                     runOnUiThread {
                         tvPendingCount.text = "$pendingCount compras pendientes"
 
                         if (filteredPurchases.isEmpty()) {
+                            Log.d(TAG, "❌ No hay compras para mostrar (vacío)")
                             rvPurchases.visibility = View.GONE
                             llEmptyState.visibility = View.VISIBLE
                         } else {
+                            Log.d(TAG, "✅ Mostrando ${filteredPurchases.size} compras")
                             rvPurchases.visibility = View.VISIBLE
                             llEmptyState.visibility = View.GONE
                             purchaseAdapter.updatePurchases(filteredPurchases)
                         }
                     }
 
+                    // Sincronizar a Room en segundo plano para caché
+                    val db = AppDatabase.getInstance(this@PendingPurchasesActivity)
+                    val purchaseDao = db.purchaseDao()
+
+                    purchasesFromFirebase.forEach { firebasePurchase ->
+                        try {
+                            val existingPurchase = purchaseDao.getAll()
+                                .find { it.firebaseId == firebasePurchase.firebaseId }
+
+                            if (existingPurchase != null) {
+                                // Actualizar compra existente
+                                val updated = existingPurchase.copy(
+                                    email = firebasePurchase.email,
+                                    password = firebasePurchase.password,
+                                    status = firebasePurchase.status,
+                                    sincronizado = true
+                                )
+                                purchaseDao.update(updated)
+                            } else {
+                                // Insertar nueva compra
+                                purchaseDao.insertar(firebasePurchase)
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error al sincronizar compra individual: ${firebasePurchase.serviceName}", e)
+                        }
+                    }
+                    Log.d(TAG, "💾 Compras sincronizadas a Room")
+
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error al sincronizar compras", e)
+                    Log.e(TAG, "❌ Error al procesar compras", e)
                     runOnUiThread {
                         Toast.makeText(
                             this@PendingPurchasesActivity,

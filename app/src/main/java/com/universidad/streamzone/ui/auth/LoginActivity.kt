@@ -160,6 +160,11 @@ class LoginActivity : AppCompatActivity() {
                 // Asignar rol Super Admin si el usuario es admin
                 assignSuperAdminRoleIfNeeded(usuarioLocal)
 
+                // Descargar roles desde Firebase ANTES de cualquier otra operación
+                if (isNetworkAvailable()) {
+                    sincronizarRolesDesdeFirebase(usuarioLocal.email, usuarioLocal.id)
+                }
+
                 // SIEMPRE sincronizar con Firebase al hacer login (si hay internet)
                 if (isNetworkAvailable()) {
                     Log.d("LoginActivity", "Sincronizando usuario con Firebase...")
@@ -235,6 +240,9 @@ class LoginActivity : AppCompatActivity() {
 
                                     // Asignar rol Super Admin si el usuario es admin
                                     assignSuperAdminRoleIfNeeded(usuarioFirebase)
+
+                                    // Descargar roles desde Firebase
+                                    sincronizarRolesDesdeFirebase(usuarioFirebase.email, usuarioFirebase.id)
 
                                     runOnUiThread {
                                         loginExitoso(usuarioFirebase.fullname, email)
@@ -464,6 +472,64 @@ class LoginActivity : AppCompatActivity() {
             }
         }
         networkCallback = null
+    }
+
+    /**
+     * Descarga y sincroniza los roles del usuario desde Firebase
+     */
+    private fun sincronizarRolesDesdeFirebase(userEmail: String, userId: Int) {
+        Log.d("LoginActivity", "🔄 Descargando roles desde Firebase para: $userEmail")
+
+        FirebaseService.obtenerRolesUsuario(
+            userEmail = userEmail,
+            onSuccess = { roleFirebaseIds ->
+                lifecycleScope.launch {
+                    try {
+                        if (roleFirebaseIds.isEmpty()) {
+                            Log.d("LoginActivity", "⚠️ Usuario no tiene roles asignados en Firebase")
+                            return@launch
+                        }
+
+                        Log.d("LoginActivity", "📥 Roles en Firebase: $roleFirebaseIds")
+
+                        val db = AppDatabase.getInstance(this@LoginActivity)
+                        val roleDao = db.roleDao()
+                        val userRoleDao = db.userRoleDao()
+
+                        // Eliminar roles actuales del usuario (para evitar conflictos)
+                        userRoleDao.eliminarRolesPorUsuario(userId)
+                        Log.d("LoginActivity", "🗑️ Roles locales eliminados")
+
+                        // Obtener todos los roles locales
+                        val allRoles = roleDao.getAll()
+
+                        // Convertir firebaseIds a IDs locales y asignar
+                        var rolesAsignados = 0
+                        roleFirebaseIds.forEach { firebaseId ->
+                            val role = allRoles.find { it.firebaseId == firebaseId }
+                            if (role != null) {
+                                val userRole = com.universidad.streamzone.data.model.UserRoleEntity(
+                                    userId = userId,
+                                    roleId = role.id
+                                )
+                                userRoleDao.insertar(userRole)
+                                rolesAsignados++
+                                Log.d("LoginActivity", "✅ Rol asignado: ${role.name}")
+                            } else {
+                                Log.w("LoginActivity", "⚠️ Rol con firebaseId $firebaseId no encontrado localmente")
+                            }
+                        }
+
+                        Log.d("LoginActivity", "✅ $rolesAsignados roles sincronizados desde Firebase")
+                    } catch (e: Exception) {
+                        Log.e("LoginActivity", "❌ Error al sincronizar roles desde Firebase", e)
+                    }
+                }
+            },
+            onFailure = { e ->
+                Log.e("LoginActivity", "❌ Error al obtener roles desde Firebase", e)
+            }
+        )
     }
 
     /**

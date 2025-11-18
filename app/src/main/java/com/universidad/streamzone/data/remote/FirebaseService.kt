@@ -279,7 +279,6 @@ object FirebaseService {
         Log.d(TAG, "🔄 Iniciando listener en tiempo real para todas las compras")
 
         return db.collection("purchases")
-            .orderBy("purchaseDate", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .addSnapshotListener { snapshots, error ->
                 if (error != null) {
                     Log.e(TAG, "❌ Error en listener de compras", error)
@@ -305,7 +304,7 @@ object FirebaseService {
                             sincronizado = true,
                             firebaseId = doc.id
                         )
-                    }
+                    }.sortedByDescending { it.purchaseDate }
 
                     Log.d(TAG, "✅ Listener: ${compras.size} compras recibidas")
                     callback(compras)
@@ -326,7 +325,6 @@ object FirebaseService {
 
         return db.collection("purchases")
             .whereEqualTo("userEmail", email)
-            .orderBy("purchaseDate", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .addSnapshotListener { snapshots, error ->
                 if (error != null) {
                     Log.e(TAG, "❌ Error en listener de compras del usuario", error)
@@ -352,7 +350,7 @@ object FirebaseService {
                             sincronizado = true,
                             firebaseId = doc.id
                         )
-                    }
+                    }.sortedByDescending { it.purchaseDate }
 
                     Log.d(TAG, "✅ Listener usuario: ${compras.size} compras recibidas")
                     callback(compras)

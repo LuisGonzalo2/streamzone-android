@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PermissionDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertar(permission: PermissionEntity): Long
 
     @Update
@@ -17,7 +17,7 @@ interface PermissionDao {
     suspend fun obtenerPorId(permissionId: Int): PermissionEntity?
 
     @Query("SELECT * FROM permissions ORDER BY name ASC")
-    fun obtenerTodos(): Flow<List<PermissionEntity>>
+     fun obtenerTodos(): Flow<List<PermissionEntity>>
 
     // Obtener permisos de un rol específico
     @Query("""

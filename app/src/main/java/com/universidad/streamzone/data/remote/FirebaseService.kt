@@ -7,6 +7,7 @@ import com.universidad.streamzone.data.model.UsuarioEntity
 import com.google.firebase.firestore.FirebaseFirestore
 import com.universidad.streamzone.data.model.PurchaseEntity
 import com.google.firebase.firestore.FieldValue
+import com.universidad.streamzone.data.model.PermissionEntity
 
 object FirebaseService {
     private val db = FirebaseFirestore.getInstance()
@@ -654,7 +655,7 @@ object FirebaseService {
      * Obtener todas las ofertas de Firebase
      */
     fun obtenerTodasLasOfertas(callback: (List<com.universidad.streamzone.data.model.OfferEntity>) -> Unit) {
-        Log.d(TAG, "Obteniendo ofertas de Firebase...")
+        //Log.d(TAG, "Obteniendo ofertas de Firebase...")
 
         db.collection("offers")
             .get()
@@ -676,16 +677,16 @@ object FirebaseService {
                             firebaseId = doc.id
                         )
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error al parsear oferta: ${e.message}")
+                       // Log.e(TAG, "Error al parsear oferta: ${e.message}")
                         null
                     }
                 }
 
-                Log.d(TAG, "✅ ${ofertas.size} ofertas obtenidas de Firebase")
+                //Log.d(TAG, "✅ ${ofertas.size} ofertas obtenidas de Firebase")
                 callback(ofertas)
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "❌ Error al obtener ofertas de Firebase", e)
+                //Log.e(TAG, "❌ Error al obtener ofertas de Firebase", e)
                 callback(emptyList())
             }
     }
@@ -911,6 +912,106 @@ object FirebaseService {
             .addOnFailureListener { e ->
                 Log.e(TAG, "❌ Error al sincronizar permisos", e)
                 onFailure(e)
+            }
+    }
+    // ========================================
+// MÉTODOS FALTANTES PARA SINCRONIZACIÓN COMPLETA
+// ========================================
+
+    /**
+     * Obtiene todos los permisos desde Firebase
+     */
+    fun obtenerTodosLosPermisos(callback: (List<PermissionEntity>) -> Unit) {
+        Log.d(TAG, "Obteniendo todos los permisos de Firebase...")
+
+        db.collection("permissions")
+            .get()
+            .addOnSuccessListener { result ->
+                val permisos = result.documents.mapNotNull { doc ->
+                    try {
+                        PermissionEntity(
+                            id = 0, // Room asignará el ID
+                            code = doc.getString("code") ?: "",
+                            name = doc.getString("name") ?: "",
+                            description = doc.getString("description") ?: ""
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error al parsear permiso: ${e.message}")
+                        null
+                    }
+                }
+
+                Log.d(TAG, "✅ ${permisos.size} permisos obtenidos de Firebase")
+                callback(permisos)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al obtener permisos de Firebase", e)
+                callback(emptyList())
+            }
+    }
+
+    /**
+     * Obtiene todas las relaciones rol-permiso desde Firebase
+     * Retorna una lista de pares (roleFirebaseId, permissionCode)
+     */
+    fun obtenerTodasLasRolePermissions(callback: (List<Pair<String, String>>) -> Unit) {
+        Log.d(TAG, "Obteniendo todas las relaciones rol-permiso de Firebase...")
+
+        db.collection("role_permissions")
+            .get()
+            .addOnSuccessListener { result ->
+                val relaciones = mutableListOf<Pair<String, String>>()
+
+                result.documents.forEach { doc ->
+                    try {
+                        val roleFirebaseId = doc.id
+                        val permissionCodes = (doc.get("permissionCodes") as? List<*>)
+                            ?.mapNotNull { it as? String }
+                            ?: emptyList()
+
+                        // Crear una relación por cada permiso del rol
+                        permissionCodes.forEach { permissionCode ->
+                            relaciones.add(roleFirebaseId to permissionCode)
+                        }
+
+                        Log.d(TAG, "Rol $roleFirebaseId tiene permisos: $permissionCodes")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error al parsear role_permission: ${e.message}")
+                    }
+                }
+
+                Log.d(TAG, "✅ ${relaciones.size} relaciones rol-permiso obtenidas")
+                callback(relaciones)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al obtener relaciones rol-permiso", e)
+                callback(emptyList())
+            }
+    }
+
+    /**
+     * Obtiene los permisos de un rol específico desde Firebase
+     */
+    fun obtenerPermisosPorRol(roleFirebaseId: String, callback: (List<String>) -> Unit) {
+        db.collection("role_permissions")
+            .document(roleFirebaseId)
+            .get()
+            .addOnSuccessListener { doc ->
+                if (doc.exists()) {
+                    val permissionCodes = (doc.get("permissionCodes") as? List<*>)
+                        ?.mapNotNull { it as? String }
+                        ?: emptyList()
+
+                    Log.d(TAG, "Permisos para rol $roleFirebaseId: $permissionCodes")
+                    callback(permissionCodes)
+                } else {
+                    Log.d(TAG, "No se encontraron permisos para rol $roleFirebaseId")
+                    callback(emptyList())
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error al obtener permisos del rol $roleFirebaseId", e)
+                callback(emptyList())
             }
     }
 }

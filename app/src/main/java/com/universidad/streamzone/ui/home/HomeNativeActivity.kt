@@ -132,7 +132,12 @@ class HomeNativeActivity : AppCompatActivity() {
     private fun checkAdminStatus() {
         val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
-        if (userEmail.isEmpty()) return
+        if (userEmail.isEmpty()) {
+            Log.w("HomeNative", "❌ No hay usuario en sesión")
+            return
+        }
+
+        Log.d("HomeNative", "🔍 Verificando permisos para: $userEmail")
 
         lifecycleScope.launch {
             try {
@@ -140,23 +145,107 @@ class HomeNativeActivity : AppCompatActivity() {
                 val usuarioDao = db.usuarioDao()
                 val usuario = usuarioDao.buscarPorEmail(userEmail)
 
-                usuario?.let { user ->
-                    currentUserId = user.id
+                if (usuario == null) {
+                    Log.e("HomeNative", "❌ Usuario no encontrado en BD local: $userEmail")
+                    return@launch
+                }
 
-                    // Verificar si el usuario es admin O tiene algún permiso
-                    val hasAnyPermission = checkIfUserHasAnyPermission(user.id)
+                currentUserId = usuario.id
+                Log.d("HomeNative", "👤 Usuario encontrado - ID: ${usuario.id}, isAdmin: ${usuario.isAdmin}")
 
-                    if (user.isAdmin || hasAnyPermission) {
-                        runOnUiThread {
-                            fabAdminMenu.visibility = View.VISIBLE
-                            Log.d("HomeNative", "Usuario tiene acceso al panel admin")
-                        }
+                // Solo esperar un momento para asegurar que Room terminó de escribir
+                kotlinx.coroutines.delay(500)
+
+                // Verificar roles asignados
+                val userRoleDao = db.userRoleDao()
+                val roleIds = userRoleDao.getRolesByUserId(usuario.id)
+                Log.d("HomeNative", "📋 Roles asignados: $roleIds")
+
+                // Verificar permisos
+                val hasAnyPermission = checkIfUserHasAnyPermission(usuario.id)
+                Log.d("HomeNative", "🔐 ¿Tiene permisos?: $hasAnyPermission")
+
+                if (usuario.isAdmin || hasAnyPermission) {
+                    runOnUiThread {
+                        fabAdminMenu.visibility = View.VISIBLE
+                        Log.d("HomeNative", "✅ FAB Admin VISIBLE")
+                    }
+                } else {
+                    runOnUiThread {
+                        fabAdminMenu.visibility = View.GONE
+                        Log.d("HomeNative", "❌ FAB Admin OCULTO (sin permisos)")
                     }
                 }
+
             } catch (e: Exception) {
-                Log.e("HomeNative", "Error al verificar estado admin", e)
+                Log.e("HomeNative", "❌ Error al verificar estado admin", e)
             }
         }
+    }
+
+
+    /**
+     * Sincronizar roles desde Firebase (SOLO PARA REFRESCAR DATOS, NO PARA LOGIN)
+     * Esta función YA NO se usa en checkAdminStatus
+     */
+    private suspend fun sincronizarRolesDesdeFirebase(userEmail: String) {
+        com.universidad.streamzone.data.remote.FirebaseService.obtenerRolesUsuario(
+            userEmail = userEmail,
+            onSuccess = { roleFirebaseIds ->
+                lifecycleScope.launch {
+                    try {
+                        val db = AppDatabase.getInstance(this@HomeNativeActivity)
+                        val usuarioDao = db.usuarioDao()
+                        val roleDao = db.roleDao()
+                        val userRoleDao = db.userRoleDao()
+
+                        val usuario = usuarioDao.buscarPorEmail(userEmail) ?: return@launch
+
+                        // Sincronizar roles disponibles
+                        com.universidad.streamzone.data.remote.FirebaseService.obtenerTodosLosRoles { firebaseRoles ->
+                            lifecycleScope.launch {
+                                firebaseRoles.forEach { firebaseRole ->
+                                    val localRole = roleDao.getAll()
+                                        .find { it.firebaseId == firebaseRole.firebaseId }
+
+                                    if (localRole == null) {
+                                        roleDao.insertar(firebaseRole)
+                                    } else {
+                                        val updated = firebaseRole.copy(id = localRole.id)
+                                        roleDao.actualizar(updated)
+                                    }
+                                }
+
+                                // Asignar roles al usuario
+                                userRoleDao.eliminarRolesPorUsuario(usuario.id)
+
+                                roleFirebaseIds.forEach { firebaseId ->
+                                    val role = roleDao.getAll().find { it.firebaseId == firebaseId }
+                                    if (role != null) {
+                                        val userRole = com.universidad.streamzone.data.model.UserRoleEntity(
+                                            userId = usuario.id,
+                                            roleId = role.id
+                                        )
+                                        userRoleDao.insertar(userRole)
+                                    }
+                                }
+
+                                Log.d("HomeNative", "✅ Roles sincronizados desde Firebase")
+
+                                // Recargar verificación de permisos
+                                checkAdminStatus()
+                            }
+                        }
+
+                    } catch (e: Exception) {
+                        Log.e("HomeNative", "❌ Error al sincronizar roles", e)
+                    }
+                }
+            },
+            onFailure = { e ->
+                Log.e("HomeNative", "❌ Error Firebase: ${e.message}")
+            }
+        )
     }
 
     // Verificar si el usuario tiene algún permiso asignado
@@ -168,19 +257,25 @@ class HomeNativeActivity : AppCompatActivity() {
 
             // Obtener roles del usuario
             val userRoleIds = userRoleDao.getRolesByUserId(userId)
+            Log.d("HomeNative", "🔍 Verificando permisos para roles: $userRoleIds")
 
-            // Si tiene roles, verificar si alguno tiene permisos
-            if (userRoleIds.isNotEmpty()) {
-                // Verificar si algún rol tiene permisos asignados
-                userRoleIds.any { roleId ->
-                    val permissions = rolePermissionDao.obtenerPermisosPorRol(roleId.toInt())
-                    permissions.isNotEmpty()
-                }
-            } else {
-                false
+            if (userRoleIds.isEmpty()) {
+                Log.w("HomeNative", "⚠️ Usuario no tiene roles asignados")
+                return false
             }
+
+            // Verificar si algún rol tiene permisos
+            val tienePermisos = userRoleIds.any { roleId ->
+                val permissions = rolePermissionDao.obtenerPermisosPorRol(roleId.toInt())
+                Log.d("HomeNative", "📌 Rol $roleId tiene ${permissions.size} permisos")
+                permissions.isNotEmpty()
+            }
+
+            Log.d("HomeNative", "✅ Resultado final: $tienePermisos")
+            tienePermisos
+
         } catch (e: Exception) {
-            Log.e("HomeNative", "Error al verificar permisos", e)
+            Log.e("HomeNative", "❌ Error al verificar permisos", e)
             false
         }
     }
@@ -189,7 +284,7 @@ class HomeNativeActivity : AppCompatActivity() {
     private fun openActiveOffer() {
         val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
-        // ✅ AGREGAR ESTE LOG PARA DEBUG
+        // AGREGAR ESTE LOG PARA DEBUG
         android.util.Log.d("HomeNative", "Email: '$userEmail', User: '$currentUser'")
 
         if (userEmail.isEmpty()) {
@@ -393,7 +488,7 @@ class HomeNativeActivity : AppCompatActivity() {
                 val db = AppDatabase.getInstance(this@HomeNativeActivity)
                 val offerDao = db.offerDao()
 
-                // ✅ NUEVO: Sincronizar ofertas desde Firebase
+                // Sincronizar ofertas desde Firebase
                 if (isNetworkAvailable()) {
                     syncOffersFromFirebase()
                 }
@@ -412,7 +507,7 @@ class HomeNativeActivity : AppCompatActivity() {
                             openActiveOffer()
                         }
 
-                        Log.d("HomeNative", "✅ Oferta cargada: ${activeOffer.title}")
+                        //Log.d("HomeNative", "✅ Oferta cargada: ${activeOffer.title}")
                     } else {
                         // No hay oferta activa, ocultar el Hero Card
                         cardHeroOffer.visibility = View.GONE
@@ -429,7 +524,7 @@ class HomeNativeActivity : AppCompatActivity() {
         }
     }
     /**
-     * ✅ NUEVA FUNCIÓN: Sincronizar ofertas desde Firebase
+     * Sincronizar ofertas desde Firebase
      */
     private suspend fun syncOffersFromFirebase() {
         com.universidad.streamzone.data.remote.FirebaseService.obtenerTodasLasOfertas { firebaseOffers ->
@@ -446,12 +541,12 @@ class HomeNativeActivity : AppCompatActivity() {
                         if (localOffer == null) {
                             // Nueva oferta → Insertar
                             offerDao.insert(firebaseOffer)
-                            Log.d("HomeNative", "➕ Oferta insertada: ${firebaseOffer.title}")
+                            //Log.d("HomeNative", "➕ Oferta insertada: ${firebaseOffer.title}")
                         } else {
                             // Oferta existe → Actualizar
                             val updated = firebaseOffer.copy(id = localOffer.id)
                             offerDao.update(updated)
-                            Log.d("HomeNative", "🔄 Oferta actualizada: ${firebaseOffer.title}")
+                            //Log.d("HomeNative", "🔄 Oferta actualizada: ${firebaseOffer.title}")
                         }
                     }
 

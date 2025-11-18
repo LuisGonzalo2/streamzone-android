@@ -22,6 +22,8 @@ import com.universidad.streamzone.ui.home.HomeNativeActivity
 import com.universidad.streamzone.R
 import com.universidad.streamzone.data.remote.FirebaseService
 import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.model.RolePermissionEntity
+import com.universidad.streamzone.data.model.UserRoleEntity
 import com.universidad.streamzone.utils.sync.SyncService
 import kotlinx.coroutines.launch
 
@@ -100,7 +102,6 @@ class LoginActivity : AppCompatActivity() {
 
         // Restaurar estado del checkbox
         checkKeepLoggedIn.isChecked = sharedPrefs.getBoolean("keep_logged_in_preference", false)
-
     }
 
     private fun setupClickListeners() {
@@ -160,11 +161,6 @@ class LoginActivity : AppCompatActivity() {
                 // Asignar rol Super Admin si el usuario es admin
                 assignSuperAdminRoleIfNeeded(usuarioLocal)
 
-                // Descargar roles desde Firebase ANTES de cualquier otra operación
-                if (isNetworkAvailable()) {
-                    sincronizarRolesDesdeFirebase(usuarioLocal.email, usuarioLocal.id)
-                }
-
                 // SIEMPRE sincronizar con Firebase al hacer login (si hay internet)
                 if (isNetworkAvailable()) {
                     Log.d("LoginActivity", "Sincronizando usuario con Firebase...")
@@ -182,7 +178,6 @@ class LoginActivity : AppCompatActivity() {
                             },
                             onFailure = { e ->
                                 Log.e("LoginActivity", "Error al crear usuario en Firebase: ${e.message}")
-                                // No bloquear el login por error de sincronización
                             }
                         )
                     } else {
@@ -195,7 +190,6 @@ class LoginActivity : AppCompatActivity() {
                             },
                             onFailure = { e ->
                                 Log.e("LoginActivity", "Error al actualizar usuario en Firebase: ${e.message}")
-                                // No bloquear el login por error de sincronización
                             }
                         )
                     }
@@ -241,9 +235,6 @@ class LoginActivity : AppCompatActivity() {
                                     // Asignar rol Super Admin si el usuario es admin
                                     assignSuperAdminRoleIfNeeded(usuarioFirebase)
 
-                                    // Descargar roles desde Firebase
-                                    sincronizarRolesDesdeFirebase(usuarioFirebase.email, usuarioFirebase.id)
-
                                     runOnUiThread {
                                         loginExitoso(usuarioFirebase.fullname, email)
                                     }
@@ -262,12 +253,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun loginExitoso(nombreUsuario: String, email: String) {
-        Toast.makeText(
-            this@LoginActivity,
-            "Bienvenido",
-            Toast.LENGTH_SHORT
-        ).show()
-
         // Guardar sesión
         val keepLoggedIn = checkKeepLoggedIn.isChecked
         sharedPrefs.edit().apply {
@@ -283,12 +268,248 @@ class LoginActivity : AppCompatActivity() {
             apply()
         }
 
+        // Sincronizar roles ANTES de navegar
+        if (isNetworkAvailable()) {
+            // Mostrar loading
+            btnLogin.isEnabled = false
+            btnLogin.text = "Sincronizando roles..."
+
+            sincronizarRolesUsuarioDesdeFirebase(email) { exitoso ->
+                runOnUiThread {
+                    btnLogin.isEnabled = true
+                    btnLogin.text = "Iniciar sesión"
+
+                    if (exitoso) {
+                        Toast.makeText(
+                            this@LoginActivity,
+                            "Bienvenido, $nombreUsuario",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        navegarAHome(nombreUsuario)
+                    } else {
+                        navegarAHome(nombreUsuario)
+                    }
+                }
+            }
+        } else {
+            // Sin internet, navegar directamente
+            Toast.makeText(
+                this@LoginActivity,
+                "Bienvenido, $nombreUsuario",
+                Toast.LENGTH_SHORT
+            ).show()
+            navegarAHome(nombreUsuario)
+        }
+    }
+
+
+    private fun navegarAHome(nombreUsuario: String) {
         val intent = Intent(this@LoginActivity, HomeNativeActivity::class.java)
         intent.putExtra("USER_FULLNAME", nombreUsuario)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
         finish()
     }
+
+    // Agregar callback de éxito/fallo
+    private fun sincronizarRolesUsuarioDesdeFirebase(userEmail: String, onComplete: (Boolean) -> Unit) {
+        lifecycleScope.launch {
+            try {
+                var completado = false
+
+                Log.d("Login", "🔄 Iniciando sincronización COMPLETA para: $userEmail")
+
+                // PASO 1: Obtener roles del usuario
+                FirebaseService.obtenerRolesUsuario(
+                    userEmail = userEmail,
+                    onSuccess = { roleFirebaseIds ->
+                        lifecycleScope.launch {
+                            try {
+                                val db = AppDatabase.getInstance(this@LoginActivity)
+                                val usuarioDao = db.usuarioDao()
+                                val roleDao = db.roleDao()
+                                val userRoleDao = db.userRoleDao()
+                                val permissionDao = db.permissionDao()
+                                val rolePermissionDao = db.rolePermissionDao()
+
+                                val usuario = usuarioDao.buscarPorEmail(userEmail)
+
+                                if (usuario == null) {
+                                    Log.e("Login", "❌ Usuario no encontrado: $userEmail")
+                                    if (!completado) {
+                                        completado = true
+                                        onComplete(false)
+                                    }
+                                    return@launch
+                                }
+
+                                Log.d("Login", "📥 Roles del usuario desde Firebase: $roleFirebaseIds")
+
+                                // PASO 2: Sincronizar TODOS los roles de Firebase
+                                FirebaseService.obtenerTodosLosRoles { firebaseRoles ->
+                                    lifecycleScope.launch {
+                                        try {
+                                            Log.d("Login", "📦 Total de roles en Firebase: ${firebaseRoles.size}")
+
+                                            // Insertar/actualizar roles en Room
+                                            firebaseRoles.forEach { firebaseRole ->
+                                                val localRole = roleDao.getAll()
+                                                    .find { it.firebaseId == firebaseRole.firebaseId }
+
+                                                if (localRole == null) {
+                                                    roleDao.insertar(firebaseRole)
+                                                    Log.d("Login", "➕ Rol insertado: ${firebaseRole.name}")
+                                                } else {
+                                                    val updated = firebaseRole.copy(id = localRole.id)
+                                                    roleDao.actualizar(updated)
+                                                    Log.d("Login", "🔄 Rol actualizado: ${firebaseRole.name}")
+                                                }
+                                            }
+
+                                            // PASO 3: Sincronizar TODOS los permisos
+                                            FirebaseService.obtenerTodosLosPermisos { firebasePermissions ->
+                                                lifecycleScope.launch {
+                                                    try {
+                                                        Log.d("Login", "🔐 Total de permisos en Firebase: ${firebasePermissions.size}")
+
+                                                        // Insertar/actualizar permisos en Room
+                                                        firebasePermissions.forEach { firebasePermission ->
+                                                            val localPermission = permissionDao.getAll()
+                                                                .find { it.code == firebasePermission.code }
+
+                                                            if (localPermission == null) {
+                                                                permissionDao.insertar(firebasePermission)
+                                                                Log.d("Login", "➕ Permiso insertado: ${firebasePermission.code}")
+                                                            } else {
+                                                                val updated = firebasePermission.copy(id = localPermission.id)
+                                                                permissionDao.actualizar(updated)
+                                                                Log.d("Login", "🔄 Permiso actualizado: ${firebasePermission.code}")
+                                                            }
+                                                        }
+
+                                                        // PASO 4: Sincronizar TODAS las relaciones rol-permiso
+                                                        FirebaseService.obtenerTodasLasRolePermissions { firebaseRelations ->
+                                                            lifecycleScope.launch {
+                                                                try {
+                                                                    Log.d("Login", "🔗 Total de relaciones rol-permiso: ${firebaseRelations.size}")
+
+                                                                    // Limpiar relaciones existentes
+                                                                    rolePermissionDao.eliminarTodas()
+
+                                                                    // Insertar nuevas relaciones
+                                                                    firebaseRelations.forEach { (roleFirebaseId, permissionCode) ->
+                                                                        // Buscar rol local por firebaseId
+                                                                        val role = roleDao.getAll()
+                                                                            .find { it.firebaseId == roleFirebaseId }
+
+                                                                        // Buscar permiso local por code
+                                                                        val permission = permissionDao.getAll()
+                                                                            .find { it.code == permissionCode }
+
+                                                                        if (role != null && permission != null) {
+                                                                            val rolePermission =
+                                                                                RolePermissionEntity(
+                                                                                    roleId = role.id,
+                                                                                    permissionId = permission.id
+                                                                                )
+                                                                            rolePermissionDao.insertar(rolePermission)
+                                                                            Log.d("Login", "✅ Relación: ${role.name} -> ${permission.code}")
+                                                                        } else {
+                                                                            Log.w("Login", "⚠️ No se pudo crear relación: $roleFirebaseId -> $permissionCode")
+                                                                        }
+                                                                    }
+
+                                                                    // PASO 5: Asignar roles al usuario
+                                                                    userRoleDao.eliminarRolesPorUsuario(usuario.id)
+                                                                    Log.d("Login", "🗑️ Roles anteriores eliminados")
+
+                                                                    var rolesAsignados = 0
+                                                                    roleFirebaseIds.forEach { firebaseId ->
+                                                                        val role = roleDao.getAll().find { it.firebaseId == firebaseId }
+                                                                        if (role != null) {
+                                                                            val userRole =
+                                                                                UserRoleEntity(
+                                                                                    userId = usuario.id,
+                                                                                    roleId = role.id
+                                                                                )
+                                                                            userRoleDao.insertar(userRole)
+                                                                            rolesAsignados++
+                                                                            Log.d("Login", "✅ Rol asignado: ${role.name} (ID: ${role.id})")
+                                                                        } else {
+                                                                            Log.w("Login", "⚠️ Rol con firebaseId $firebaseId no encontrado localmente")
+                                                                        }
+                                                                    }
+
+                                                                    Log.d("Login", "✅ Sincronización COMPLETA: $rolesAsignados roles asignados a $userEmail")
+
+                                                                    if (!completado) {
+                                                                        completado = true
+                                                                        onComplete(true)
+                                                                    }
+
+                                                                } catch (e: Exception) {
+                                                                    Log.e("Login", "❌ Error al procesar relaciones rol-permiso", e)
+                                                                    if (!completado) {
+                                                                        completado = true
+                                                                        onComplete(false)
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+
+                                                    } catch (e: Exception) {
+                                                        Log.e("Login", "❌ Error al procesar permisos", e)
+                                                        if (!completado) {
+                                                            completado = true
+                                                            onComplete(false)
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                        } catch (e: Exception) {
+                                            Log.e("Login", "❌ Error al procesar roles internos", e)
+                                            if (!completado) {
+                                                completado = true
+                                                onComplete(false)
+                                            }
+                                        }
+                                    }
+                                }
+
+                            } catch (e: Exception) {
+                                Log.e("Login", "❌ Error al procesar roles", e)
+                                if (!completado) {
+                                    completado = true
+                                    onComplete(false)
+                                }
+                            }
+                        }
+                    },
+                    onFailure = { e ->
+                        Log.e("Login", "❌ Error al obtener roles desde Firebase: ${e.message}")
+                        if (!completado) {
+                            completado = true
+                            onComplete(false)
+                        }
+                    }
+                )
+
+                // Timeout de seguridad (20 segundos)
+                kotlinx.coroutines.delay(20000)
+                if (!completado) {
+                    completado = true
+                    Log.w("Login", "⚠️ Timeout en sincronización completa (20s)")
+                    onComplete(false)
+                }
+
+            } catch (e: Exception) {
+                Log.e("Login", "❌ Error en sincronización de roles", e)
+                onComplete(false)
+            }
+        }
+    }
+
 
     private fun checkActiveSession(): Boolean {
         val keepLoggedIn = sharedPrefs.getBoolean("keep_logged_in_preference", false)
@@ -333,7 +554,6 @@ class LoginActivity : AppCompatActivity() {
                 etEmail.requestFocus()
                 false
             }
-
             !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                 tilEmail.error = "Formato de correo inválido"
                 etEmail.requestFocus()
@@ -401,19 +621,17 @@ class LoginActivity : AppCompatActivity() {
 
         if (isPasswordVisible) {
             etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            btnTogglePassword.setIconResource(R.drawable.ic_visibility) // Ojo cerrado
+            btnTogglePassword.setIconResource(R.drawable.ic_visibility)
             isPasswordVisible = false
         } else {
             etPassword.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-            btnTogglePassword.setIconResource(R.drawable.ic_visibility_off) // Ojo abierto
+            btnTogglePassword.setIconResource(R.drawable.ic_visibility_off)
             isPasswordVisible = true
         }
 
         etPassword.typeface = currentTypeface
         etPassword.setSelection(selection)
     }
-
-
 
     private fun saveEmail() {
         val email = etEmail.text.toString().trim()
@@ -445,13 +663,12 @@ class LoginActivity : AppCompatActivity() {
         networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 runOnUiThread {
-                    // Sincronizar silenciosamente sin mostrar mensaje
                     SyncService.sincronizarUsuariosPendientes(this@LoginActivity)
                 }
             }
 
             override fun onLost(network: Network) {
-                // Silencioso - sin mensajes
+                // Silencioso
             }
         }
 
@@ -476,6 +693,7 @@ class LoginActivity : AppCompatActivity() {
 
     /**
      * Descarga y sincroniza los roles del usuario desde Firebase
+     * (VERSIÓN ANTIGUA - NO SE USA)
      */
     private fun sincronizarRolesDesdeFirebase(userEmail: String, userId: Int) {
         Log.d("LoginActivity", "🔄 Descargando roles desde Firebase para: $userEmail")
@@ -496,14 +714,11 @@ class LoginActivity : AppCompatActivity() {
                         val roleDao = db.roleDao()
                         val userRoleDao = db.userRoleDao()
 
-                        // Eliminar roles actuales del usuario (para evitar conflictos)
                         userRoleDao.eliminarRolesPorUsuario(userId)
                         Log.d("LoginActivity", "🗑️ Roles locales eliminados")
 
-                        // Obtener todos los roles locales
                         val allRoles = roleDao.getAll()
 
-                        // Convertir firebaseIds a IDs locales y asignar
                         var rolesAsignados = 0
                         roleFirebaseIds.forEach { firebaseId ->
                             val role = allRoles.find { it.firebaseId == firebaseId }
@@ -538,9 +753,8 @@ class LoginActivity : AppCompatActivity() {
     private fun assignSuperAdminRoleIfNeeded(usuario: com.universidad.streamzone.data.model.UsuarioEntity) {
         lifecycleScope.launch {
             try {
-                // Solo procesar si el usuario es admin
                 if (!usuario.isAdmin) {
-                    Log.d("LoginActivity", "Usuario ${usuario.email} no es admin, saltando asignación de rol")
+                    Log.d("LoginActivity", "Usuario ${usuario.email} no es admin")
                     return@launch
                 }
 
@@ -548,32 +762,29 @@ class LoginActivity : AppCompatActivity() {
                 val roleDao = db.roleDao()
                 val userRoleDao = db.userRoleDao()
 
-                // Buscar el rol "Super Admin"
                 val allRoles = roleDao.getAll()
                 val superAdminRole = allRoles.find { it.name == "Super Admin" }
 
                 if (superAdminRole == null) {
-                    Log.e("LoginActivity", "⚠️ Rol 'Super Admin' no encontrado en la base de datos")
+                    Log.e("LoginActivity", "⚠️ Rol 'Super Admin' no encontrado")
                     return@launch
                 }
 
-                // Verificar si el usuario ya tiene el rol asignado
                 val hasRole = userRoleDao.tieneRol(usuario.id, superAdminRole.id) > 0
 
                 if (hasRole) {
-                    Log.d("LoginActivity", "Usuario ${usuario.email} ya tiene rol Super Admin asignado")
+                    Log.d("LoginActivity", "Usuario ${usuario.email} ya tiene Super Admin")
                 } else {
-                    // Asignar el rol Super Admin
                     val userRole = com.universidad.streamzone.data.model.UserRoleEntity(
                         userId = usuario.id,
                         roleId = superAdminRole.id
                     )
                     userRoleDao.insertar(userRole)
-                    Log.d("LoginActivity", "✅ Rol Super Admin asignado automáticamente a ${usuario.email}")
+                    Log.d("LoginActivity", "✅ Super Admin asignado a ${usuario.email}")
                 }
 
             } catch (e: Exception) {
-                Log.e("LoginActivity", "❌ Error al asignar rol Super Admin: ${e.message}", e)
+                Log.e("LoginActivity", "❌ Error al asignar Super Admin", e)
             }
         }
     }

@@ -23,4 +23,6 @@ interface RolePermissionDao {
     // Asignar múltiples permisos a un rol
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun asignarRoles(rolePermissions: List<RolePermissionEntity>)
+    @Query("DELETE FROM role_permissions")
+    suspend fun eliminarTodas()
 }

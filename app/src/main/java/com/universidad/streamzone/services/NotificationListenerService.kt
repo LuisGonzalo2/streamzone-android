@@ -43,6 +43,9 @@ class NotificationListenerService(private val context: Context) {
      * Inicia todos los listeners
      */
     fun startListening() {
+        Log.d(TAG, "🚀 Iniciando listeners de notificaciones...")
+        Log.d(TAG, "⏳ isFirstLoad = true (se cambiará a false en 2 segundos)")
+
         listenToCategories()
         listenToServices()
         listenToOffers()
@@ -53,6 +56,7 @@ class NotificationListenerService(private val context: Context) {
         serviceScope.launch {
             kotlinx.coroutines.delay(2000)
             isFirstLoad = false
+            Log.d(TAG, "✅ isFirstLoad = false (ya pueden enviarse notificaciones)")
         }
 
         Log.d(TAG, "Listeners de notificaciones iniciados")
@@ -338,6 +342,8 @@ class NotificationListenerService(private val context: Context) {
 
                     when (change.type) {
                         com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
+                            Log.d(TAG, "➕ ADDED detectado para compra: $purchaseId - $serviceName (status: $status)")
+
                             // Sincronizar compra nueva a Room
                             serviceScope.launch {
                                 try {
@@ -373,8 +379,11 @@ class NotificationListenerService(private val context: Context) {
                                 }
                             }
                             seenPurchases.add(purchaseId)
+                            Log.d(TAG, "📝 Compra $purchaseId agregada a seenPurchases (total: ${seenPurchases.size})")
                         }
                         com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
+                            Log.d(TAG, "🔔 MODIFIED detectado para compra: $purchaseId - $serviceName")
+
                             // Sincronizar actualización de compra a Room
                             serviceScope.launch {
                                 try {
@@ -394,12 +403,27 @@ class NotificationListenerService(private val context: Context) {
                                         purchaseDao.update(updatedPurchase)
                                         Log.d(TAG, "✅ Compra actualizada desde Firebase: $serviceName")
 
+                                        // Debug: Verificar condiciones para notificación
+                                        Log.d(TAG, "🔍 Verificando condiciones para notificación:")
+                                        Log.d(TAG, "   - purchaseId: $purchaseId")
+                                        Log.d(TAG, "   - seenPurchases.contains(purchaseId): ${seenPurchases.contains(purchaseId)}")
+                                        Log.d(TAG, "   - status: $status (¿es 'active'?: ${status == "active"})")
+                                        Log.d(TAG, "   - email: $email (¿no vacío?: ${!email.isNullOrEmpty()})")
+                                        Log.d(TAG, "   - password: ${if (password.isNullOrEmpty()) "vacío" else "no vacío"} (¿no vacío?: ${!password.isNullOrEmpty()})")
+                                        Log.d(TAG, "   - isFirstLoad: $isFirstLoad (¿NO es primera carga?: ${!isFirstLoad})")
+                                        Log.d(TAG, "   - seenPurchases actual: $seenPurchases")
+
                                         // Notificar cuando se asignan credenciales (estado = "active")
-                                        if (seenPurchases.contains(purchaseId) &&
+                                        val shouldNotify = seenPurchases.contains(purchaseId) &&
                                             status == "active" &&
                                             !email.isNullOrEmpty() &&
                                             !password.isNullOrEmpty() &&
-                                            !isFirstLoad) {
+                                            !isFirstLoad
+
+                                        Log.d(TAG, "   ➡️ ¿Debería notificar?: $shouldNotify")
+
+                                        if (shouldNotify) {
+                                            Log.d(TAG, "📬 ENVIANDO NOTIFICACIÓN para $serviceName")
                                             createNotification(
                                                 title = "¡Credenciales asignadas!",
                                                 message = "Tus credenciales de $serviceName están listas. Ve a 'Mis Compras' para verlas.",
@@ -409,10 +433,15 @@ class NotificationListenerService(private val context: Context) {
                                                 actionType = "open_purchases",
                                                 actionData = purchaseId
                                             )
+                                            Log.d(TAG, "✅ Notificación enviada correctamente")
+                                        } else {
+                                            Log.w(TAG, "⚠️ NO se envió notificación porque alguna condición no se cumplió")
                                         }
+                                    } else {
+                                        Log.w(TAG, "⚠️ No se encontró la compra en Room: $purchaseId")
                                     }
                                 } catch (e: Exception) {
-                                    Log.e(TAG, "Error al actualizar compra", e)
+                                    Log.e(TAG, "❌ Error al actualizar compra", e)
                                 }
                             }
                         }

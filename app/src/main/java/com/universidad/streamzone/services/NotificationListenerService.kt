@@ -312,12 +312,14 @@ class NotificationListenerService(private val context: Context) {
     private fun listenToPurchases() {
         // Obtener el email del usuario actual desde SharedPreferences
         val sharedPrefs = context.getSharedPreferences("StreamZoneData", Context.MODE_PRIVATE)
-        val userEmail = sharedPrefs.getString("USER_EMAIL", "") ?: ""
+        val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
         if (userEmail.isEmpty()) {
             Log.d(TAG, "No hay usuario logueado, no se escucharán compras")
             return
         }
+
+        Log.d(TAG, "Iniciando listener de compras para: $userEmail")
 
         purchasesListener = db.collection("purchases")
             .whereEqualTo("userEmail", userEmail)
@@ -336,23 +338,82 @@ class NotificationListenerService(private val context: Context) {
 
                     when (change.type) {
                         com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
+                            // Sincronizar compra nueva a Room
+                            serviceScope.launch {
+                                try {
+                                    val appDb = AppDatabase.getInstance(context)
+                                    val purchaseDao = appDb.purchaseDao()
+
+                                    // Verificar si ya existe
+                                    val existingPurchase = purchaseDao.getAll()
+                                        .find { it.firebaseId == purchaseId }
+
+                                    if (existingPurchase == null) {
+                                        val newPurchase = com.universidad.streamzone.data.model.PurchaseEntity(
+                                            id = 0,
+                                            userEmail = change.document.getString("userEmail") ?: "",
+                                            userName = change.document.getString("userName") ?: "",
+                                            serviceId = change.document.getString("serviceId") ?: "",
+                                            serviceName = serviceName,
+                                            servicePrice = change.document.getString("servicePrice") ?: "",
+                                            serviceDuration = change.document.getString("serviceDuration") ?: "",
+                                            email = email,
+                                            password = password,
+                                            purchaseDate = change.document.getLong("purchaseDate") ?: System.currentTimeMillis(),
+                                            expirationDate = change.document.getLong("expirationDate") ?: 0L,
+                                            status = status,
+                                            sincronizado = true,
+                                            firebaseId = purchaseId
+                                        )
+                                        purchaseDao.insertar(newPurchase)
+                                        Log.d(TAG, "✅ Compra sincronizada desde Firebase: $serviceName")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error al sincronizar compra nueva", e)
+                                }
+                            }
                             seenPurchases.add(purchaseId)
                         }
                         com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
-                            // Notificar cuando se asignan credenciales
-                            if (seenPurchases.contains(purchaseId) &&
-                                status == "completed" &&
-                                !email.isNullOrEmpty() &&
-                                !password.isNullOrEmpty()) {
-                                createNotification(
-                                    title = "¡Credenciales asignadas!",
-                                    message = "Tus credenciales de $serviceName están listas. Ve a 'Mis Compras' para verlas.",
-                                    type = NotificationType.PURCHASE,
-                                    icon = "✅",
-                                    userId = userEmail,
-                                    actionType = "open_purchases",
-                                    actionData = purchaseId
-                                )
+                            // Sincronizar actualización de compra a Room
+                            serviceScope.launch {
+                                try {
+                                    val appDb = AppDatabase.getInstance(context)
+                                    val purchaseDao = appDb.purchaseDao()
+
+                                    val existingPurchase = purchaseDao.getAll()
+                                        .find { it.firebaseId == purchaseId }
+
+                                    if (existingPurchase != null) {
+                                        val updatedPurchase = existingPurchase.copy(
+                                            email = email,
+                                            password = password,
+                                            status = status,
+                                            sincronizado = true
+                                        )
+                                        purchaseDao.update(updatedPurchase)
+                                        Log.d(TAG, "✅ Compra actualizada desde Firebase: $serviceName")
+
+                                        // Notificar cuando se asignan credenciales (estado = "active")
+                                        if (seenPurchases.contains(purchaseId) &&
+                                            status == "active" &&
+                                            !email.isNullOrEmpty() &&
+                                            !password.isNullOrEmpty() &&
+                                            !isFirstLoad) {
+                                            createNotification(
+                                                title = "¡Credenciales asignadas!",
+                                                message = "Tus credenciales de $serviceName están listas. Ve a 'Mis Compras' para verlas.",
+                                                type = NotificationType.PURCHASE,
+                                                icon = "✅",
+                                                userId = userEmail,
+                                                actionType = "open_purchases",
+                                                actionData = purchaseId
+                                            )
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error al actualizar compra", e)
+                                }
                             }
                         }
                         else -> {}
@@ -367,12 +428,14 @@ class NotificationListenerService(private val context: Context) {
     private fun listenToUserRoles() {
         // Obtener el email del usuario actual desde SharedPreferences
         val sharedPrefs = context.getSharedPreferences("StreamZoneData", Context.MODE_PRIVATE)
-        val userEmail = sharedPrefs.getString("USER_EMAIL", "") ?: ""
+        val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
         if (userEmail.isEmpty()) {
             Log.d(TAG, "No hay usuario logueado, no se escucharán roles")
             return
         }
+
+        Log.d(TAG, "Iniciando listener de roles para: $userEmail")
 
         userRolesListener = db.collection("user_roles")
             .whereEqualTo("userEmail", userEmail)

@@ -101,11 +101,6 @@ class OffersManagerActivity : BaseAdminActivity() {
 
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(
-                        this@OffersManagerActivity,
-                        "Error al cargar ofertas: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             }
         }

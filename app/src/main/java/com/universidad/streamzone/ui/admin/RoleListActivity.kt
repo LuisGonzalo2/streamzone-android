@@ -35,14 +35,17 @@ class RoleListActivity : BaseAdminActivity() {
 
     // Control de sincronización para evitar duplicados
     private var lastSyncTimestamp: Long = 0
-    private val SYNC_COOLDOWN_MS = 30000 // 30 segundos
+    private val SYNC_COOLDOWN_MS = 5000 // 5 segundos (reducido para testing)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("RoleList", "🎯 onCreate() - Iniciando RoleListActivity")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_role_list)
+        Log.d("RoleList", "✅ onCreate() - ContentView establecido")
     }
 
     override fun onPermissionGranted() {
+        Log.d("RoleList", "✅ onPermissionGranted() - Permisos concedidos")
         initViews()
         setupRecyclerView()
         loadRoles()
@@ -80,6 +83,7 @@ class RoleListActivity : BaseAdminActivity() {
 
     override fun onResume() {
         super.onResume()
+        Log.d("RoleList", "🔄 onResume() - Actividad resumida")
         loadRoles()
     }
 
@@ -91,10 +95,21 @@ class RoleListActivity : BaseAdminActivity() {
 
                 // Sincronizar desde Firebase solo si pasó el tiempo de cooldown
                 val currentTime = System.currentTimeMillis()
-                if (isNetworkAvailable() && (currentTime - lastSyncTimestamp) > SYNC_COOLDOWN_MS) {
+                val timeSinceLastSync = currentTime - lastSyncTimestamp
+
+                Log.d("RoleList", "⏰ Tiempo desde última sync: ${timeSinceLastSync}ms (cooldown: ${SYNC_COOLDOWN_MS}ms)")
+
+                if (isNetworkAvailable() && timeSinceLastSync > SYNC_COOLDOWN_MS) {
+                    Log.d("RoleList", "🚀 INICIANDO SINCRONIZACIÓN COMPLETA...")
                     lastSyncTimestamp = currentTime
                     syncRolesFromFirebase()
                     syncUserRolesFromFirebase() // Sincronizar asignaciones de roles a usuarios
+                } else {
+                    if (!isNetworkAvailable()) {
+                        Log.w("RoleList", "⚠️ Sin conexión a internet - saltando sincronización")
+                    } else {
+                        Log.d("RoleList", "⏸️ Cooldown activo - saltando sincronización (quedan ${SYNC_COOLDOWN_MS - timeSinceLastSync}ms)")
+                    }
                 }
 
                 val roles = roleDao.getAll()

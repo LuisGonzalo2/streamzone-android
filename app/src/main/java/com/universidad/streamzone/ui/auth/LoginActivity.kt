@@ -116,10 +116,6 @@ class LoginActivity : AppCompatActivity() {
         btnTogglePassword.setOnClickListener {
             togglePasswordVisibility()
         }
-
-        findViewById<TextView>(R.id.tv_forgot_password).setOnClickListener {
-            handleForgotPassword()
-        }
     }
 
     private fun handleLogin() {

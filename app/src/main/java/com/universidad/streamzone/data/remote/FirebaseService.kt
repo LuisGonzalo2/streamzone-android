@@ -387,6 +387,82 @@ object FirebaseService {
             }
     }
 
+    /**
+     * Sincroniza TODOS los user_roles (asignaciones de roles a usuarios) desde Firebase
+     * Esto es crucial para mantener sincronizados los roles entre dispositivos
+     */
+    fun sincronizarTodosLosUserRoles(
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        Log.d(TAG, "🔄 Sincronizando TODOS los user_roles desde Firebase...")
+
+        db.collection("usuarios")
+            .get()
+            .addOnSuccessListener { documents ->
+                Log.d(TAG, "📥 ${documents.size()} usuarios encontrados en Firebase")
+
+                val userRolesData = mutableListOf<Pair<String, List<String>>>() // email -> roleFirebaseIds
+
+                documents.documents.forEach { doc ->
+                    val email = doc.getString("email")
+                    val roleFirebaseIds = (doc.get("roleFirebaseIds") as? List<*>)
+                        ?.mapNotNull { it as? String }
+                        ?: emptyList()
+
+                    if (email != null) {
+                        userRolesData.add(email to roleFirebaseIds)
+                        Log.d(TAG, "   Usuario: $email → Roles: $roleFirebaseIds")
+                    }
+                }
+
+                Log.d(TAG, "✅ Datos de roles obtenidos. Total usuarios con roles: ${userRolesData.size}")
+                onSuccess()
+
+                // Notificar los datos para que puedan ser procesados
+                // (procesamiento se hará en RoleListActivity)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al sincronizar user_roles desde Firebase", e)
+                onFailure(e)
+            }
+    }
+
+    /**
+     * Obtiene los roleFirebaseIds de TODOS los usuarios desde Firebase
+     * Retorna un mapa de email -> lista de roleFirebaseIds
+     */
+    fun obtenerTodosLosUserRoles(
+        onSuccess: (Map<String, List<String>>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        Log.d(TAG, "📥 Obteniendo todos los user_roles desde Firebase...")
+
+        db.collection("usuarios")
+            .get()
+            .addOnSuccessListener { documents ->
+                val userRolesMap = mutableMapOf<String, List<String>>()
+
+                documents.documents.forEach { doc ->
+                    val email = doc.getString("email")
+                    val roleFirebaseIds = (doc.get("roleFirebaseIds") as? List<*>)
+                        ?.mapNotNull { it as? String }
+                        ?: emptyList()
+
+                    if (email != null) {
+                        userRolesMap[email] = roleFirebaseIds
+                    }
+                }
+
+                Log.d(TAG, "✅ User roles obtenidos para ${userRolesMap.size} usuarios")
+                onSuccess(userRolesMap)
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error al obtener user_roles", e)
+                onFailure(e)
+            }
+    }
+
     private fun actualizarUsuarioPorId(
         docId: String,
         usuario: UsuarioEntity,

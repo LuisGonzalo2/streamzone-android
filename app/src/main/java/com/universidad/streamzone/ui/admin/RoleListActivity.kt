@@ -94,6 +94,7 @@ class RoleListActivity : BaseAdminActivity() {
                 if (isNetworkAvailable() && (currentTime - lastSyncTimestamp) > SYNC_COOLDOWN_MS) {
                     lastSyncTimestamp = currentTime
                     syncRolesFromFirebase()
+                    syncUserRolesFromFirebase() // Sincronizar asignaciones de roles a usuarios
                 }
 
                 val roles = roleDao.getAll()
@@ -194,6 +195,75 @@ class RoleListActivity : BaseAdminActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * Sincronizar user_roles (asignaciones de roles a usuarios) desde Firebase
+     */
+    private fun syncUserRolesFromFirebase() {
+        FirebaseService.obtenerTodosLosUserRoles(
+            onSuccess = { userRolesMap ->
+                lifecycleScope.launch {
+                    try {
+                        Log.d("RoleList", "🔄 Sincronizando user_roles desde Firebase...")
+                        Log.d("RoleList", "   ${userRolesMap.size} usuarios con roles encontrados")
+
+                        val db = AppDatabase.getInstance(this@RoleListActivity)
+                        val usuarioDao = db.usuarioDao()
+                        val roleDao = db.roleDao()
+                        val userRoleDao = db.userRoleDao()
+
+                        var totalAsignados = 0
+
+                        userRolesMap.forEach { (email, roleFirebaseIds) ->
+                            // Buscar usuario por email
+                            val usuario = usuarioDao.buscarPorEmail(email)
+                            if (usuario == null) {
+                                Log.w("RoleList", "⚠️ Usuario no encontrado: $email")
+                                return@forEach
+                            }
+
+                            if (roleFirebaseIds.isEmpty()) {
+                                // Usuario no tiene roles, eliminar asignaciones locales
+                                userRoleDao.eliminarRolesPorUsuario(usuario.id)
+                                Log.d("RoleList", "   Usuario $email: sin roles → limpiado")
+                                return@forEach
+                            }
+
+                            // Eliminar roles actuales
+                            userRoleDao.eliminarRolesPorUsuario(usuario.id)
+
+                            // Obtener todos los roles locales
+                            val allRoles = roleDao.getAll()
+
+                            // Asignar nuevos roles
+                            roleFirebaseIds.forEach { firebaseId ->
+                                val role = allRoles.find { it.firebaseId == firebaseId }
+                                if (role != null) {
+                                    userRoleDao.insertar(
+                                        com.universidad.streamzone.data.model.UserRoleEntity(
+                                            userId = usuario.id,
+                                            roleId = role.id
+                                        )
+                                    )
+                                    totalAsignados++
+                                    Log.d("RoleList", "   ✅ $email → ${role.name}")
+                                } else {
+                                    Log.w("RoleList", "⚠️ Rol con firebaseId $firebaseId no encontrado")
+                                }
+                            }
+                        }
+
+                        Log.d("RoleList", "✅ User roles sincronizados: $totalAsignados asignaciones")
+                    } catch (e: Exception) {
+                        Log.e("RoleList", "❌ Error al sincronizar user_roles", e)
+                    }
+                }
+            },
+            onFailure = { e ->
+                Log.e("RoleList", "❌ Error al obtener user_roles desde Firebase", e)
+            }
+        )
     }
 
     private fun showDeleteConfirmation(role: RoleEntity) {

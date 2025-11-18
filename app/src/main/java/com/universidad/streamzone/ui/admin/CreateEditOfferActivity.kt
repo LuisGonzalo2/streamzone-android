@@ -122,11 +122,6 @@ class CreateEditOfferActivity : BaseAdminActivity() {
                 allServices = serviceDao.getAll()
 
             } catch (e: Exception) {
-                Toast.makeText(
-                    this@CreateEditOfferActivity,
-                    "Error al cargar servicios: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
             }
         }
     }
@@ -170,11 +165,6 @@ class CreateEditOfferActivity : BaseAdminActivity() {
 
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(
-                        this@CreateEditOfferActivity,
-                        "Error al cargar oferta: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             }
         }

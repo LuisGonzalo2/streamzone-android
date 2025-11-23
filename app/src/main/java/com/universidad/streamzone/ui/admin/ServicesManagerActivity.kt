@@ -13,11 +13,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.Timestamp
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.firebase.repository.CategoryRepository
+import com.universidad.streamzone.data.firebase.repository.ServiceRepository
 import com.universidad.streamzone.data.model.CategoryEntity
 import com.universidad.streamzone.data.model.ServiceEntity
 import com.universidad.streamzone.util.PermissionManager
+import com.universidad.streamzone.util.toCategoryEntityList
+import com.universidad.streamzone.util.toServiceEntityList
 import kotlinx.coroutines.launch
 
 // Sealed class para items de la lista (header o servicio)
@@ -29,6 +33,10 @@ sealed class ServiceListItem {
 class ServicesManagerActivity : BaseAdminActivity() {
 
     override val requiredPermission: String = PermissionManager.MANAGE_SERVICES
+
+    // Firebase Repositories
+    private val serviceRepository = ServiceRepository()
+    private val categoryRepository = CategoryRepository()
 
     private lateinit var btnBack: ImageButton
     private lateinit var rvServices: RecyclerView
@@ -71,7 +79,7 @@ class ServicesManagerActivity : BaseAdminActivity() {
             items = emptyList(),
             onEditClick = { service ->
                 val intent = Intent(this, CreateEditServiceActivity::class.java)
-                intent.putExtra("SERVICE_ID", service.id.toLong())
+                intent.putExtra("SERVICE_ID", service.firebaseId ?: "")
                 startActivity(intent)
             },
             onToggleClick = { service ->
@@ -91,12 +99,13 @@ class ServicesManagerActivity : BaseAdminActivity() {
     private fun loadServices() {
         lifecycleScope.launch {
             try {
-                val db = AppDatabase.getInstance(this@ServicesManagerActivity)
-                val serviceDao = db.serviceDao()
-                val categoryDao = db.categoryDao()
+                // Obtener servicios y categorías desde Firebase
+                val firebaseServices = serviceRepository.getActiveServices()
+                val firebaseCategories = categoryRepository.getAllSync()
 
-                val services = serviceDao.getAll()
-                val categories = categoryDao.obtenerTodasSync()
+                // Convertir a entidades para la UI
+                val services = firebaseServices.toServiceEntityList()
+                val categories = firebaseCategories.toCategoryEntityList()
 
                 // Agrupar servicios por categoría
                 val groupedItems = mutableListOf<ServiceListItem>()
@@ -125,6 +134,7 @@ class ServicesManagerActivity : BaseAdminActivity() {
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("ServicesManager", "❌ Error al cargar servicios", e)
                 runOnUiThread {
                     Toast.makeText(
                         this@ServicesManagerActivity,
@@ -139,22 +149,30 @@ class ServicesManagerActivity : BaseAdminActivity() {
     private fun toggleServiceStatus(service: ServiceEntity) {
         lifecycleScope.launch {
             try {
-                val db = AppDatabase.getInstance(this@ServicesManagerActivity)
-                val serviceDao = db.serviceDao()
+                if (service.firebaseId != null) {
+                    // Obtener servicio desde Firebase
+                    val firebaseService = serviceRepository.findById(service.firebaseId!!)
+                    if (firebaseService != null) {
+                        // Actualizar estado en Firebase
+                        val updatedService = firebaseService.copy(
+                            isActive = !firebaseService.isActive,
+                            updatedAt = Timestamp.now()
+                        )
+                        serviceRepository.update(updatedService)
 
-                val updatedService = service.copy(isActive = !service.isActive)
-                serviceDao.actualizar(updatedService)
-
-                runOnUiThread {
-                    Toast.makeText(
-                        this@ServicesManagerActivity,
-                        if (updatedService.isActive) "Servicio activado" else "Servicio desactivado",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    loadServices()
+                        runOnUiThread {
+                            Toast.makeText(
+                                this@ServicesManagerActivity,
+                                if (updatedService.isActive) "Servicio activado" else "Servicio desactivado",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            loadServices()
+                        }
+                    }
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("ServicesManager", "❌ Error al actualizar servicio", e)
                 runOnUiThread {
                     Toast.makeText(
                         this@ServicesManagerActivity,

@@ -9,12 +9,14 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.Timestamp
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.firebase.models.Role
+import com.universidad.streamzone.data.firebase.repository.PermissionRepository
+import com.universidad.streamzone.data.firebase.repository.RoleRepository
 import com.universidad.streamzone.data.model.PermissionEntity
-import com.universidad.streamzone.data.model.RoleEntity
-import com.universidad.streamzone.data.model.RolePermissionEntity
 import com.universidad.streamzone.util.PermissionManager
+import com.universidad.streamzone.util.toPermissionEntityList
 import kotlinx.coroutines.launch
 
 /**

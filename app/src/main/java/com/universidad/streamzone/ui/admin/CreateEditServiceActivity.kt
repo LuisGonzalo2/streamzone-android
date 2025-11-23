@@ -22,11 +22,14 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.Timestamp
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.firebase.models.Service
+import com.universidad.streamzone.data.firebase.repository.CategoryRepository
+import com.universidad.streamzone.data.firebase.repository.ServiceRepository
 import com.universidad.streamzone.data.model.CategoryEntity
-import com.universidad.streamzone.data.model.ServiceEntity
 import com.universidad.streamzone.util.PermissionManager
+import com.universidad.streamzone.util.toCategoryEntityList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -35,6 +38,10 @@ import java.io.ByteArrayOutputStream
 class CreateEditServiceActivity : BaseAdminActivity() {
 
     override val requiredPermission: String = PermissionManager.MANAGE_SERVICES
+
+    // Firebase Repositories
+    private val serviceRepository = ServiceRepository()
+    private val categoryRepository = CategoryRepository()
 
     private lateinit var btnBack: ImageButton
     private lateinit var tvTitle: TextView
@@ -51,8 +58,8 @@ class CreateEditServiceActivity : BaseAdminActivity() {
     private lateinit var btnSave: MaterialButton
 
     private var categories: List<CategoryEntity> = emptyList()
-    private var selectedCategoryId: Int = 0
-    private var serviceId: Int? = null
+    private var selectedCategoryId: String = ""
+    private var serviceId: String? = null
     private var imageBase64: String? = null
 
     // Launcher para seleccionar imagen
@@ -76,9 +83,9 @@ class CreateEditServiceActivity : BaseAdminActivity() {
         loadCategories()
 
         // Verificar si es edición
-        val serviceIdLong = intent.getLongExtra("SERVICE_ID", -1L)
-        if (serviceIdLong != -1L) {
-            serviceId = serviceIdLong.toInt()
+        val serviceIdFromIntent = intent.getStringExtra("SERVICE_ID")
+        if (serviceIdFromIntent != null && serviceIdFromIntent.isNotEmpty()) {
+            serviceId = serviceIdFromIntent
             tvTitle.text = "Editar Servicio"
             loadServiceData(serviceId!!)
         }
@@ -108,9 +115,9 @@ class CreateEditServiceActivity : BaseAdminActivity() {
     private fun loadCategories() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val db = AppDatabase.getInstance(this@CreateEditServiceActivity)
-                val categoryDao = db.categoryDao()
-                categories = categoryDao.obtenerCategoriasActivasSync()
+                // Obtener categorías activas desde Firebase
+                val firebaseCategories = categoryRepository.getActiveCategories()
+                categories = firebaseCategories.toCategoryEntityList()
 
                 withContext(Dispatchers.Main) {
                     if (categories.isEmpty()) {
@@ -135,7 +142,7 @@ class CreateEditServiceActivity : BaseAdminActivity() {
 
                     spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                         override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                            selectedCategoryId = categories[position].id
+                            selectedCategoryId = categories[position].firebaseId ?: ""
                         }
 
                         override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -145,11 +152,12 @@ class CreateEditServiceActivity : BaseAdminActivity() {
 
                     // Seleccionar primera categoría por defecto
                     if (categories.isNotEmpty()) {
-                        selectedCategoryId = categories[0].id
+                        selectedCategoryId = categories[0].firebaseId ?: ""
                     }
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("CreateService", "❌ Error al cargar categorías", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@CreateEditServiceActivity,
@@ -161,12 +169,11 @@ class CreateEditServiceActivity : BaseAdminActivity() {
         }
     }
 
-    private fun loadServiceData(id: Int) {
+    private fun loadServiceData(id: String) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val db = AppDatabase.getInstance(this@CreateEditServiceActivity)
-                val serviceDao = db.serviceDao()
-                val service = serviceDao.obtenerPorId(id)
+                // Obtener servicio desde Firebase
+                val service = serviceRepository.findById(id)
 
                 withContext(Dispatchers.Main) {
                     if (service != null) {
@@ -176,31 +183,32 @@ class CreateEditServiceActivity : BaseAdminActivity() {
                         switchIsPopular.isChecked = service.isPopular
                         switchIsActive.isChecked = service.isActive
 
-                        // Cargar imagen si existe
-                        if (!service.iconBase64.isNullOrEmpty()) {
-                            imageBase64 = service.iconBase64
-                            try {
-                                val decodedBytes = Base64.decode(service.iconBase64, Base64.DEFAULT)
-                                val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-                                ivServicePreview.setImageBitmap(bitmap)
-                                ivServicePreview.visibility = View.VISIBLE
-                                llImagePlaceholder.visibility = View.GONE
-                                btnRemoveImage.visibility = View.VISIBLE
-                            } catch (e: Exception) {
-                                // Si hay error, simplemente no mostramos la imagen
-                            }
-                        }
+                        // TODO: Cargar imagen desde Firebase Storage URL si existe
+                        // (Por ahora no cargamos imagen en edición)
 
                         // Seleccionar categoría correspondiente
-                        val categoryIndex = categories.indexOfFirst { it.id == service.categoryId }
+                        val categoryIndex = categories.indexOfFirst { it.firebaseId == service.categoryId }
                         if (categoryIndex >= 0) {
                             spinnerCategory.setSelection(categoryIndex)
                         }
+                    } else {
+                        Toast.makeText(
+                            this@CreateEditServiceActivity,
+                            "Servicio no encontrado",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        finish()
                     }
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("CreateService", "❌ Error al cargar servicio", e)
                 withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@CreateEditServiceActivity,
+                        "Error al cargar servicio: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -229,50 +237,30 @@ class CreateEditServiceActivity : BaseAdminActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val db = AppDatabase.getInstance(this@CreateEditServiceActivity)
-                val serviceDao = db.serviceDao()
-
-                val service = ServiceEntity(
-                    id = serviceId ?: 0,
+                // Crear objeto Service de Firebase
+                val service = Service(
+                    id = serviceId ?: "", // Si es edición, usar serviceId; si es nuevo, Firebase generará el ID
                     serviceId = name.lowercase().replace(" ", "_"),
                     name = name,
                     price = price,
                     description = description,
-                    iconDrawable = null,
-                    iconBase64 = imageBase64,
-                    iconUrl = null,
+                    iconUrl = null, // TODO: Implementar subida a Firebase Storage
                     categoryId = selectedCategoryId,
                     isActive = switchIsActive.isChecked,
-                    isPopular = switchIsPopular.isChecked
+                    isPopular = switchIsPopular.isChecked,
+                    createdAt = Timestamp.now(),
+                    updatedAt = Timestamp.now()
                 )
 
-                if (serviceId != null) {
-                    // Actualizar servicio existente
-                    serviceDao.actualizar(service)
+                // Guardar o actualizar en Firebase
+                if (serviceId == null) {
+                    // TODO: Si hay imageBase64, primero subir a Firebase Storage y obtener URL
+                    serviceRepository.insert(service)
+                    android.util.Log.d("CreateService", "✅ Nuevo servicio creado en Firebase")
                 } else {
-                    // Insertar nuevo servicio
-                    serviceDao.insertar(service)
+                    serviceRepository.update(service)
+                    android.util.Log.d("CreateService", "✅ Servicio actualizado en Firebase")
                 }
-
-                // Sincronizar con Firebase
-                com.universidad.streamzone.data.remote.FirebaseService.sincronizarServicio(
-                    serviceId = service.serviceId,
-                    name = service.name,
-                    description = service.description,
-                    categoryId = service.categoryId,
-                    price = service.price,
-                    duration = "",
-                    imageUrl = service.iconUrl,
-                    iconBase64 = service.iconBase64,
-                    isActive = service.isActive,
-                    isPopular = service.isPopular,
-                    onSuccess = {
-                        android.util.Log.d("CreateService", "✅ Servicio sincronizado con Firebase (incluye imagen)")
-                    },
-                    onFailure = { e ->
-                        android.util.Log.e("CreateService", "❌ Error al sincronizar: ${e.message}")
-                    }
-                )
 
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
@@ -284,7 +272,13 @@ class CreateEditServiceActivity : BaseAdminActivity() {
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("CreateService", "❌ Error al guardar servicio", e)
                 withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        this@CreateEditServiceActivity,
+                        "Error al guardar: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }

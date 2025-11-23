@@ -9,10 +9,12 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.Timestamp
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
-import com.universidad.streamzone.data.model.OfferEntity
-import com.universidad.streamzone.data.model.ServiceEntity
+import com.universidad.streamzone.data.firebase.models.Offer
+import com.universidad.streamzone.data.firebase.models.Service
+import com.universidad.streamzone.data.firebase.repository.OfferRepository
+import com.universidad.streamzone.data.firebase.repository.ServiceRepository
 import com.universidad.streamzone.util.PermissionManager
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -21,6 +23,10 @@ import java.util.*
 class CreateEditOfferActivity : BaseAdminActivity() {
 
     override val requiredPermission: String = PermissionManager.MANAGE_OFFERS
+
+    // Firebase Repositories
+    private val offerRepository = OfferRepository()
+    private val serviceRepository = ServiceRepository()
 
     private lateinit var btnBack: ImageButton
     private lateinit var tvTitle: TextView
@@ -36,9 +42,9 @@ class CreateEditOfferActivity : BaseAdminActivity() {
     private lateinit var switchIsActive: SwitchCompat
     private lateinit var btnSaveOffer: Button
 
-    private var offerId: Long? = null
-    private var selectedServiceIds = mutableListOf<Int>()
-    private var allServices = listOf<ServiceEntity>()
+    private var offerId: String? = null
+    private var selectedServiceIds = mutableListOf<String>()
+    private var allServices = listOf<Service>()
     private var startDateMillis: Long = System.currentTimeMillis()
     private var endDateMillis: Long = System.currentTimeMillis() + (30L * 24 * 60 * 60 * 1000) // 30 días
 
@@ -46,7 +52,7 @@ class CreateEditOfferActivity : BaseAdminActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_edit_offer)
 
-        offerId = intent.getLongExtra("OFFER_ID", -1).takeIf { it != -1L }
+        offerId = intent.getStringExtra("OFFER_ID")?.takeIf { it.isNotEmpty() }
     }
 
     override fun onPermissionGranted() {
@@ -116,30 +122,29 @@ class CreateEditOfferActivity : BaseAdminActivity() {
     private fun loadServices() {
         lifecycleScope.launch {
             try {
-                val db = AppDatabase.getInstance(this@CreateEditOfferActivity)
-                val serviceDao = db.serviceDao()
-
-                allServices = serviceDao.getAll()
+                // Obtener servicios activos desde Firebase
+                allServices = serviceRepository.getActiveServices()
 
             } catch (e: Exception) {
+                android.util.Log.e("CreateEditOffer", "❌ Error al cargar servicios", e)
             }
         }
     }
 
-    private fun loadOffer(id: Long) {
+    private fun loadOffer(id: String) {
         lifecycleScope.launch {
             try {
-                val db = AppDatabase.getInstance(this@CreateEditOfferActivity)
-                val offerDao = db.offerDao()
-
-                val offer = offerDao.getById(id)
+                // Obtener oferta desde Firebase
+                val offer = offerRepository.findById(id)
                 if (offer == null) {
-                    Toast.makeText(
-                        this@CreateEditOfferActivity,
-                        "Oferta no encontrada",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    finish()
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@CreateEditOfferActivity,
+                            "Oferta no encontrada",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        finish()
+                    }
                     return@launch
                 }
 
@@ -150,21 +155,25 @@ class CreateEditOfferActivity : BaseAdminActivity() {
                     etComboPrice.setText(offer.comboPrice.toString())
                     switchIsActive.isChecked = offer.isActive
 
-                    startDateMillis = offer.startDate
-                    endDateMillis = offer.endDate
+                    startDateMillis = offer.startDate.seconds * 1000
+                    endDateMillis = offer.endDate.seconds * 1000
                     updateDateButtons()
 
-                    // Cargar servicios seleccionados
-                    selectedServiceIds = offer.serviceIds.split(",")
-                        .mapNotNull { it.trim().toIntOrNull() }
-                        .toMutableList()
+                    // Cargar servicios seleccionados (ahora son String IDs de Firebase)
+                    selectedServiceIds = offer.serviceIds.toMutableList()
 
                     updateSelectedServicesText()
                     calculateDiscount()
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("CreateEditOffer", "❌ Error al cargar oferta", e)
                 runOnUiThread {
+                    Toast.makeText(
+                        this@CreateEditOfferActivity,
+                        "Error al cargar oferta: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -178,13 +187,13 @@ class CreateEditOfferActivity : BaseAdminActivity() {
 
         val serviceNames = allServices.map { it.name }.toTypedArray()
         val checkedItems = allServices.map { service ->
-            selectedServiceIds.contains(service.id)
+            selectedServiceIds.contains(service.id) // service.id es String ahora
         }.toBooleanArray()
 
         AlertDialog.Builder(this)
             .setTitle("Seleccionar Servicios")
             .setMultiChoiceItems(serviceNames, checkedItems) { _, which, isChecked ->
-                val serviceId = allServices[which].id
+                val serviceId = allServices[which].id // String ID de Firebase
                 if (isChecked) {
                     if (!selectedServiceIds.contains(serviceId)) {
                         selectedServiceIds.add(serviceId)
@@ -296,68 +305,32 @@ class CreateEditOfferActivity : BaseAdminActivity() {
         }
 
         val discount = ((originalPrice - comboPrice) / originalPrice * 100).toInt()
-        val serviceIdsString = selectedServiceIds.joinToString(",")
 
         lifecycleScope.launch {
             try {
-                val db = AppDatabase.getInstance(this@CreateEditOfferActivity)
-                val offerDao = db.offerDao()
-
-                // Obtener firebaseId si es edición
-                var firebaseId: String? = null
-                if (offerId != null) {
-                    val existingOffer = offerDao.getById(offerId!!)
-                    firebaseId = existingOffer?.firebaseId
-                }
-
-                val offer = OfferEntity(
-                    id = offerId ?: 0,
+                // Crear objeto Offer de Firebase
+                val offer = Offer(
+                    id = offerId ?: "", // Si es edición, usar offerId; si es nuevo, Firebase generará el ID
                     title = title,
                     description = description,
-                    serviceIds = serviceIdsString,
+                    serviceIds = selectedServiceIds, // Lista de String IDs
                     originalPrice = originalPrice,
                     comboPrice = comboPrice,
                     discountPercent = discount,
-                    startDate = startDateMillis,
-                    endDate = endDateMillis,
+                    startDate = Timestamp(Date(startDateMillis)),
+                    endDate = Timestamp(Date(endDateMillis)),
                     isActive = switchIsActive.isChecked,
-                    firebaseId = firebaseId
+                    createdAt = Timestamp.now(),
+                    updatedAt = Timestamp.now()
                 )
 
-                // Guardar en Room
-                val savedId = if (offerId == null) {
-                    offerDao.insert(offer)
+                // Guardar o actualizar en Firebase
+                if (offerId == null) {
+                    offerRepository.insert(offer)
+                    android.util.Log.d("CreateEditOffer", "✅ Nueva oferta creada en Firebase")
                 } else {
-                    offerDao.update(offer)
-                    offerId!!
-                }
-
-                // Sincronizar con Firebase
-                if (isNetworkAvailable()) {
-                    val offerToSync = if (offerId == null) {
-                        offer.copy(id = savedId)
-                    } else {
-                        offer
-                    }
-
-                    com.universidad.streamzone.data.remote.FirebaseService.sincronizarOferta(
-                        offer = offerToSync,
-                        onSuccess = { newFirebaseId ->
-                            lifecycleScope.launch {
-                                // Actualizar firebaseId en Room si es nueva
-                                if (firebaseId == null) {
-                                    offerDao.update(offerToSync.copy(
-                                        firebaseId = newFirebaseId,
-                                        sincronizado = true
-                                    ))
-                                }
-                                android.util.Log.d("CreateEditOffer", "✅ Oferta sincronizada con Firebase")
-                            }
-                        },
-                        onFailure = { e ->
-                            android.util.Log.e("CreateEditOffer", "❌ Error al sincronizar con Firebase: ${e.message}")
-                        }
-                    )
+                    offerRepository.update(offer)
+                    android.util.Log.d("CreateEditOffer", "✅ Oferta actualizada en Firebase")
                 }
 
                 runOnUiThread {
@@ -370,6 +343,7 @@ class CreateEditOfferActivity : BaseAdminActivity() {
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("CreateEditOffer", "❌ Error al guardar oferta", e)
                 runOnUiThread {
                     Toast.makeText(
                         this@CreateEditOfferActivity,
@@ -378,24 +352,6 @@ class CreateEditOfferActivity : BaseAdminActivity() {
                     ).show()
                 }
             }
-        }
-    }
-
-    /**
-     * Verificar conectividad
-     */
-    private fun isNetworkAvailable(): Boolean {
-        return try {
-            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
-                    as android.net.ConnectivityManager
-            val network = cm.activeNetwork ?: return false
-            val caps = cm.getNetworkCapabilities(network) ?: return false
-
-            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
-                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
-        } catch (e: Exception) {
-            false
         }
     }
 }

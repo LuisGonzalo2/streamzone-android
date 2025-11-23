@@ -24,6 +24,7 @@ local.properties
 *.class
 
 # Generated files
+temp_auto_push.bat
 bin/
 gen/
 out/
@@ -50,3 +51,5 @@ freeline_project_description.json
 # Local temp files created by scripts
 /commit_msg.txt
 /pr_body.md
+.gitignore
+branch_structure.json

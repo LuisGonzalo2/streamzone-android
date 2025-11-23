@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.universidad.streamzone.data.firebase.repository.UserRepository
 import com.universidad.streamzone.ui.auth.LoginActivity
 import com.universidad.streamzone.util.PermissionManager
 import kotlinx.coroutines.launch
@@ -16,6 +17,9 @@ import kotlinx.coroutines.launch
  * Valida automáticamente permisos y sesión de usuario
  */
 abstract class BaseAdminActivity : AppCompatActivity() {
+
+    // Firebase Repository
+    private val userRepository = UserRepository()
 
     protected lateinit var permissionManager: PermissionManager
     protected lateinit var sharedPrefs: SharedPreferences
@@ -123,14 +127,8 @@ abstract class BaseAdminActivity : AppCompatActivity() {
     //Verificar si el usuario tiene algún rol asignado
     private suspend fun hasAnyRole(userEmail: String): Boolean {
         return try {
-            val db = com.universidad.streamzone.data.local.database.AppDatabase.getInstance(this)
-            val usuarioDao = db.usuarioDao()
-            val userRoleDao = db.userRoleDao()
-
-            val usuario = usuarioDao.buscarPorEmail(userEmail) ?: return false
-            val roles = userRoleDao.getRolesByUserId(usuario.id)
-
-            roles.isNotEmpty()
+            val user = userRepository.findByEmail(userEmail) ?: return false
+            user.roleIds.isNotEmpty()
         } catch (e: Exception) {
             false
         }

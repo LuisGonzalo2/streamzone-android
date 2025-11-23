@@ -13,14 +13,14 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.firebase.repository.ServiceRepository
 import com.universidad.streamzone.data.model.Service
 import com.universidad.streamzone.ui.auth.LoginActivity
 import com.universidad.streamzone.ui.components.NavbarManager
 import com.universidad.streamzone.ui.home.PurchaseDialogFragment
 import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
 import com.universidad.streamzone.ui.home.adapter.ServiceAdapter
-import com.universidad.streamzone.util.toServiceList
+import com.universidad.streamzone.util.toUIServiceList
 import kotlinx.coroutines.launch
 
 class CategoryActivity : AppCompatActivity() {
@@ -30,6 +30,9 @@ class CategoryActivity : AppCompatActivity() {
     private lateinit var tvCategorySubtitle: TextView
     private lateinit var tvCategoryIcon: TextView
     private lateinit var btnBack: MaterialButton
+
+    // Firebase Repository
+    private val serviceRepository = ServiceRepository()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,9 +91,9 @@ class CategoryActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         // Obtener el ID de la categoría desde el Intent
-        val categoryId = intent.getIntExtra("CATEGORY_ID", -1)
+        val categoryId = intent.getStringExtra("CATEGORY_ID") ?: ""
 
-        if (categoryId == -1) {
+        if (categoryId.isEmpty()) {
             showToast("Error: Categoría no encontrada")
             finish()
             return
@@ -101,15 +104,12 @@ class CategoryActivity : AppCompatActivity() {
         val spacingPx = (resources.displayMetrics.density * 12).toInt()
         rvServices.addItemDecoration(GridSpacingItemDecoration(2, spacingPx, true))
 
-        // Cargar servicios desde la BD
+        // Cargar servicios desde Firebase
         lifecycleScope.launch {
             try {
-                val db = AppDatabase.getInstance(this@CategoryActivity)
-                val serviceDao = db.serviceDao()
-
-                // Obtener servicios de la categoría
-                val serviceEntities = serviceDao.obtenerServiciosPorCategoriaSync(categoryId)
-                val services = serviceEntities.toServiceList()
+                // Obtener servicios de la categoría desde Firebase
+                val firebaseServices = serviceRepository.getServicesByCategory(categoryId)
+                val services = firebaseServices.toUIServiceList()
 
                 // Actualizar UI en el hilo principal
                 runOnUiThread {

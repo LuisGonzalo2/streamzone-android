@@ -1,13 +1,14 @@
 package com.universidad.streamzone.util
 
-import android.content.Context
-import com.universidad.streamzone.data.local.database.AppDatabase
-import com.universidad.streamzone.data.model.UsuarioEntity
+import com.universidad.streamzone.data.firebase.models.User
+import com.universidad.streamzone.data.firebase.repository.UserRepository
 
 /**
- * Manager para validar permisos de usuarios
+ * Manager para validar permisos de usuarios con Firebase
  */
-class PermissionManager(private val context: Context) {
+class PermissionManager {
+
+    private val userRepository = UserRepository()
 
     companion object {
         // Códigos de permisos
@@ -29,56 +30,30 @@ class PermissionManager(private val context: Context) {
      * Verifica si un usuario tiene un permiso específico
      */
     suspend fun hasPermission(userEmail: String, permissionCode: String): Boolean {
-        val db = AppDatabase.getInstance(context)
-        val usuarioDao = db.usuarioDao()
-        val permissionDao = db.permissionDao()
-        val userRoleDao = db.userRoleDao()
-
         // Obtener usuario
-        val usuario = usuarioDao.buscarPorEmail(userEmail) ?: return false
+        val user = userRepository.findByEmail(userEmail) ?: return false
 
         // Si es admin, tiene acceso completo
-        if (usuario.isAdmin) {
+        if (user.isAdmin) {
             return true
         }
 
-        // Obtener roles del usuario
-        val userRoles = userRoleDao.getRolesByUserId(usuario.id)
-
-        // Verificar si alguno de sus roles tiene el permiso
-        userRoles.forEach { roleId ->
-            val permissions = permissionDao.getPermissionsByRole(roleId)
-
-            // Si tiene FULL_ACCESS, tiene todos los permisos
-            if (permissions.any { it.code == FULL_ACCESS }) {
-                return true
-            }
-
-            // Verificar permiso específico
-            if (permissions.any { it.code == permissionCode }) {
-                return true
-            }
-        }
-
-        return false
+        // Verificar permisos a través del repositorio
+        return userRepository.hasPermission(user.id, permissionCode)
     }
 
     /**
      * Verifica si el usuario es administrador
      */
     suspend fun isAdmin(userEmail: String): Boolean {
-        val db = AppDatabase.getInstance(context)
-        val usuarioDao = db.usuarioDao()
-        val usuario = usuarioDao.buscarPorEmail(userEmail) ?: return false
-        return usuario.isAdmin
+        val user = userRepository.findByEmail(userEmail) ?: return false
+        return user.isAdmin
     }
 
     /**
      * Obtiene el usuario por email
      */
-    suspend fun getUser(userEmail: String): UsuarioEntity? {
-        val db = AppDatabase.getInstance(context)
-        val usuarioDao = db.usuarioDao()
-        return usuarioDao.buscarPorEmail(userEmail)
+    suspend fun getUser(userEmail: String): User? {
+        return userRepository.findByEmail(userEmail)
     }
 }

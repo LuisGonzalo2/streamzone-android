@@ -3,7 +3,6 @@ package com.universidad.streamzone.ui.auth
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.ConnectivityManager
-import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.text.Editable
@@ -12,9 +11,7 @@ import android.text.InputType
 import android.text.TextWatcher
 import android.util.Log
 import android.util.Patterns
-import android.widget.ArrayAdapter
 import android.widget.CheckBox
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -22,40 +19,18 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import com.google.firebase.Timestamp
 import com.hbb20.CountryCodePicker
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.remote.FirebaseService
-import com.universidad.streamzone.data.local.dao.UsuarioDao
-import com.universidad.streamzone.data.local.database.AppDatabase
-import com.universidad.streamzone.data.model.UsuarioEntity
+import com.universidad.streamzone.data.firebase.models.User
+import com.universidad.streamzone.data.firebase.repository.UserRepository
 import kotlinx.coroutines.launch
-import kotlin.text.substringAfterLast
 
 class RegisterActivity : AppCompatActivity() {
 
-    private fun registerNetworkCallback() {
-        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                // Conexión restaurada, no mostrar mensaje
-            }
-
-            override fun onLost(network: Network) {
-                // Conexión perdida, no mostrar mensaje
-            }
-        }
-
-        try {
-            connectivityManager.registerDefaultNetworkCallback(networkCallback!!)
-        } catch (e: Exception) {
-            // Silencioso
-        }
-    }private lateinit var tilFullName: TextInputLayout
+    private lateinit var tilFullName: TextInputLayout
     private lateinit var tilEmail: TextInputLayout
-    // AÑADE ESTA LÍNEA
     private lateinit var ccp: CountryCodePicker
-
     private lateinit var tilPassword: TextInputLayout
     private lateinit var tilConfirmPassword: TextInputLayout
     private lateinit var tilPhone: TextInputLayout
@@ -70,12 +45,17 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var btnRegister: MaterialButton
     private lateinit var tvBackToLogin: TextView
 
-
     private var isPasswordVisible = false
     private var isConfirmPasswordVisible = false
 
     private lateinit var sharedPrefs: SharedPreferences
-    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+
+    // Firebase Repository
+    private val userRepository = UserRepository()
+
+    companion object {
+        private const val TAG = "RegisterActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -123,11 +103,6 @@ class RegisterActivity : AppCompatActivity() {
         checkShowPassword = findViewById(R.id.check_show_password)
         tvBackToLogin = findViewById(R.id.tv_back_to_login)
         ccp.registerCarrierNumberEditText(etPhone)
-
-
-
-
-
     }
 
     private fun setupPhone() {
@@ -151,9 +126,7 @@ class RegisterActivity : AppCompatActivity() {
         // Listener para quitar el 0 inicial automáticamente
         etPhone.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
             override fun afterTextChanged(s: Editable?) {
                 if (s != null && s.isNotEmpty() && s[0] == '0') {
                     etPhone.setText(s.substring(1))
@@ -162,8 +135,6 @@ class RegisterActivity : AppCompatActivity() {
             }
         })
     }
-
-
 
     private fun setupListeners() {
         btnRegister.setOnClickListener {
@@ -201,8 +172,6 @@ class RegisterActivity : AppCompatActivity() {
             etPassword.setSelection(etPassword.text?.length ?: 0)
             etConfirmPassword.setSelection(etConfirmPassword.text?.length ?: 0)
         }
-
-
     }
 
     private fun handleRegister() {
@@ -213,7 +182,6 @@ class RegisterActivity : AppCompatActivity() {
         val password = etPassword.text.toString()
         val confirmPassword = etConfirmPassword.text.toString()
 
-
         clearAllErrors()
 
         if (!validateFullName(fullName)) return
@@ -222,26 +190,26 @@ class RegisterActivity : AppCompatActivity() {
         if (!validatePassword(password)) return
         if (!validateConfirmPassword(password, confirmPassword)) return
 
-        // Mostrar que está procesando
-        runOnUiThread {
-            btnRegister.isEnabled = false
-            btnRegister.text = "Creando cuenta..."
+        if (!isNetworkAvailable()) {
+            Toast.makeText(
+                this,
+                "Se requiere conexión a internet para registrarse",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
         }
 
-        val dao = AppDatabase.Companion.getInstance(this).usuarioDao()
+        // Mostrar que está procesando
+        btnRegister.isEnabled = false
+        btnRegister.text = "Creando cuenta..."
 
         lifecycleScope.launch {
             try {
-                Log.d("RegisterActivity", "Iniciando registro para: $email")
+                Log.d(TAG, "Iniciando registro para: $email")
 
-                // PASO 1: Verificar duplicados locales (Room)
-                val usuarioExistentePorEmail = dao.buscarPorEmail(email)
-                val usuarioExistentePorTelefono = dao.buscarPorTelefono(phone)
-
-                Log.d("RegisterActivity", "Usuario por email en Room: $usuarioExistentePorEmail")
-                Log.d("RegisterActivity", "Usuario por teléfono en Room: $usuarioExistentePorTelefono")
-
-                if (usuarioExistentePorEmail != null) {
+                // Verificar si el email ya existe
+                val userByEmail = userRepository.findByEmail(email)
+                if (userByEmail != null) {
                     runOnUiThread {
                         tilEmail.error = "Este correo ya está registrado"
                         btnRegister.isEnabled = true
@@ -250,7 +218,9 @@ class RegisterActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                if (usuarioExistentePorTelefono != null) {
+                // Verificar si el teléfono ya existe
+                val userByPhone = userRepository.findByPhone(phone)
+                if (userByPhone != null) {
                     runOnUiThread {
                         etPhone.error = "Este número ya está registrado"
                         btnRegister.isEnabled = true
@@ -259,200 +229,42 @@ class RegisterActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                // PASO 2: Si hay internet, verificar duplicados en Firebase
-                val hayInternet = isNetworkAvailable()
-                Log.d("RegisterActivity", "Hay internet: $hayInternet")
-
-                if (hayInternet) {
-                    // Verificar email en Firebase
-                    FirebaseService.verificarEmailExiste(email) { emailExiste ->
-                        if (emailExiste) {
-                            runOnUiThread {
-                                tilEmail.error = "Este correo ya está registrado"
-                                btnRegister.isEnabled = true
-                                btnRegister.text = "Crear cuenta"
-                            }
-                            return@verificarEmailExiste
-                        }
-
-                        // Verificar teléfono en Firebase
-                        FirebaseService.verificarTelefonoExiste(phone) { telefonoExiste ->
-                            if (telefonoExiste) {
-                                runOnUiThread {
-                                    etPhone.error = "Este número ya está registrado"
-                                    btnRegister.isEnabled = true
-                                    btnRegister.text = "Crear cuenta"
-                                }
-                                return@verificarTelefonoExiste
-                            }
-
-                            // PASO 3: No hay duplicados, proceder a guardar
-                            guardarUsuario(fullName, email, phone, password, confirmPassword, dao, hayInternet)
-                        }
-                    }
-                } else {
-                    // Sin internet, solo guardar localmente
-                    guardarUsuario(fullName, email, phone, password, confirmPassword, dao, hayInternet)
-                }
-
-            } catch (e: Exception) {
-                Log.e("RegisterActivity", "Error general en handleRegister", e)
-                runOnUiThread {
-                    btnRegister.isEnabled = true
-                    btnRegister.text = "Crear cuenta"
-                    Toast.makeText(
-                        this@RegisterActivity,
-                        "Error al crear la cuenta. Intenta de nuevo",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun guardarUsuario(
-        fullName: String,
-        email: String,
-        phone: String,
-        password: String,
-        confirmPassword: String,
-        dao: UsuarioDao,
-        hayInternet: Boolean
-    ) {
-        lifecycleScope.launch {
-            try {
-                // Obtener número completo con código de país
-                val fullPhoneNumber = ccp.fullNumberWithPlus.replace("+", "")
-                // Crear usuario
-                val usuario = UsuarioEntity(
+                // Crear nuevo usuario
+                val newUser = User(
                     fullname = fullName,
                     email = email,
                     phone = phone,
                     password = password,
-                    confirmPassword = confirmPassword,
-                    sincronizado = false
+                    photoUrl = null,
+                    isAdmin = false,
+                    roleIds = emptyList(),
+                    createdAt = Timestamp.now(),
+                    updatedAt = Timestamp.now()
                 )
 
-                Log.d("RegisterActivity", "Usuario creado: $usuario")
+                // Guardar en Firebase
+                val userId = userRepository.insert(newUser)
+                Log.d(TAG, "✅ Usuario creado exitosamente con ID: $userId")
 
-                if (hayInternet) {
-                    Log.d("RegisterActivity", "Guardando en Firebase...")
-                    runOnUiThread {
-                        btnRegister.text = "Creando cuenta..."
-                    }
-
-                    // HAY INTERNET: Intentar guardar en Firebase primero
-                    FirebaseService.guardarUsuario(
-                        usuario = usuario,
-                        onSuccess = { firebaseId ->
-                            Log.d("RegisterActivity", "Guardado en Firebase con ID: $firebaseId")
-                            lifecycleScope.launch {
-                                try {
-                                    // Guardar en Room con flag sincronizado
-                                    val usuarioSincronizado = usuario.copy(
-                                        sincronizado = true,
-                                        firebaseId = firebaseId
-                                    )
-                                    dao.insertar(usuarioSincronizado)
-                                    Log.d("RegisterActivity", "Guardado en Room")
-
-                                    runOnUiThread {
-                                        btnRegister.isEnabled = true
-                                        btnRegister.text = "Crear cuenta"
-                                        Toast.makeText(
-                                            this@RegisterActivity,
-                                            "Cuenta creada exitosamente",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        navigateToLogin()
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("RegisterActivity", "Error al guardar en Room", e)
-                                    runOnUiThread {
-                                        btnRegister.isEnabled = true
-                                        btnRegister.text = "Crear cuenta"
-                                        Toast.makeText(
-                                            this@RegisterActivity,
-                                            "Error al crear la cuenta. Intenta de nuevo",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                }
-                            }
-                        },
-                        onFailure = { e ->
-                            Log.e("RegisterActivity", "Error en Firebase", e)
-                            lifecycleScope.launch {
-                                try {
-                                    // Si falla Firebase, guardar solo en Room
-                                    dao.insertar(usuario)
-                                    Log.d("RegisterActivity", "Guardado solo en Room")
-                                    runOnUiThread {
-                                        btnRegister.isEnabled = true
-                                        btnRegister.text = "Crear cuenta"
-                                        Toast.makeText(
-                                            this@RegisterActivity,
-                                            "Cuenta creada exitosamente",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        navigateToLogin()
-                                    }
-                                } catch (ex: Exception) {
-                                    Log.e("RegisterActivity", "Error al guardar en Room", ex)
-                                    runOnUiThread {
-                                        btnRegister.isEnabled = true
-                                        btnRegister.text = "Crear cuenta"
-                                        Toast.makeText(
-                                            this@RegisterActivity,
-                                            "Error al crear la cuenta. Intenta de nuevo",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                }
-                            }
-                        }
-                    )
-                } else {
-                    Log.d("RegisterActivity", "Sin internet, guardando solo en Room...")
-                    runOnUiThread {
-                        btnRegister.text = "Creando cuenta..."
-                    }
-
-                    try {
-                        // NO HAY INTERNET: Guardar solo en Room
-                        dao.insertar(usuario)
-                        Log.d("RegisterActivity", "Guardado en Room exitosamente")
-                        runOnUiThread {
-                            btnRegister.isEnabled = true
-                            btnRegister.text = "Crear cuenta"
-                            Toast.makeText(
-                                this@RegisterActivity,
-                                "Cuenta creada exitosamente",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            navigateToLogin()
-                        }
-                    } catch (e: Exception) {
-                        Log.e("RegisterActivity", "Error al guardar en Room", e)
-                        runOnUiThread {
-                            btnRegister.isEnabled = true
-                            btnRegister.text = "Crear cuenta"
-                            Toast.makeText(
-                                this@RegisterActivity,
-                                "Error al crear la cuenta. Intenta de nuevo",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("RegisterActivity", "Error en guardarUsuario", e)
                 runOnUiThread {
                     btnRegister.isEnabled = true
                     btnRegister.text = "Crear cuenta"
                     Toast.makeText(
                         this@RegisterActivity,
-                        "Error al crear la cuenta. Intenta de nuevo",
+                        "Cuenta creada exitosamente",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    navigateToLogin()
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error al crear la cuenta", e)
+                runOnUiThread {
+                    btnRegister.isEnabled = true
+                    btnRegister.text = "Crear cuenta"
+                    Toast.makeText(
+                        this@RegisterActivity,
+                        "Error al crear la cuenta: ${e.message}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -487,7 +299,6 @@ class RegisterActivity : AppCompatActivity() {
                 etFullName.requestFocus()
                 false
             }
-
             else -> true
         }
     }
@@ -504,7 +315,6 @@ class RegisterActivity : AppCompatActivity() {
                 etEmail.requestFocus()
                 false
             }
-
             !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                 tilEmail.error = "Formato de correo inválido"
                 etEmail.requestFocus()
@@ -561,11 +371,10 @@ class RegisterActivity : AppCompatActivity() {
                 false
             }
             password.length > 20 -> {
-                tilPassword.error = "La contraseña debe tener como maximo 20 caracteres"
+                tilPassword.error = "La contraseña debe tener como máximo 20 caracteres"
                 etPassword.requestFocus()
                 false
             }
-
             !password.matches(Regex(".*[A-Z].*")) -> {
                 tilPassword.error = "Debe contener al menos una mayúscula"
                 etPassword.requestFocus()

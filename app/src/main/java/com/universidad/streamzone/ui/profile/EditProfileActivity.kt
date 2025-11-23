@@ -22,8 +22,8 @@ import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.lifecycleScope
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
-import com.universidad.streamzone.data.remote.FirebaseService
+import com.universidad.streamzone.data.firebase.repository.UserRepository
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
 import com.google.android.material.button.MaterialButton
 import com.hbb20.CountryCodePicker
@@ -31,6 +31,9 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 
 class EditProfileActivity : AppCompatActivity() {
+
+    // Firebase Repository
+    private val userRepository = UserRepository()
 
     private lateinit var sharedPrefs: SharedPreferences
     private lateinit var etFullName: EditText
@@ -176,24 +179,28 @@ class EditProfileActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val dao = AppDatabase.getInstance(this@EditProfileActivity).usuarioDao()
-                val usuario = dao.buscarPorEmail(userEmail)
+                // Obtener usuario desde Firebase
+                val user = userRepository.findByEmail(userEmail)
 
-                usuario?.let { user ->
+                user?.let {
                     runOnUiThread {
-                        etFullName.setText(user.fullname)
+                        etFullName.setText(it.fullname)
+                        tvPhoneDisplay.text = it.phone
 
-                        tvPhoneDisplay.text = user.phone
                         // Cargar foto de perfil si existe
-                        if (!user.fotoBase64.isNullOrEmpty()) {
-                            val bitmap = convertirBase64ABitmap(user.fotoBase64!!)
-                            imgFotoPerfil.setImageBitmap(bitmap)
-                            fotoBase64 = user.fotoBase64
+                        // TODO: Cargar desde Firebase Storage URL cuando se implemente
+                        // Por ahora mantenemos compatibilidad con base64 si existe
+                        if (!it.photoUrl.isNullOrEmpty()) {
+                            // Aquí podrías usar Glide o Coil para cargar la imagen desde URL
+                            Log.d("EditProfile", "Photo URL: ${it.photoUrl}")
                         }
                     }
                 }
             } catch (e: Exception) {
                 Log.e("EditProfile", "Error al cargar datos", e)
+                runOnUiThread {
+                    Toast.makeText(this@EditProfileActivity, "Error al cargar datos del perfil", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -385,10 +392,10 @@ class EditProfileActivity : AppCompatActivity() {
         // Guardar cambios
         lifecycleScope.launch {
             try {
-                val dao = AppDatabase.getInstance(this@EditProfileActivity).usuarioDao()
-                val usuario = dao.buscarPorEmail(userEmail)
+                // Obtener usuario desde Firebase
+                val user = userRepository.findByEmail(userEmail)
 
-                if (usuario == null) {
+                if (user == null) {
                     runOnUiThread {
                         Toast.makeText(this@EditProfileActivity, "Error: Usuario no encontrado", Toast.LENGTH_SHORT).show()
                     }
@@ -396,7 +403,7 @@ class EditProfileActivity : AppCompatActivity() {
                 }
 
                 // Verificar contraseña actual (SIEMPRE)
-                if (usuario.password != currentPassword) {
+                if (user.password != currentPassword) {
                     runOnUiThread {
                         Toast.makeText(this@EditProfileActivity, "❌ La contraseña actual es incorrecta", Toast.LENGTH_LONG).show()
                         etCurrentPassword.requestFocus()
@@ -405,24 +412,16 @@ class EditProfileActivity : AppCompatActivity() {
                 }
 
                 // Actualizar datos (incluye foto si cambió)
-                val updatedUser = usuario.copy(
+                val updatedUser = user.copy(
                     fullname = newFullName,
-                    password = if (changingPassword) newPassword else usuario.password,
-                    fotoBase64 = fotoBase64 ?: usuario.fotoBase64  // Mantener foto existente si no cambió
+                    password = if (changingPassword) newPassword else user.password,
+                    photoUrl = fotoBase64 ?: user.photoUrl,  // TODO: Subir a Firebase Storage
+                    updatedAt = Timestamp.now()
                 )
 
-                dao.actualizar(updatedUser)
-
-                // Sincronizar con Firebase
-                FirebaseService.actualizarUsuario(
-                    updatedUser,
-                    onSuccess = {
-                        Log.d("EditProfile", "Usuario sincronizado con Firebase")
-                    },
-                    onFailure = { e ->
-                        Log.e("EditProfile", "Error al sincronizar con Firebase", e)
-                    }
-                )
+                // Guardar directamente en Firebase
+                userRepository.update(updatedUser)
+                Log.d("EditProfile", "✅ Usuario actualizado en Firebase")
 
                 // Actualizar SharedPreferences
                 sharedPrefs.edit().apply {
@@ -443,7 +442,7 @@ class EditProfileActivity : AppCompatActivity() {
                 }
 
             } catch (e: Exception) {
-                Log.e("EditProfile", "Error al guardar cambios", e)
+                Log.e("EditProfile", "❌ Error al guardar cambios", e)
                 runOnUiThread {
                     Toast.makeText(
                         this@EditProfileActivity,

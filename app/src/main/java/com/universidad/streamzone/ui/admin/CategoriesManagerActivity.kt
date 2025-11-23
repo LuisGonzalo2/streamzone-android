@@ -13,10 +13,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.Timestamp
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.firebase.repository.CategoryRepository
 import com.universidad.streamzone.data.model.CategoryEntity
 import com.universidad.streamzone.util.PermissionManager
+import com.universidad.streamzone.util.toCategoryEntityList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -24,6 +26,9 @@ import kotlinx.coroutines.withContext
 class CategoriesManagerActivity : BaseAdminActivity() {
 
     override val requiredPermission: String = PermissionManager.MANAGE_CATEGORIES
+
+    // Firebase Repository
+    private val categoryRepository = CategoryRepository()
 
     private lateinit var btnBack: ImageButton
     private lateinit var rvCategories: RecyclerView
@@ -61,7 +66,7 @@ class CategoriesManagerActivity : BaseAdminActivity() {
             categories = emptyList(),
             onEditClick = { category ->
                 val intent = Intent(this, CreateEditCategoryActivity::class.java)
-                intent.putExtra("CATEGORY_ID", category.id.toLong())
+                intent.putExtra("CATEGORY_ID", category.firebaseId ?: "")
                 startActivity(intent)
             },
             onToggleClick = { category ->
@@ -81,30 +86,31 @@ class CategoriesManagerActivity : BaseAdminActivity() {
     private fun loadCategories() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val db = AppDatabase.getInstance(this@CategoriesManagerActivity)
-                val categoryDao = db.categoryDao()
+                // Obtener TODAS las categorías desde Firebase
+                val firebaseCategories = categoryRepository.getAllSync()
 
-                // Obtener TODAS las categorías (activas e inactivas) de forma síncrona
-                val allCategories = categoryDao.obtenerTodasSync()
+                // Convertir a CategoryEntity para la UI
+                val categoryEntities = firebaseCategories.toCategoryEntityList()
 
                 withContext(Dispatchers.Main) {
-                    if (allCategories.isEmpty()) {
+                    if (categoryEntities.isEmpty()) {
                         rvCategories.visibility = View.GONE
                         llEmptyState.visibility = View.VISIBLE
                     } else {
                         rvCategories.visibility = View.VISIBLE
                         llEmptyState.visibility = View.GONE
-                        categoryAdapter.updateCategories(allCategories)
+                        categoryAdapter.updateCategories(categoryEntities)
                     }
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("CategoriesManager", "❌ Error al cargar categorías", e)
                 withContext(Dispatchers.Main) {
-                    //Toast.makeText(
-                       // this@CategoriesManagerActivity,
-                       // "Error al cargar categorías: ${e.message}",
-                       // Toast.LENGTH_SHORT
-                    //).show()
+                    Toast.makeText(
+                        this@CategoriesManagerActivity,
+                        "Error al cargar categorías: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -113,22 +119,30 @@ class CategoriesManagerActivity : BaseAdminActivity() {
     private fun toggleCategoryStatus(category: CategoryEntity) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val db = AppDatabase.getInstance(this@CategoriesManagerActivity)
-                val categoryDao = db.categoryDao()
+                if (category.firebaseId != null) {
+                    // Obtener la categoría de Firebase
+                    val firebaseCategory = categoryRepository.findById(category.firebaseId!!)
+                    if (firebaseCategory != null) {
+                        // Actualizar el estado en Firebase
+                        val updatedCategory = firebaseCategory.copy(
+                            isActive = !firebaseCategory.isActive,
+                            updatedAt = Timestamp.now()
+                        )
+                        categoryRepository.update(updatedCategory)
 
-                val updatedCategory = category.copy(isActive = !category.isActive)
-                categoryDao.actualizar(updatedCategory)
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@CategoriesManagerActivity,
-                        if (updatedCategory.isActive) "Categoría activada" else "Categoría desactivada",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    loadCategories()
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(
+                                this@CategoriesManagerActivity,
+                                if (updatedCategory.isActive) "Categoría activada" else "Categoría desactivada",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            loadCategories()
+                        }
+                    }
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("CategoriesManager", "❌ Error al actualizar categoría", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@CategoriesManagerActivity,

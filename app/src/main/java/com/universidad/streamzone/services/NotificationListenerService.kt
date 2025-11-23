@@ -2,13 +2,12 @@ package com.universidad.streamzone.services
 
 import android.content.Context
 import android.util.Log
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import com.universidad.streamzone.data.local.database.AppDatabase
-import com.universidad.streamzone.data.model.CategoryEntity
-import com.universidad.streamzone.data.model.NotificationEntity
-import com.universidad.streamzone.data.model.NotificationType
-import com.universidad.streamzone.data.model.ServiceEntity
+import com.universidad.streamzone.data.firebase.models.Notification
+import com.universidad.streamzone.data.firebase.models.NotificationType
+import com.universidad.streamzone.data.firebase.repository.NotificationRepository
 import com.universidad.streamzone.util.NotificationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +23,7 @@ class NotificationListenerService(private val context: Context) {
     private val TAG = "NotificationListener"
     private val db = FirebaseFirestore.getInstance()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val notificationRepository = NotificationRepository()
 
     private var categoriesListener: ListenerRegistration? = null
     private var servicesListener: ListenerRegistration? = null
@@ -44,7 +44,6 @@ class NotificationListenerService(private val context: Context) {
      */
     fun startListening() {
         Log.d(TAG, "🚀 Iniciando listeners de notificaciones...")
-        Log.d(TAG, "⏳ isFirstLoad = true (se cambiará a false en 2 segundos)")
 
         listenToCategories()
         listenToServices()
@@ -58,8 +57,6 @@ class NotificationListenerService(private val context: Context) {
             isFirstLoad = false
             Log.d(TAG, "✅ isFirstLoad = false (ya pueden enviarse notificaciones)")
         }
-
-        Log.d(TAG, "Listeners de notificaciones iniciados")
     }
 
     /**
@@ -71,7 +68,6 @@ class NotificationListenerService(private val context: Context) {
         offersListener?.remove()
         purchasesListener?.remove()
         userRolesListener?.remove()
-
         Log.d(TAG, "Listeners de notificaciones detenidos")
     }
 
@@ -94,33 +90,6 @@ class NotificationListenerService(private val context: Context) {
 
                     when (change.type) {
                         com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
-                            // Sincronizar a base de datos local
-                            serviceScope.launch {
-                                try {
-                                    val appDb = AppDatabase.getInstance(context)
-                                    val categoryDao = appDb.categoryDao()
-
-                                    // Verificar si ya existe
-                                    val existingCategory = categoryDao.obtenerPorCategoryId(categoryId)
-                                    if (existingCategory == null) {
-                                        val newCategory = CategoryEntity(
-                                            id = 0,
-                                            categoryId = categoryId,
-                                            name = categoryName,
-                                            icon = categoryIcon,
-                                            description = "",
-                                            gradientStart = "#1E3A8A",
-                                            gradientEnd = "#3B82F6",
-                                            isActive = isActive
-                                        )
-                                        categoryDao.insertar(newCategory)
-                                        Log.d(TAG, "✅ Categoría sincronizada desde Firebase: $categoryName")
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Error al sincronizar categoría", e)
-                                }
-                            }
-
                             if (!seenCategories.contains(categoryId) && !isFirstLoad) {
                                 createNotification(
                                     title = "Nueva categoría disponible",
@@ -134,26 +103,6 @@ class NotificationListenerService(private val context: Context) {
                             seenCategories.add(categoryId)
                         }
                         com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
-                            // Actualizar en base de datos local
-                            serviceScope.launch {
-                                try {
-                                    val appDb = AppDatabase.getInstance(context)
-                                    val categoryDao = appDb.categoryDao()
-                                    val existingCategory = categoryDao.obtenerPorCategoryId(categoryId)
-                                    if (existingCategory != null) {
-                                        val updatedCategory = existingCategory.copy(
-                                            name = categoryName,
-                                            icon = categoryIcon,
-                                            isActive = isActive
-                                        )
-                                        categoryDao.actualizar(updatedCategory)
-                                        Log.d(TAG, "✅ Categoría actualizada desde Firebase: $categoryName")
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Error al actualizar categoría", e)
-                                }
-                            }
-
                             if (seenCategories.contains(categoryId) && isActive) {
                                 createNotification(
                                     title = "Categoría actualizada",
@@ -183,44 +132,11 @@ class NotificationListenerService(private val context: Context) {
                 snapshots?.documentChanges?.forEach { change ->
                     val serviceId = change.document.id
                     val serviceName = change.document.getString("name") ?: "Nuevo servicio"
-                    val serviceDescription = change.document.getString("description") ?: ""
                     val servicePrice = change.document.getString("price") ?: ""
                     val isActive = change.document.getBoolean("isActive") ?: true
-                    val isPopular = change.document.getBoolean("isPopular") ?: false
-                    val categoryId = change.document.getLong("categoryId")?.toInt() ?: 0
 
                     when (change.type) {
                         com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
-                            // Sincronizar a base de datos local
-                            serviceScope.launch {
-                                try {
-                                    val appDb = AppDatabase.getInstance(context)
-                                    val serviceDao = appDb.serviceDao()
-
-                                    // Verificar si ya existe
-                                    val existingService = serviceDao.obtenerPorServiceId(serviceId)
-                                    if (existingService == null) {
-                                        val newService = ServiceEntity(
-                                            id = 0,
-                                            serviceId = serviceId,
-                                            name = serviceName,
-                                            description = serviceDescription,
-                                            price = servicePrice,
-                                            iconDrawable = null,
-                                            iconBase64 = change.document.getString("iconBase64"),
-                                            iconUrl = change.document.getString("imageUrl"),
-                                            categoryId = categoryId,
-                                            isActive = isActive,
-                                            isPopular = isPopular
-                                        )
-                                        serviceDao.insertar(newService)
-                                        Log.d(TAG, "✅ Servicio sincronizado desde Firebase: $serviceName (con imagen)")
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Error al sincronizar servicio", e)
-                                }
-                            }
-
                             if (!seenServices.contains(serviceId) && !isFirstLoad && isActive) {
                                 createNotification(
                                     title = "Nuevo servicio disponible",
@@ -234,30 +150,6 @@ class NotificationListenerService(private val context: Context) {
                             seenServices.add(serviceId)
                         }
                         com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
-                            // Actualizar en base de datos local
-                            serviceScope.launch {
-                                try {
-                                    val appDb = AppDatabase.getInstance(context)
-                                    val serviceDao = appDb.serviceDao()
-                                    val existingService = serviceDao.obtenerPorServiceId(serviceId)
-                                    if (existingService != null) {
-                                        val updatedService = existingService.copy(
-                                            name = serviceName,
-                                            description = serviceDescription,
-                                            price = servicePrice,
-                                            iconBase64 = change.document.getString("iconBase64"),
-                                            iconUrl = change.document.getString("imageUrl"),
-                                            isActive = isActive,
-                                            isPopular = isPopular
-                                        )
-                                        serviceDao.actualizar(updatedService)
-                                        Log.d(TAG, "✅ Servicio actualizado desde Firebase: $serviceName (con imagen)")
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Error al actualizar servicio", e)
-                                }
-                            }
-
                             if (seenServices.contains(serviceId) && isActive) {
                                 createNotification(
                                     title = "Servicio actualizado",
@@ -314,7 +206,6 @@ class NotificationListenerService(private val context: Context) {
      * Escucha cambios en compras
      */
     private fun listenToPurchases() {
-        // Obtener el email del usuario actual desde SharedPreferences
         val sharedPrefs = context.getSharedPreferences("StreamZoneData", Context.MODE_PRIVATE)
         val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
@@ -337,112 +228,37 @@ class NotificationListenerService(private val context: Context) {
                     val purchaseId = change.document.id
                     val serviceName = change.document.getString("serviceName") ?: "Servicio"
                     val status = change.document.getString("status") ?: "pending"
-                    val email = change.document.getString("email")
-                    val password = change.document.getString("password")
+
+                    @Suppress("UNCHECKED_CAST")
+                    val credentialsMap = change.document.get("credentials") as? Map<String, Any?>
+                    val email = credentialsMap?.get("email") as? String
+                    val password = credentialsMap?.get("password") as? String
 
                     when (change.type) {
                         com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
-                            Log.d(TAG, "➕ ADDED detectado para compra: $purchaseId - $serviceName (status: $status)")
-
-                            // Sincronizar compra nueva a Room
-                            serviceScope.launch {
-                                try {
-                                    val appDb = AppDatabase.getInstance(context)
-                                    val purchaseDao = appDb.purchaseDao()
-
-                                    // Verificar si ya existe
-                                    val existingPurchase = purchaseDao.getAll()
-                                        .find { it.firebaseId == purchaseId }
-
-                                    if (existingPurchase == null) {
-                                        val newPurchase = com.universidad.streamzone.data.model.PurchaseEntity(
-                                            id = 0,
-                                            userEmail = change.document.getString("userEmail") ?: "",
-                                            userName = change.document.getString("userName") ?: "",
-                                            serviceId = change.document.getString("serviceId") ?: "",
-                                            serviceName = serviceName,
-                                            servicePrice = change.document.getString("servicePrice") ?: "",
-                                            serviceDuration = change.document.getString("serviceDuration") ?: "",
-                                            email = email,
-                                            password = password,
-                                            purchaseDate = change.document.getLong("purchaseDate") ?: System.currentTimeMillis(),
-                                            expirationDate = change.document.getLong("expirationDate") ?: 0L,
-                                            status = status,
-                                            sincronizado = true,
-                                            firebaseId = purchaseId
-                                        )
-                                        purchaseDao.insertar(newPurchase)
-                                        Log.d(TAG, "✅ Compra sincronizada desde Firebase: $serviceName")
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Error al sincronizar compra nueva", e)
-                                }
-                            }
+                            Log.d(TAG, "➕ Nueva compra detectada: $serviceName")
                             seenPurchases.add(purchaseId)
-                            Log.d(TAG, "📝 Compra $purchaseId agregada a seenPurchases (total: ${seenPurchases.size})")
                         }
                         com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
-                            Log.d(TAG, "🔔 MODIFIED detectado para compra: $purchaseId - $serviceName")
+                            Log.d(TAG, "🔔 Compra actualizada: $serviceName (status: $status)")
 
-                            // Sincronizar actualización de compra a Room
-                            serviceScope.launch {
-                                try {
-                                    val appDb = AppDatabase.getInstance(context)
-                                    val purchaseDao = appDb.purchaseDao()
+                            // Notificar cuando se asignan credenciales
+                            if (seenPurchases.contains(purchaseId) &&
+                                status == "active" &&
+                                !email.isNullOrEmpty() &&
+                                !password.isNullOrEmpty() &&
+                                !isFirstLoad) {
 
-                                    val existingPurchase = purchaseDao.getAll()
-                                        .find { it.firebaseId == purchaseId }
-
-                                    if (existingPurchase != null) {
-                                        val updatedPurchase = existingPurchase.copy(
-                                            email = email,
-                                            password = password,
-                                            status = status,
-                                            sincronizado = true
-                                        )
-                                        purchaseDao.update(updatedPurchase)
-                                        Log.d(TAG, "✅ Compra actualizada desde Firebase: $serviceName")
-
-                                        // Debug: Verificar condiciones para notificación
-                                        Log.d(TAG, "🔍 Verificando condiciones para notificación:")
-                                        Log.d(TAG, "   - purchaseId: $purchaseId")
-                                        Log.d(TAG, "   - seenPurchases.contains(purchaseId): ${seenPurchases.contains(purchaseId)}")
-                                        Log.d(TAG, "   - status: $status (¿es 'active'?: ${status == "active"})")
-                                        Log.d(TAG, "   - email: $email (¿no vacío?: ${!email.isNullOrEmpty()})")
-                                        Log.d(TAG, "   - password: ${if (password.isNullOrEmpty()) "vacío" else "no vacío"} (¿no vacío?: ${!password.isNullOrEmpty()})")
-                                        Log.d(TAG, "   - isFirstLoad: $isFirstLoad (¿NO es primera carga?: ${!isFirstLoad})")
-                                        Log.d(TAG, "   - seenPurchases actual: $seenPurchases")
-
-                                        // Notificar cuando se asignan credenciales (estado = "active")
-                                        val shouldNotify = seenPurchases.contains(purchaseId) &&
-                                            status == "active" &&
-                                            !email.isNullOrEmpty() &&
-                                            !password.isNullOrEmpty() &&
-                                            !isFirstLoad
-
-                                        Log.d(TAG, "   ➡️ ¿Debería notificar?: $shouldNotify")
-
-                                        if (shouldNotify) {
-                                            Log.d(TAG, "📬 ENVIANDO NOTIFICACIÓN para $serviceName")
-                                            createNotification(
-                                                title = "¡Credenciales asignadas!",
-                                                message = "Tus credenciales de $serviceName están listas. Ve a 'Mis Compras' para verlas.",
-                                                type = NotificationType.PURCHASE,
-                                                icon = "✅",
-                                                userId = userEmail,
-                                                actionType = "open_purchases",
-                                                actionData = purchaseId
-                                            )
-                                            Log.d(TAG, "✅ Notificación enviada correctamente")
-                                        } else {
-                                            Log.w(TAG, "⚠️ NO se envió notificación porque alguna condición no se cumplió")
-                                        }
-                                    } else {
-                                        Log.w(TAG, "⚠️ No se encontró la compra en Room: $purchaseId")
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "❌ Error al actualizar compra", e)
-                                }
+                                Log.d(TAG, "📬 Enviando notificación de credenciales asignadas")
+                                createNotification(
+                                    title = "¡Credenciales asignadas!",
+                                    message = "Tus credenciales de $serviceName están listas. Ve a 'Mis Compras' para verlas.",
+                                    type = NotificationType.PURCHASE,
+                                    icon = "✅",
+                                    userId = userEmail,
+                                    actionType = "open_purchases",
+                                    actionData = purchaseId
+                                )
                             }
                         }
                         else -> {}
@@ -455,7 +271,6 @@ class NotificationListenerService(private val context: Context) {
      * Escucha cambios en asignación de roles a usuarios
      */
     private fun listenToUserRoles() {
-        // Obtener el email del usuario actual desde SharedPreferences
         val sharedPrefs = context.getSharedPreferences("StreamZoneData", Context.MODE_PRIVATE)
         val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
@@ -466,8 +281,9 @@ class NotificationListenerService(private val context: Context) {
 
         Log.d(TAG, "Iniciando listener de roles para: $userEmail")
 
-        userRolesListener = db.collection("user_roles")
-            .whereEqualTo("userEmail", userEmail)
+        // Escuchar cambios en el usuario (sus roleIds)
+        db.collection("users")
+            .whereEqualTo("email", userEmail)
             .addSnapshotListener { snapshots, error ->
                 if (error != null) {
                     Log.e(TAG, "Error al escuchar roles de usuario", error)
@@ -475,34 +291,18 @@ class NotificationListenerService(private val context: Context) {
                 }
 
                 snapshots?.documentChanges?.forEach { change ->
-                    val userRoleId = change.document.id
-                    val roleName = change.document.getString("roleName") ?: "Rol"
-
                     when (change.type) {
-                        com.google.firebase.firestore.DocumentChange.Type.ADDED -> {
-                            if (!seenUserRoles.contains(userRoleId) && !isFirstLoad) {
+                        com.google.firebase.firestore.DocumentChange.Type.MODIFIED -> {
+                            if (!isFirstLoad) {
                                 createNotification(
-                                    title = "¡Nuevo rol asignado!",
-                                    message = "Se te ha asignado el rol de $roleName. Ahora tienes nuevos permisos.",
+                                    title = "¡Roles actualizados!",
+                                    message = "Tus permisos han sido actualizados. Reinicia la app para verlos.",
                                     type = NotificationType.ROLE,
                                     icon = "👤",
                                     userId = userEmail,
                                     actionType = "refresh_permissions",
-                                    actionData = roleName
+                                    actionData = null
                                 )
-                            }
-                            seenUserRoles.add(userRoleId)
-                        }
-                        com.google.firebase.firestore.DocumentChange.Type.REMOVED -> {
-                            if (seenUserRoles.contains(userRoleId)) {
-                                createNotification(
-                                    title = "Rol removido",
-                                    message = "El rol de $roleName ha sido removido de tu cuenta.",
-                                    type = NotificationType.ROLE,
-                                    icon = "⚠️",
-                                    userId = userEmail
-                                )
-                                seenUserRoles.remove(userRoleId)
                             }
                         }
                         else -> {}
@@ -512,7 +312,7 @@ class NotificationListenerService(private val context: Context) {
     }
 
     /**
-     * Crea y guarda una notificación en la base de datos local
+     * Crea y guarda una notificación en Firebase
      * y muestra una notificación push local
      */
     private fun createNotification(
@@ -526,20 +326,20 @@ class NotificationListenerService(private val context: Context) {
     ) {
         serviceScope.launch {
             try {
-                val appDb = AppDatabase.getInstance(context)
-                val notificationDao = appDb.notificationDao()
-
-                val notification = NotificationEntity(
+                val notification = Notification(
                     title = title,
                     message = message,
                     type = type,
+                    timestamp = Timestamp.now(),
+                    isRead = false,
                     userId = userId,
                     actionType = actionType,
                     actionData = actionData,
-                    icon = icon
+                    icon = icon,
+                    createdAt = Timestamp.now()
                 )
 
-                notificationDao.insert(notification)
+                notificationRepository.insert(notification)
 
                 // Mostrar notificación local
                 NotificationManager.showNotification(
@@ -549,9 +349,9 @@ class NotificationListenerService(private val context: Context) {
                     icon = icon
                 )
 
-                Log.d(TAG, "Notificación creada: $title")
+                Log.d(TAG, "✅ Notificación creada: $title")
             } catch (e: Exception) {
-                Log.e(TAG, "Error al crear notificación", e)
+                Log.e(TAG, "❌ Error al crear notificación", e)
             }
         }
     }

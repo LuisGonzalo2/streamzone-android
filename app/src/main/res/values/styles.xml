@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Tipografías y tamaños reutilizables para el diálogo de compra -->
+    <style name="DialogTitle">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="DialogServiceName">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="DialogServicePrice">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="DialogSectionTitle">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="DialogTotalLabel">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="DialogTotalAmount">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="DialogButtonText">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <!-- Compat aliases para referencias antiguas que usan puntos (ej. Dialog.Title) -->
+    <style name="Dialog" />
+    <style name="Dialog.Title" parent="@style/DialogTitle" />
+    <style name="Dialog.ServiceName" parent="@style/DialogServiceName" />
+    <style name="Dialog.ServicePrice" parent="@style/DialogServicePrice" />
+    <style name="Dialog.SectionTitle" parent="@style/DialogSectionTitle" />
+    <style name="Dialog.TotalLabel" parent="@style/DialogTotalLabel" />
+    <style name="Dialog.TotalAmount" parent="@style/DialogTotalAmount" />
+    <style name="Dialog.ButtonText" parent="@style/DialogButtonText" />
+
+    <!-- Nuevos estilos para el dialogo de compra (Purchase) -->
+    <style name="Purchase.DialogBase">
+        <item name="android:background">@color/bg_dark</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="Purchase.SectionHeader">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/muted</item>
+    </style>
+
+    <style name="Purchase.Card">
+        <item name="android:background">@drawable/bg_card_rounded</item>
+        <item name="android:padding">14dp</item>
+    </style>
+
+    <style name="Purchase.Chip">
+        <item name="android:background">@drawable/bg_chip_selector</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:paddingLeft">10dp</item>
+        <item name="android:paddingRight">10dp</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">6dp</item>
+    </style>
+
+    <style name="Purchase.ButtonPrimary">
+        <item name="android:background">@drawable/bg_gradient_button</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:padding">12dp</item>
+    </style>
+
+    <style name="Purchase.TotalText">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/muted</item>
+    </style>
+
+    <style name="Purchase.TotalAmount">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <!-- Compatibilidad: alias 'Purchase' para referencias antiguas que usan @style/Purchase -->
+    <!-- Alias sin parent para evitar ciclo implícito con Purchase.DialogBase -->
+    <style name="Purchase" />
+
+    <!-- Estilo para diálogos de pantalla completa -->
+    <style name="FullScreenDialog" parent="Theme.AppCompat.Light.Dialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowCloseOnTouchOutside">false</item>
+    </style>
+
+    <style name="SpinnerTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorControlNormal">@color/white</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
+
+</resources>

@@ -2,10 +2,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- ====================================== -->
+    <!-- PERMISOS                               -->
+    <!-- ====================================== -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Permisos para cámara y galería -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Permisos para notificaciones push -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".application.StreamZoneApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -15,9 +26,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CarpoolAppUniversidad">
 
-        <!-- Splash - Pantalla de inicio -->
+        <!-- ====================================== -->
+        <!-- PANTALLA DE INICIO (SPLASH)            -->
+        <!-- ====================================== -->
         <activity
-            android:name=".SplashActivity"
+            android:name=".ui.splash.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.NoActionBar">
             <intent-filter>
@@ -26,22 +39,165 @@
             </intent-filter>
         </activity>
 
-        <!-- Login -->
-        <activity
-            android:name=".LoginActivity"
-            android:exported="false" />
+        <!-- ====================================== -->
+        <!-- AUTENTICACIÓN                          -->
+        <!-- ====================================== -->
 
-        <!-- Registro -->
+        <!-- Login de usuarios -->
         <activity
-            android:name=".RegisterActivity"
+            android:name=".ui.auth.LoginActivity"
             android:exported="false"
-            android:parentActivityName=".LoginActivity" />
+            android:screenOrientation="portrait" />
 
-        <!-- MainActivity -->
+        <!-- Registro de nuevos usuarios -->
         <activity
-            android:name=".MainActivity"
-            android:exported="false" />
+            android:name=".ui.auth.RegisterActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.auth.LoginActivity"
+            android:screenOrientation="portrait" />
 
+        <!-- ====================================== -->
+        <!-- PANTALLAS PRINCIPALES                  -->
+        <!-- ====================================== -->
+
+        <!-- Home: Catálogo de servicios -->
+        <activity
+            android:name=".ui.home.HomeNativeActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Reserva de servicios -->
+        <activity
+            android:name=".ui.reserve.ReserveActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.home.UserProfileActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <!-- Pantalla de servicios por categoría -->
+        <activity
+            android:name=".ui.category.CategoryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <!-- Editar perfil -->
+        <activity
+            android:name=".ui.profile.EditProfileActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <!-- Mis Compras -->
+        <activity
+            android:name=".ui.purchases.PurchaseHistoryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Notificaciones -->
+        <activity
+            android:name=".ui.notifications.NotificationsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- ====================================== -->
+        <!-- PANEL DE ADMINISTRADOR                 -->
+        <!-- ====================================== -->
+
+        <!-- Menú principal de administrador -->
+        <activity
+            android:name=".ui.admin.AdminMenuActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Gestión de ofertas -->
+        <activity
+            android:name=".ui.admin.OffersManagerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Crear/Editar oferta -->
+        <activity
+            android:name=".ui.admin.CreateEditOfferActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Compras pendientes -->
+        <activity
+            android:name=".ui.admin.PendingPurchasesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Lista de usuarios -->
+        <activity
+            android:name=".ui.admin.UserListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Gestión de roles -->
+        <activity
+            android:name=".ui.admin.RolesManagerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Lista de roles -->
+        <activity
+            android:name=".ui.admin.RoleListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Crear/Editar rol -->
+        <activity
+            android:name=".ui.admin.CreateEditRoleActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Gestión de servicios -->
+        <activity
+            android:name=".ui.admin.ServicesManagerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".ui.admin.CreateEditServiceActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Gestión de categorías -->
+        <activity
+            android:name=".ui.admin.CategoriesManagerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".ui.admin.CreateEditCategoryActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".ui.admin.AssignRolesActivity"
+            android:screenOrientation="portrait" />
+
+        <!-- ====================================== -->
+        <!-- SERVICIOS                              -->
+        <!-- ====================================== -->
+
+        <!-- Servicio de Firebase Cloud Messaging para notificaciones push -->
+        <service
+            android:name=".services.FCMService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- FileProvider para compartir archivos de la cámara -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

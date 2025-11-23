@@ -1,0 +1,24 @@
+feat(purchase-dialog): corregir visibilidad de logos e icono de instrucciones
+
+Checklist rápido antes del mensaje
+
+Incluye título y cuerpo detallado.
+Menciona los archivos modificados (dialog_purchase.xml, ic_bank.xml, ic_bill.xml, ic_siren.xml).
+Indica la verificación/resumen breve.
+
+Cambios en drawables para asegurar contraste:
+
+- ic_bank.xml — usar android:fillColor="@color/white" para que el icono del banco contraste en el círculo morado.
+- ic_bill.xml — usar android:fillColor="@color/white" para que el icono PayPal/factura sea visible.
+- ic_siren.xml — usar android:fillColor="@color/brand_pink" para que la sirena se muestre coloreada dentro del círculo naranja.
+
+Cambios en layout:
+
+- dialog_purchase.xml:
+  - Eliminado android:tint="@color/white" en ivImportantIcon para que el drawable muestre su propio color.
+  - Añadido android:tint="@null" en ivPayment1, ivPayment2, ivPayment3, ivPayment4 e ivServiceLogo para evitar tints globales que ocultaban los iconos.
+
+Resultado: los logos y el icono de "Instrucciones Importantes" se ven correctamente en el diálogo de compra.
+
+Nota: recursos verificados (no hay errores críticos, sólo warnings de layout). Ejecutar build localmente para validación final.
+

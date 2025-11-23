@@ -3,6 +3,10 @@
     <style name="Base.Theme.CarpoolAppUniversidad" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+
+        <!-- Configuración para el notch/cutout -->
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="p">shortEdges</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
     </style>
 
     <style name="Theme.CarpoolAppUniversidad" parent="Base.Theme.CarpoolAppUniversidad" />

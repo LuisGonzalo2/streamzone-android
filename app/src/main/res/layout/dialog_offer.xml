@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="12dp"
+    android:fillViewport="true"
+    android:background="@color/bg_dark">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header: title + close -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="12dp">
+
+            <TextView
+                android:id="@+id/tvDialogTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Oferta Especial"
+                android:textSize="22sp"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_toStartOf="@id/btnClose"
+                android:layout_marginEnd="8dp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <ImageButton
+                android:id="@+id/btnClose"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_alignParentEnd="true"
+                android:background="@android:color/transparent"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                app:tint="@color/white"
+                android:contentDescription="Cerrar" />
+
+        </RelativeLayout>
+
+        <!-- Oferta Badge -->
+        <TextView
+            android:id="@+id/tvOfferBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OFERTA DEL MES"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:background="#8B5CF6"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:layout_marginBottom="12dp"
+            android:textStyle="bold" />
+
+        <!-- Título de la oferta -->
+        <TextView
+            android:id="@+id/tvOfferTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Combo: Netflix + Spotify"
+            android:textSize="20sp"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Descripción -->
+        <TextView
+            android:id="@+id/tvOfferDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Suscripción mensual de Netflix Premium + Spotify Premium"
+            android:textSize="14sp"
+            android:textColor="#B0B0B0"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Servicios incluidos -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Servicios Incluidos"
+            android:textSize="16sp"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Container para servicios (se llenará dinámicamente) -->
+        <LinearLayout
+            android:id="@+id/llServices"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Card de precios -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="#1C1C1E"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Precio original (tachado) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:text="Precio individual"
+                        android:textSize="14sp"
+                        android:textColor="#B0B0B0" />
+
+                    <TextView
+                        android:id="@+id/tvOriginalPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="US$ 9,38"
+                        android:textSize="16sp"
+                        android:textColor="#B0B0B0" />
+
+                </LinearLayout>
+
+                <!-- Precio combo (por mes) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:text="Precio combo /mes"
+                        android:textSize="14sp"
+                        android:textColor="@color/white" />
+
+                    <TextView
+                        android:id="@+id/tvComboPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="US$ 7,50"
+                        android:textSize="18sp"
+                        android:textColor="#10B981"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <!-- Ahorro -->
+                <TextView
+                    android:id="@+id/tvSavings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ahorras 20% (US$ 1,88/mes)"
+                    android:textSize="14sp"
+                    android:textColor="#10B981"
+                    android:gravity="end"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Divisor -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#2C2C2E"
+                    android:layout_marginVertical="8dp" />
+
+                <!--  Precio total según duración -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:text="Total a pagar"
+                        android:textSize="18sp"
+                        android:textColor="@color/white"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvTotalPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="US$ 7,50"
+                        android:textSize="24sp"
+                        android:textColor="#8B5CF6"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Duración -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Duración"
+            android:textSize="16sp"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/llDurations"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
+            android:weightSum="4">
+
+            <Button
+                android:id="@+id/btnDuration1"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="40dp"
+                android:text="1 mes"
+                android:textAllCaps="false"
+                android:layout_marginEnd="6dp"
+                android:backgroundTint="#2C2C2E"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/btnDuration2"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="40dp"
+                android:text="2 meses"
+                android:textAllCaps="false"
+                android:layout_marginEnd="6dp"
+                android:backgroundTint="#2C2C2E"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/btnDuration3"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="40dp"
+                android:text="3 meses"
+                android:textAllCaps="false"
+                android:layout_marginEnd="6dp"
+                android:backgroundTint="#2C2C2E"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/btnDuration6"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="40dp"
+                android:text="6 meses"
+                android:textAllCaps="false"
+                android:backgroundTint="#2C2C2E"
+                android:textColor="@color/white" />
+
+        </LinearLayout>
+
+        <!-- Vigencia de la oferta -->
+        <TextView
+            android:id="@+id/tvOfferExpiry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⏰ Oferta válida hasta el 30 de noviembre"
+            android:textSize="13sp"
+            android:textColor="#F59E0B"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Botón de compra -->
+        <Button
+            android:id="@+id/btnPurchaseOffer"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Comprar Combo"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:backgroundTint="#8B5CF6"
+            android:textColor="@color/white" />
+
+    </LinearLayout>
+
+</ScrollView>

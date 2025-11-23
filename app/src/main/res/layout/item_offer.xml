@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardBackgroundColor="#1C1C1E"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header: título + badge de estado -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvOfferTitle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Combo: Netflix + Spotify"
+                android:textSize="16sp"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvOfferStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✅ Activa"
+                android:textSize="12sp"
+                android:textColor="#10B981"
+                android:background="#10B98120"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
+
+        </LinearLayout>
+
+        <!-- Precio y descuento -->
+        <TextView
+            android:id="@+id/tvOfferPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="US$ 7,50 (20% OFF)"
+            android:textSize="18sp"
+            android:textColor="#10B981"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Vigencia -->
+        <TextView
+            android:id="@+id/tvOfferDates"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Válida hasta: 30 Nov 2025"
+            android:textSize="13sp"
+            android:textColor="#B0B0B0"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Botones de acción -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <Button
+                android:id="@+id/btnEditOffer"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="✏️ Editar"
+                android:textAllCaps="false"
+                android:backgroundTint="#3B82F6"
+                android:textColor="@color/white"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btnDeleteOffer"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="🗑️ Eliminar"
+                android:textAllCaps="false"
+                android:backgroundTint="#EF4444"
+                android:textColor="@color/white" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

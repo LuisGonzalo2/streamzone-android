@@ -43,3 +43,10 @@ google-services.json
 freeline.py
 freeline/
 freeline_project_description.json
+
+# IDE files
+/.idea/
+
+# Local temp files created by scripts
+/commit_msg.txt
+/pr_body.md

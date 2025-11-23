@@ -15,7 +15,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.firebase.repository.UserRepository
 import com.universidad.streamzone.ui.auth.LoginActivity
 import com.universidad.streamzone.ui.components.NavbarManager
 import com.universidad.streamzone.ui.profile.EditProfileActivity
@@ -23,6 +23,9 @@ import kotlinx.coroutines.launch
 
 
 class UserProfileActivity : AppCompatActivity() {
+
+    // Firebase Repository
+    private val userRepository = UserRepository()
 
     private lateinit var sharedPrefs: SharedPreferences
     private lateinit var tvUserName: TextView
@@ -98,21 +101,23 @@ class UserProfileActivity : AppCompatActivity() {
     private fun loadUserDetailsFromDatabase(userEmail: String) {
         lifecycleScope.launch {
             try {
-                val dao = AppDatabase.getInstance(this@UserProfileActivity).usuarioDao()
-                val usuario = dao.buscarPorEmail(userEmail)
+                // Obtener usuario desde Firebase
+                val user = userRepository.findByEmail(userEmail)
 
-                usuario?.let { user ->
+                user?.let {
                     runOnUiThread {
-                        tvUserName.text = user.fullname
-                        tvUserEmail.text = user.email
-                        tvFullName.text = user.fullname
-                        tvPersonalEmail.text = user.email
-                        tvPhone.text = user.phone ?: "No registrado"
+                        tvUserName.text = it.fullname
+                        tvUserEmail.text = it.email
+                        tvFullName.text = it.fullname
+                        tvPersonalEmail.text = it.email
+                        tvPhone.text = it.phone.ifEmpty { "No registrado" }
 
                         // CARGAR FOTO DE PERFIL
-                        if (!user.fotoBase64.isNullOrEmpty()) {
-                            val bitmap = convertirBase64ABitmap(user.fotoBase64!!)
-                            imgUserAvatar.setImageBitmap(bitmap)
+                        // TODO: Cargar desde Firebase Storage URL con Glide/Coil
+                        if (!it.photoUrl.isNullOrEmpty()) {
+                            Log.d("UserProfile", "Photo URL: ${it.photoUrl}")
+                            // Aquí podrías usar: Glide.with(this).load(it.photoUrl).into(imgUserAvatar)
+                            imgUserAvatar.setImageResource(R.drawable.ic_person_placeholder)
                         } else {
                             // Mantener placeholder por defecto
                             imgUserAvatar.setImageResource(R.drawable.ic_person_placeholder)
@@ -120,15 +125,12 @@ class UserProfileActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("UserProfile", "Error al cargar datos del usuario", e)
+                Log.e("UserProfile", "❌ Error al cargar datos del usuario", e)
+                runOnUiThread {
+                    Toast.makeText(this@UserProfileActivity, "Error al cargar perfil", Toast.LENGTH_SHORT).show()
+                }
             }
         }
-    }
-
-    // FUNCIÓN PARA CONVERTIR BASE64 A BITMAP
-    private fun convertirBase64ABitmap(base64: String): Bitmap {
-        val decodedBytes = Base64.decode(base64, Base64.DEFAULT)
-        return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
     }
 
     private fun setupClickListeners() {

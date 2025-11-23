@@ -8,9 +8,10 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.Timestamp
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
-import com.universidad.streamzone.data.model.CategoryEntity
+import com.universidad.streamzone.data.firebase.models.Category
+import com.universidad.streamzone.data.firebase.repository.CategoryRepository
 import com.universidad.streamzone.util.PermissionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,6 +20,9 @@ import kotlinx.coroutines.withContext
 class CreateEditCategoryActivity : BaseAdminActivity() {
 
     override val requiredPermission: String = PermissionManager.MANAGE_CATEGORIES
+
+    // Firebase Repository
+    private val categoryRepository = CategoryRepository()
 
     private lateinit var btnBack: ImageButton
     private lateinit var tvTitle: TextView
@@ -30,7 +34,7 @@ class CreateEditCategoryActivity : BaseAdminActivity() {
     private lateinit var switchIsActive: SwitchCompat
     private lateinit var btnSave: MaterialButton
 
-    private var categoryId: Int? = null
+    private var categoryId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,9 +45,9 @@ class CreateEditCategoryActivity : BaseAdminActivity() {
         initViews()
 
         // Verificar si es edición
-        val categoryIdLong = intent.getLongExtra("CATEGORY_ID", -1L)
-        if (categoryIdLong != -1L) {
-            categoryId = categoryIdLong.toInt()
+        val categoryIdFromIntent = intent.getStringExtra("CATEGORY_ID")
+        if (categoryIdFromIntent != null && categoryIdFromIntent.isNotEmpty()) {
+            categoryId = categoryIdFromIntent
             tvTitle.text = "Editar Categoría"
             loadCategoryData(categoryId!!)
         }
@@ -64,12 +68,11 @@ class CreateEditCategoryActivity : BaseAdminActivity() {
         btnSave.setOnClickListener { saveCategory() }
     }
 
-    private fun loadCategoryData(id: Int) {
+    private fun loadCategoryData(id: String) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val db = AppDatabase.getInstance(this@CreateEditCategoryActivity)
-                val categoryDao = db.categoryDao()
-                val category = categoryDao.obtenerPorId(id)
+                // Obtener categoría desde Firebase
+                val category = categoryRepository.findById(id)
 
                 withContext(Dispatchers.Main) {
                     if (category != null) {
@@ -79,10 +82,18 @@ class CreateEditCategoryActivity : BaseAdminActivity() {
                         etGradientStart.setText(category.gradientStart)
                         etGradientEnd.setText(category.gradientEnd)
                         switchIsActive.isChecked = category.isActive
+                    } else {
+                        Toast.makeText(
+                            this@CreateEditCategoryActivity,
+                            "Categoría no encontrada",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        finish()
                     }
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("CreateCategory", "❌ Error al cargar categoría", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@CreateEditCategoryActivity,
@@ -140,42 +151,29 @@ class CreateEditCategoryActivity : BaseAdminActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val db = AppDatabase.getInstance(this@CreateEditCategoryActivity)
-                val categoryDao = db.categoryDao()
-
-                val category = CategoryEntity(
-                    id = categoryId ?: 0,
+                // Crear objeto Category de Firebase
+                val category = Category(
+                    id = categoryId ?: "", // Si es edición, usar categoryId; si es nuevo, Firebase generará el ID
                     categoryId = name.lowercase().replace(" ", "_"),
                     name = name,
                     icon = icon,
                     description = description,
                     gradientStart = gradientStart,
                     gradientEnd = gradientEnd,
-                    isActive = switchIsActive.isChecked
+                    isActive = switchIsActive.isChecked,
+                    order = 0, // Orden por defecto
+                    createdAt = Timestamp.now(),
+                    updatedAt = Timestamp.now()
                 )
 
-                if (categoryId != null) {
-                    // Actualizar categoría existente
-                    categoryDao.actualizar(category)
+                // Guardar o actualizar en Firebase
+                if (categoryId == null) {
+                    categoryRepository.insert(category)
+                    android.util.Log.d("CreateCategory", "✅ Nueva categoría creada en Firebase")
                 } else {
-                    // Insertar nueva categoría
-                    categoryDao.insertar(category)
+                    categoryRepository.update(category)
+                    android.util.Log.d("CreateCategory", "✅ Categoría actualizada en Firebase")
                 }
-
-                // Sincronizar con Firebase
-                com.universidad.streamzone.data.remote.FirebaseService.sincronizarCategoria(
-                    categoryId = category.categoryId,
-                    name = category.name,
-                    icon = category.icon,
-                    isActive = category.isActive,
-                    order = category.order,
-                    onSuccess = {
-                        android.util.Log.d("CreateCategory", "✅ Categoría sincronizada con Firebase")
-                    },
-                    onFailure = { e ->
-                        android.util.Log.e("CreateCategory", "❌ Error al sincronizar: ${e.message}")
-                    }
-                )
 
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
@@ -187,6 +185,7 @@ class CreateEditCategoryActivity : BaseAdminActivity() {
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("CreateCategory", "❌ Error al guardar categoría", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         this@CreateEditCategoryActivity,

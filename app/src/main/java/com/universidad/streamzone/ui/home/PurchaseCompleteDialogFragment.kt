@@ -12,10 +12,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.Timestamp
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
-import com.universidad.streamzone.data.model.PurchaseEntity
-import com.universidad.streamzone.data.remote.FirebaseService
+import com.universidad.streamzone.data.firebase.models.Purchase
+import com.universidad.streamzone.data.firebase.repository.PurchaseRepository
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import androidx.appcompat.widget.AppCompatImageButton
@@ -25,6 +25,9 @@ class PurchaseCompleteDialogFragment : DialogFragment() {
     private lateinit var tvMessage: TextView
     private lateinit var btnWhatsApp: Button
     private lateinit var btnClose: AppCompatImageButton
+
+    // Firebase Repository
+    private val purchaseRepository = PurchaseRepository()
 
     private var serviceId: String = ""
     private var serviceName: String = ""
@@ -108,52 +111,36 @@ class PurchaseCompleteDialogFragment : DialogFragment() {
 
         lifecycleScope.launch {
             try {
-                val dao = AppDatabase.getInstance(requireContext()).purchaseDao()
-
                 // Calcular fechas
-                val purchaseDate = System.currentTimeMillis()
-                val expirationDate = calcularFechaExpiracion(purchaseDate, duration)
+                val purchaseDate = Timestamp.now()
+                val expirationDate = calcularFechaExpiracion(duration)
 
                 // Crear la compra
-                val purchase = PurchaseEntity(
+                val purchase = Purchase(
+                    userId = "", // Se puede llenar después si se necesita
                     userEmail = userEmail,
                     userName = userName,
                     serviceId = serviceId,
                     serviceName = serviceName,
                     servicePrice = servicePrice,
                     serviceDuration = duration,
-                    email = null, // Se llenará después cuando el admin entregue credenciales
-                    password = null,
+                    credentials = null, // Se llenará después cuando el admin entregue credenciales
                     purchaseDate = purchaseDate,
                     expirationDate = expirationDate,
                     status = "pending", // pending hasta que se entreguen credenciales
-                    sincronizado = false
+                    createdAt = Timestamp.now(),
+                    updatedAt = Timestamp.now()
                 )
 
-                // Guardar en Room
-                val purchaseId = dao.insertar(purchase)
-                Log.d("PurchaseComplete", "Compra guardada en Room con ID: $purchaseId")
-
-                // Intentar sincronizar con Firebase
-                FirebaseService.guardarCompra(
-                    purchase = purchase,
-                    onSuccess = { firebaseId ->
-                        lifecycleScope.launch {
-                            dao.marcarComoSincronizada(purchaseId.toInt(), firebaseId)
-                            Log.d("PurchaseComplete", "Compra sincronizada con Firebase")
-                        }
-                    },
-                    onFailure = { e ->
-                        Log.e("PurchaseComplete", "Error al sincronizar con Firebase", e)
-                        // No pasa nada, se sincronizará después
-                    }
-                )
+                // Guardar directamente en Firebase
+                val purchaseId = purchaseRepository.insert(purchase)
+                Log.d("PurchaseComplete", "✅ Compra guardada en Firebase con ID: $purchaseId")
 
                 // Abrir WhatsApp
                 abrirWhatsApp()
 
             } catch (e: Exception) {
-                Log.e("PurchaseComplete", "Error al guardar compra", e)
+                Log.e("PurchaseComplete", "❌ Error al guardar compra", e)
                 Toast.makeText(
                     requireContext(),
                     "Error al registrar compra. Intenta de nuevo.",
@@ -163,9 +150,8 @@ class PurchaseCompleteDialogFragment : DialogFragment() {
         }
     }
 
-    private fun calcularFechaExpiracion(fechaInicio: Long, duracion: String): Long {
+    private fun calcularFechaExpiracion(duracion: String): Timestamp {
         val calendar = Calendar.getInstance()
-        calendar.timeInMillis = fechaInicio
 
         when {
             duracion.contains("mes", ignoreCase = true) -> {
@@ -181,7 +167,7 @@ class PurchaseCompleteDialogFragment : DialogFragment() {
             }
         }
 
-        return calendar.timeInMillis
+        return Timestamp(calendar.time)
     }
 
     private fun abrirWhatsApp() {

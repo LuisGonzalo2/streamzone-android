@@ -16,7 +16,10 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.firebase.repository.CategoryRepository
+import com.universidad.streamzone.data.firebase.repository.ServiceRepository
+import com.universidad.streamzone.data.firebase.repository.OfferRepository
+import com.universidad.streamzone.data.firebase.repository.UserRepository
 import com.universidad.streamzone.data.model.Category
 import com.universidad.streamzone.data.model.Service
 import com.universidad.streamzone.ui.auth.LoginActivity
@@ -25,8 +28,6 @@ import com.universidad.streamzone.ui.components.NavbarManager
 import com.universidad.streamzone.ui.home.adapter.CategoryCardAdapter
 import com.universidad.streamzone.ui.home.adapter.GridSpacingItemDecoration
 import com.universidad.streamzone.util.NotificationPermissionHelper
-import com.universidad.streamzone.util.toCategory
-import com.universidad.streamzone.util.toServiceList
 import com.universidad.streamzone.services.NotificationListenerService
 import kotlinx.coroutines.launch
 
@@ -37,36 +38,39 @@ class HomeNativeActivity : AppCompatActivity() {
     private lateinit var sharedPrefs: SharedPreferences
     private lateinit var fabAdminMenu: FloatingActionButton
     private var currentUser: String = ""
-    private var currentUserId: Int = 0
 
     private lateinit var cardHeroOffer: View
     private lateinit var tvOfferTitle: TextView
     private lateinit var tvOfferPrice: TextView
 
+    // Firebase Repositories
+    private val userRepository = UserRepository()
+    private val categoryRepository = CategoryRepository()
+    private val serviceRepository = ServiceRepository()
+    private val offerRepository = OfferRepository()
+
     // Servicio de notificaciones en tiempo real
     private var notificationService: NotificationListenerService? = null
 
-    // Mapa para guardar categoryId (String -> Int) para pasarlo al Intent
-    private val categoryIdMap = mutableMapOf<String, Int>()
+    // Mapa para guardar categoryId (Firebase ID -> Local display)
+    private val categoryIdMap = mutableMapOf<String, String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Usar el layout base con navbar inferior
         setContentView(R.layout.activity_base)
-
         sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
 
-        // Configurar edge-to-edge con padding dinámico
+        // Configurar edge-to-edge
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false)
         }
 
-        // Inflar el contenido específico del home
+        // Inflar contenido del home
         val contentContainer = findViewById<FrameLayout>(R.id.content_container)
         val homeView = LayoutInflater.from(this).inflate(R.layout.activity_home_native, contentContainer, true)
 
-        // Aplicar padding superior para evitar el notch
+        // Aplicar padding superior para el notch
         homeView.setOnApplyWindowInsetsListener { view, insets ->
             val systemBars = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                 insets.getInsets(android.view.WindowInsets.Type.systemBars())
@@ -78,40 +82,31 @@ class HomeNativeActivity : AppCompatActivity() {
             insets
         }
 
-        // DEBUG: Verificar que los views existen
-        Log.d("HomeNative", "Netflix card: ${findViewById<View>(R.id.card_popular_netflix) != null}")
-        Log.d("HomeNative", "Spotify card: ${findViewById<View>(R.id.card_popular_spotify) != null}")
-        Log.d("HomeNative", "Disney card: ${findViewById<View>(R.id.card_popular_disney) != null}")
-
         setupViews()
         setupCategoriesRecyclerView()
         setupPopularServices()
         setupBottomNavbar()
         checkAdminStatus()
 
-        // Solicitar permisos de notificaciones (Android 13+)
+        // Solicitar permisos de notificaciones
         NotificationPermissionHelper.requestNotificationPermission(this)
 
-        // Iniciar servicio de notificaciones en tiempo real
+        // Iniciar servicio de notificaciones
         startNotificationService()
     }
 
-    /**
-     * Iniciar el servicio de notificaciones en tiempo real
-     */
     private fun startNotificationService() {
-        Log.d("HomeNative", "🔔 Inicializando NotificationListenerService...")
+        Log.d(TAG, "🔔 Inicializando NotificationListenerService...")
         notificationService = NotificationListenerService(applicationContext)
         notificationService?.startListening()
-        Log.d("HomeNative", "✅ NotificationListenerService iniciado")
+        Log.d(TAG, "✅ NotificationListenerService iniciado")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Detener el servicio de notificaciones
         notificationService?.stopListening()
         notificationService = null
-        Log.d("HomeNative", "🛑 NotificationListenerService detenido")
+        Log.d(TAG, "🛑 NotificationListenerService detenido")
     }
 
     override fun onRequestPermissionsResult(
@@ -123,20 +118,14 @@ class HomeNativeActivity : AppCompatActivity() {
         NotificationPermissionHelper.handlePermissionResult(
             requestCode,
             grantResults,
-            onGranted = {
-                Log.d("HomeNative", "Permisos de notificaciones concedidos")
-            },
-            onDenied = {
-                Log.d("HomeNative", "Permisos de notificaciones denegados")
-            }
+            onGranted = { Log.d(TAG, "Permisos de notificaciones concedidos") },
+            onDenied = { Log.d(TAG, "Permisos de notificaciones denegados") }
         )
     }
 
     private fun setupViews() {
         tvGreeting = findViewById(R.id.tvGreeting)
         fabAdminMenu = findViewById(R.id.fab_admin_menu)
-
-        //Referencias al Hero Card
         cardHeroOffer = findViewById(R.id.cardHeroOffer)
         tvOfferTitle = findViewById(R.id.tvOfferTitle)
         tvOfferPrice = findViewById(R.id.tvOfferPrice)
@@ -144,212 +133,56 @@ class HomeNativeActivity : AppCompatActivity() {
         currentUser = intent.getStringExtra("USER_FULLNAME") ?: ""
         tvGreeting.text = if (currentUser.isNotEmpty()) "Bienvenido, $currentUser" else "Bienvenido"
 
-        // Cargar oferta dinámica
         loadActiveOfferCard()
 
-        // Configurar FAB de admin
         fabAdminMenu.setOnClickListener {
             openAdminMenu()
         }
     }
 
-    //  Verificar si el usuario es admin
     private fun checkAdminStatus() {
         val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
         if (userEmail.isEmpty()) {
-            Log.w("HomeNative", "❌ No hay usuario en sesión")
+            Log.w(TAG, "❌ No hay usuario en sesión")
+            fabAdminMenu.visibility = View.GONE
             return
         }
 
-        Log.d("HomeNative", "🔍 Verificando permisos para: $userEmail")
+        Log.d(TAG, "🔍 Verificando permisos para: $userEmail")
 
         lifecycleScope.launch {
             try {
-                val db = AppDatabase.getInstance(this@HomeNativeActivity)
-                val usuarioDao = db.usuarioDao()
-                val usuario = usuarioDao.buscarPorEmail(userEmail)
+                val user = userRepository.findByEmail(userEmail)
 
-                if (usuario == null) {
-                    Log.e("HomeNative", "❌ Usuario no encontrado en BD local: $userEmail")
+                if (user == null) {
+                    Log.e(TAG, "❌ Usuario no encontrado: $userEmail")
+                    runOnUiThread { fabAdminMenu.visibility = View.GONE }
                     return@launch
                 }
 
-                currentUserId = usuario.id
-                Log.d("HomeNative", "👤 Usuario encontrado - ID: ${usuario.id}, isAdmin: ${usuario.isAdmin}")
+                Log.d(TAG, "👤 Usuario encontrado - isAdmin: ${user.isAdmin}")
 
-                // Solo esperar un momento para asegurar que Room terminó de escribir
-                kotlinx.coroutines.delay(500)
+                // Verificar si es admin o tiene permisos
+                val hasPermissions = user.isAdmin || user.roleIds.isNotEmpty()
 
-                // Verificar roles asignados
-                val userRoleDao = db.userRoleDao()
-                val roleIds = userRoleDao.getRolesByUserId(usuario.id)
-                Log.d("HomeNative", "📋 Roles asignados: $roleIds")
-
-                // Verificar permisos
-                val hasAnyPermission = checkIfUserHasAnyPermission(usuario.id)
-                Log.d("HomeNative", "🔐 ¿Tiene permisos?: $hasAnyPermission")
-
-                if (usuario.isAdmin || hasAnyPermission) {
-                    runOnUiThread {
-                        fabAdminMenu.visibility = View.VISIBLE
-                        Log.d("HomeNative", "✅ FAB Admin VISIBLE")
-                    }
-                } else {
-                    runOnUiThread {
-                        fabAdminMenu.visibility = View.GONE
-                        Log.d("HomeNative", "❌ FAB Admin OCULTO (sin permisos)")
+                runOnUiThread {
+                    fabAdminMenu.visibility = if (hasPermissions) {
+                        Log.d(TAG, "✅ FAB Admin VISIBLE")
+                        View.VISIBLE
+                    } else {
+                        Log.d(TAG, "❌ FAB Admin OCULTO")
+                        View.GONE
                     }
                 }
 
             } catch (e: Exception) {
-                Log.e("HomeNative", "❌ Error al verificar estado admin", e)
+                Log.e(TAG, "❌ Error al verificar estado admin", e)
+                runOnUiThread { fabAdminMenu.visibility = View.GONE }
             }
         }
     }
 
-
-    /**
-     * Sincronizar roles desde Firebase (SOLO PARA REFRESCAR DATOS, NO PARA LOGIN)
-     * Esta función YA NO se usa en checkAdminStatus
-     */
-    private suspend fun sincronizarRolesDesdeFirebase(userEmail: String) {
-        com.universidad.streamzone.data.remote.FirebaseService.obtenerRolesUsuario(
-            userEmail = userEmail,
-            onSuccess = { roleFirebaseIds ->
-                lifecycleScope.launch {
-                    try {
-                        val db = AppDatabase.getInstance(this@HomeNativeActivity)
-                        val usuarioDao = db.usuarioDao()
-                        val roleDao = db.roleDao()
-                        val userRoleDao = db.userRoleDao()
-
-                        val usuario = usuarioDao.buscarPorEmail(userEmail) ?: return@launch
-
-                        // Sincronizar roles disponibles
-                        com.universidad.streamzone.data.remote.FirebaseService.obtenerTodosLosRoles { firebaseRoles ->
-                            lifecycleScope.launch {
-                                firebaseRoles.forEach { firebaseRole ->
-                                    val localRole = roleDao.getAll()
-                                        .find { it.firebaseId == firebaseRole.firebaseId }
-
-                                    if (localRole == null) {
-                                        roleDao.insertar(firebaseRole)
-                                    } else {
-                                        val updated = firebaseRole.copy(id = localRole.id)
-                                        roleDao.actualizar(updated)
-                                    }
-                                }
-
-                                // Asignar roles al usuario
-                                userRoleDao.eliminarRolesPorUsuario(usuario.id)
-
-                                roleFirebaseIds.forEach { firebaseId ->
-                                    val role = roleDao.getAll().find { it.firebaseId == firebaseId }
-                                    if (role != null) {
-                                        val userRole = com.universidad.streamzone.data.model.UserRoleEntity(
-                                            userId = usuario.id,
-                                            roleId = role.id
-                                        )
-                                        userRoleDao.insertar(userRole)
-                                    }
-                                }
-
-                                Log.d("HomeNative", "✅ Roles sincronizados desde Firebase")
-
-                                // Recargar verificación de permisos
-                                checkAdminStatus()
-                            }
-                        }
-
-                    } catch (e: Exception) {
-                        Log.e("HomeNative", "❌ Error al sincronizar roles", e)
-                    }
-                }
-            },
-            onFailure = { e ->
-                Log.e("HomeNative", "❌ Error Firebase: ${e.message}")
-            }
-        )
-    }
-
-    // Verificar si el usuario tiene algún permiso asignado
-    private suspend fun checkIfUserHasAnyPermission(userId: Int): Boolean {
-        return try {
-            val db = AppDatabase.getInstance(this@HomeNativeActivity)
-            val userRoleDao = db.userRoleDao()
-            val rolePermissionDao = db.rolePermissionDao()
-
-            // Obtener roles del usuario
-            val userRoleIds = userRoleDao.getRolesByUserId(userId)
-            Log.d("HomeNative", "🔍 Verificando permisos para roles: $userRoleIds")
-
-            if (userRoleIds.isEmpty()) {
-                Log.w("HomeNative", "⚠️ Usuario no tiene roles asignados")
-                return false
-            }
-
-            // Verificar si algún rol tiene permisos
-            val tienePermisos = userRoleIds.any { roleId ->
-                val permissions = rolePermissionDao.obtenerPermisosPorRol(roleId.toInt())
-                Log.d("HomeNative", "📌 Rol $roleId tiene ${permissions.size} permisos")
-                permissions.isNotEmpty()
-            }
-
-            Log.d("HomeNative", "✅ Resultado final: $tienePermisos")
-            tienePermisos
-
-        } catch (e: Exception) {
-            Log.e("HomeNative", "❌ Error al verificar permisos", e)
-            false
-        }
-    }
-
-    // Abrir oferta activa
-    private fun openActiveOffer() {
-        val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
-
-        // AGREGAR ESTE LOG PARA DEBUG
-        android.util.Log.d("HomeNative", "Email: '$userEmail', User: '$currentUser'")
-
-        if (userEmail.isEmpty()) {
-            showToast("Debes iniciar sesión para ver las ofertas")
-            return
-        }
-
-        lifecycleScope.launch {
-            try {
-                val db = AppDatabase.getInstance(this@HomeNativeActivity)
-                val offerDao = db.offerDao()
-
-                val activeOffer = offerDao.getActiveOffer()
-                if (activeOffer == null) {
-                    runOnUiThread {
-                        showToast("No hay ofertas disponibles en este momento")
-                    }
-                    return@launch
-                }
-
-                runOnUiThread {
-                    val dialog = PurchaseOfferDialogFragment.newInstance(
-                        offerId = activeOffer.id,
-                        userEmail = userEmail,
-                        userName = currentUser
-                    )
-                    dialog.show(supportFragmentManager, "offerDialog")
-                }
-
-            } catch (e: Exception) {
-                Log.e("HomeNative", "Error al cargar oferta", e)
-                runOnUiThread {
-                    showToast("Error al cargar la oferta")
-                }
-            }
-        }
-    }
-
-
-    // NUEVA FUNCIÓN: Abrir menú de admin
     private fun openAdminMenu() {
         val intent = Intent(this, com.universidad.streamzone.ui.admin.AdminMenuActivity::class.java)
         startActivity(intent)
@@ -358,38 +191,38 @@ class HomeNativeActivity : AppCompatActivity() {
     private fun setupCategoriesRecyclerView() {
         rvCategories = findViewById(R.id.rvCategories)
 
-        // Grid de 2 columnas con aspect ratio dinámico
         val gridLayoutManager = GridLayoutManager(this, 2)
         rvCategories.layoutManager = gridLayoutManager
 
-        // Ajustar espaciado
         val spacingPx = (resources.displayMetrics.density * 8).toInt()
         rvCategories.addItemDecoration(GridSpacingItemDecoration(2, spacingPx, true))
 
-        // Cargar categorías desde la BD
         lifecycleScope.launch {
             try {
-                val db = AppDatabase.getInstance(this@HomeNativeActivity)
-                val categoryDao = db.categoryDao()
-                val serviceDao = db.serviceDao()
+                // Obtener categorías activas desde Firebase
+                val firebaseCategories = categoryRepository.getActiveCategoriesSync()
 
-                // Obtener categorías activas
-                val categoryEntities = categoryDao.obtenerCategoriasActivasSync()
-
-                // Calcular el conteo de servicios por categoría
-                val serviceCounts = mutableMapOf<Int, Int>()
-                categoryEntities.forEach { categoryEntity ->
-                    val count = serviceDao.obtenerServiciosPorCategoriaSync(categoryEntity.id).size
-                    serviceCounts[categoryEntity.id] = count
+                // Contar servicios por categoría
+                val serviceCounts = mutableMapOf<String, Int>()
+                firebaseCategories.forEach { fbCategory ->
+                    val services = serviceRepository.getAllSync()
+                        .filter { it.categoryId == fbCategory.id && it.isActive }
+                    serviceCounts[fbCategory.id] = services.size
                 }
 
-                // Convertir a modelo de UI y guardar mapeo de IDs
-                val categories = categoryEntities.map { categoryEntity ->
-                    categoryIdMap[categoryEntity.categoryId] = categoryEntity.id
-                    categoryEntity.toCategory(serviceCounts[categoryEntity.id] ?: 0)
+                // Convertir a modelo de UI
+                val categories = firebaseCategories.map { fbCategory ->
+                    categoryIdMap[fbCategory.id] = fbCategory.categoryId
+                    Category(
+                        id = fbCategory.categoryId,
+                        name = fbCategory.name,
+                        icon = fbCategory.icon,
+                        serviceCount = serviceCounts[fbCategory.id] ?: 0,
+                        gradientStart = fbCategory.gradientStart,
+                        gradientEnd = fbCategory.gradientEnd
+                    )
                 }
 
-                // Actualizar UI en el hilo principal
                 runOnUiThread {
                     val adapter = CategoryCardAdapter(categories) { category ->
                         onCategoryClick(category)
@@ -398,7 +231,7 @@ class HomeNativeActivity : AppCompatActivity() {
                 }
 
             } catch (e: Exception) {
-                Log.e("HomeNative", "Error al cargar categorías", e)
+                Log.e(TAG, "Error al cargar categorías", e)
                 runOnUiThread {
                     showToast("Error al cargar categorías")
                 }
@@ -407,62 +240,51 @@ class HomeNativeActivity : AppCompatActivity() {
     }
 
     private fun setupPopularServices() {
-        // Cargar servicios populares desde la BD
         lifecycleScope.launch {
             try {
-                val db = AppDatabase.getInstance(this@HomeNativeActivity)
-                val serviceDao = db.serviceDao()
+                // Obtener servicios populares desde Firebase
+                val popularServices = serviceRepository.getPopularServices()
 
-                // Obtener servicios marcados como populares
-                val popularServiceEntities = serviceDao.obtenerServiciosPopulares()
-                val popularServices = popularServiceEntities.toServiceList()
-
-                // Si no hay servicios populares en la BD, no hacer nada
                 if (popularServices.isEmpty()) {
-                    Log.w("HomeNative", "No hay servicios populares en la BD")
+                    Log.w(TAG, "No hay servicios populares")
                     return@launch
                 }
 
-                // Actualizar UI en el hilo principal
                 runOnUiThread {
-                    // Asignar listeners dinámicamente según los servicios populares
-                    // Nota: Los IDs de las cards están hardcodeados en el XML (card_popular_netflix, etc.)
-                    // Para hacerlo completamente dinámico, sería mejor usar un RecyclerView
-
-                    // Por ahora, asignar basado en el serviceId
-                    popularServices.forEachIndexed { index, service ->
-                        val cardView = when (service.id) {
+                    // Asignar listeners basados en serviceId
+                    popularServices.forEach { service ->
+                        val cardView = when (service.serviceId) {
                             "netflix" -> findViewById<View>(R.id.card_popular_netflix)
                             "spotify" -> findViewById<View>(R.id.card_popular_spotify)
                             "disney_plus_premium" -> findViewById<View>(R.id.card_popular_disney)
-                            "chatgpt" -> findViewById<View>(R.id.card_popular_disney) // Reusa una card existente
+                            "chatgpt" -> findViewById<View>(R.id.card_popular_disney)
                             else -> null
                         }
 
                         cardView?.setOnClickListener {
-                            Log.d("HomeNative", "Click en ${service.title}")
+                            Log.d(TAG, "Click en ${service.name}")
                             openPurchaseDialog(service)
                         }
                     }
 
-                    Log.d("HomeNative", "Listeners configurados para ${popularServices.size} servicios populares")
+                    Log.d(TAG, "Listeners configurados para ${popularServices.size} servicios")
                 }
 
             } catch (e: Exception) {
-                Log.e("HomeNative", "Error al cargar servicios populares", e)
+                Log.e(TAG, "Error al cargar servicios populares", e)
             }
         }
     }
 
-    private fun openPurchaseDialog(service: Service) {
+    private fun openPurchaseDialog(service: com.universidad.streamzone.data.firebase.models.Service) {
         val dlg = PurchaseDialogFragment.newInstance(
-            service.id,
-            service.title,
+            service.serviceId,
+            service.name,
             service.price,
-            service.desc,
+            service.description,
             currentUser,
             null,
-            service.iconRes
+            null // iconRes - Firebase usa URLs
         )
         dlg.show(supportFragmentManager, "purchaseDialog")
     }
@@ -477,131 +299,64 @@ class HomeNativeActivity : AppCompatActivity() {
         val intent = Intent(this, CategoryActivity::class.java)
         intent.putExtra("CATEGORY_NAME", category.name)
         intent.putExtra("CATEGORY_ICON", category.icon)
-
-        // Obtener el ID numérico de la categoría desde el mapa
-        val categoryId = categoryIdMap[category.id] ?: -1
-        intent.putExtra("CATEGORY_ID", categoryId)
-
+        intent.putExtra("CATEGORY_ID", category.id) // Ahora usamos el String ID
         startActivity(intent)
-    }
-
-    private fun cerrarSesion() {
-        sharedPrefs.edit().apply {
-            remove("logged_in_user_email")
-            remove("logged_in_user_name")
-            remove("session_start_time")
-            apply()
-        }
-
-        Toast.makeText(this, "👋 Sesión cerrada", Toast.LENGTH_SHORT).show()
-
-        val intent = Intent(this, LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(intent)
-        finish()
     }
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
-    /**
-     * Cargar oferta activa y mostrarla en el Hero Card
-     */
+
     private fun loadActiveOfferCard() {
         lifecycleScope.launch {
             try {
-                val db = AppDatabase.getInstance(this@HomeNativeActivity)
-                val offerDao = db.offerDao()
-
-                // Sincronizar ofertas desde Firebase
-                if (isNetworkAvailable()) {
-                    syncOffersFromFirebase()
-                }
-
-                val activeOffer = offerDao.getActiveOffer()
+                // Obtener oferta activa desde Firebase
+                val activeOfferData = offerRepository.getActiveOfferWithServices()
 
                 runOnUiThread {
-                    if (activeOffer != null) {
-                        // Mostrar oferta en el Hero Card
+                    if (activeOfferData != null && activeOfferData.isValid()) {
                         cardHeroOffer.visibility = View.VISIBLE
-                        tvOfferTitle.text = activeOffer.title
-                        tvOfferPrice.text = "US$ %.2f/mes (ahorra ${activeOffer.discountPercent}%%)"
-                            .format(activeOffer.comboPrice)
+                        tvOfferTitle.text = activeOfferData.offer.title
+                        tvOfferPrice.text = "US$ %.2f/mes (ahorra ${activeOfferData.offer.discountPercent}%%)"
+                            .format(activeOfferData.offer.comboPrice)
 
                         findViewById<Button>(R.id.btnViewOffer).setOnClickListener {
-                            openActiveOffer()
+                            openActiveOffer(activeOfferData.offer.id)
                         }
 
-                        //Log.d("HomeNative", "✅ Oferta cargada: ${activeOffer.title}")
+                        Log.d(TAG, "✅ Oferta cargada: ${activeOfferData.offer.title}")
                     } else {
-                        // No hay oferta activa, ocultar el Hero Card
                         cardHeroOffer.visibility = View.GONE
-                        Log.d("HomeNative", "⚠️ No hay ofertas activas")
+                        Log.d(TAG, "⚠️ No hay ofertas activas")
                     }
                 }
 
             } catch (e: Exception) {
-                Log.e("HomeNative", "❌ Error al cargar oferta", e)
+                Log.e(TAG, "❌ Error al cargar oferta", e)
                 runOnUiThread {
                     cardHeroOffer.visibility = View.GONE
                 }
             }
         }
     }
-    /**
-     * Sincronizar ofertas desde Firebase
-     */
-    private suspend fun syncOffersFromFirebase() {
-        com.universidad.streamzone.data.remote.FirebaseService.obtenerTodasLasOfertas { firebaseOffers ->
-            lifecycleScope.launch {
-                try {
-                    val db = AppDatabase.getInstance(this@HomeNativeActivity)
-                    val offerDao = db.offerDao()
 
-                    firebaseOffers.forEach { firebaseOffer ->
-                        // Buscar si ya existe localmente
-                        val localOffer = offerDao.getAll()
-                            .find { it.firebaseId == firebaseOffer.firebaseId }
+    private fun openActiveOffer(offerId: String) {
+        val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
-                        if (localOffer == null) {
-                            // Nueva oferta → Insertar
-                            offerDao.insert(firebaseOffer)
-                            //Log.d("HomeNative", "➕ Oferta insertada: ${firebaseOffer.title}")
-                        } else {
-                            // Oferta existe → Actualizar
-                            val updated = firebaseOffer.copy(id = localOffer.id)
-                            offerDao.update(updated)
-                            //Log.d("HomeNative", "🔄 Oferta actualizada: ${firebaseOffer.title}")
-                        }
-                    }
-
-                    // Recargar oferta activa
-                    runOnUiThread {
-                        loadActiveOfferCard()
-                    }
-
-                } catch (e: Exception) {
-                    Log.e("HomeNative", "❌ Error al guardar ofertas de Firebase", e)
-                }
-            }
+        if (userEmail.isEmpty()) {
+            showToast("Debes iniciar sesión para ver las ofertas")
+            return
         }
+
+        val dialog = PurchaseOfferDialogFragment.newInstance(
+            offerId = offerId,
+            userEmail = userEmail,
+            userName = currentUser
+        )
+        dialog.show(supportFragmentManager, "offerDialog")
     }
 
-    /**
-     * Verificar conectividad
-     */
-    private fun isNetworkAvailable(): Boolean {
-        return try {
-            val cm = getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
-                    as android.net.ConnectivityManager
-            val network = cm.activeNetwork ?: return false
-            val caps = cm.getNetworkCapabilities(network) ?: return false
-
-            caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
-                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
-        } catch (e: Exception) {
-            false
-        }
+    companion object {
+        private const val TAG = "HomeNativeActivity"
     }
 }

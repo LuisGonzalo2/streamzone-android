@@ -1,11 +1,12 @@
 package com.universidad.streamzone.services
 
 import android.util.Log
+import com.google.firebase.Timestamp
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.universidad.streamzone.data.local.database.AppDatabase
-import com.universidad.streamzone.data.model.NotificationEntity
-import com.universidad.streamzone.data.model.NotificationType
+import com.universidad.streamzone.data.firebase.models.Notification
+import com.universidad.streamzone.data.firebase.models.NotificationType
+import com.universidad.streamzone.data.firebase.repository.NotificationRepository
 import com.universidad.streamzone.util.NotificationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 class FCMService : FirebaseMessagingService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val notificationRepository = NotificationRepository()
     private val TAG = "FCMService"
 
     override fun onNewToken(token: String) {
@@ -39,13 +41,10 @@ class FCMService : FirebaseMessagingService() {
         val userId = message.data["userId"]
         val icon = message.data["icon"] ?: "🔔"
 
-        // Guardar notificación en la base de datos
+        // Guardar notificación en Firebase
         serviceScope.launch {
             try {
-                val db = AppDatabase.getInstance(applicationContext)
-                val notificationDao = db.notificationDao()
-
-                val notification = NotificationEntity(
+                val notification = Notification(
                     title = title,
                     message = body,
                     type = try {
@@ -53,13 +52,16 @@ class FCMService : FirebaseMessagingService() {
                     } catch (e: Exception) {
                         NotificationType.SYSTEM
                     },
+                    timestamp = Timestamp.now(),
+                    isRead = false,
                     userId = userId,
                     actionType = actionType,
                     actionData = actionData,
-                    icon = icon
+                    icon = icon,
+                    createdAt = Timestamp.now()
                 )
 
-                notificationDao.insert(notification)
+                notificationRepository.insert(notification)
 
                 // Mostrar notificación local
                 NotificationManager.showNotification(

@@ -12,11 +12,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.universidad.streamzone.R
-import com.universidad.streamzone.data.local.database.AppDatabase
+import com.universidad.streamzone.data.firebase.repository.NotificationRepository
 import com.universidad.streamzone.data.model.NotificationEntity
 import com.universidad.streamzone.services.NotificationListenerService
 import com.universidad.streamzone.ui.components.NavbarManager
+import com.universidad.streamzone.util.toNotificationEntityList
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -24,6 +26,9 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 class NotificationsActivity : AppCompatActivity() {
+
+    // Firebase Repository
+    private val notificationRepository = NotificationRepository()
 
     private lateinit var navbarManager: NavbarManager
     private lateinit var rvNotifications: RecyclerView
@@ -80,27 +85,32 @@ class NotificationsActivity : AppCompatActivity() {
 
     private fun loadNotifications() {
         lifecycleScope.launch {
-            val db = AppDatabase.getInstance(this@NotificationsActivity)
-            val notificationDao = db.notificationDao()
+            // Obtener usuario actual
+            val sharedPrefs = getSharedPreferences("StreamZoneData", MODE_PRIVATE)
+            val userEmail = sharedPrefs.getString("logged_in_user_email", "") ?: ""
 
-            // Observar cambios en tiempo real
-            notificationDao.getAllFlow().collectLatest { notifications ->
-                if (notifications.isEmpty()) {
-                    showEmptyState()
-                } else {
-                    showNotifications()
-                    notificationAdapter.submitList(notifications)
+            // Observar cambios en tiempo real desde Firebase
+            notificationRepository.getAll()
+                .map { it.toNotificationEntityList() }
+                .collectLatest { notifications ->
+                    if (notifications.isEmpty()) {
+                        showEmptyState()
+                    } else {
+                        showNotifications()
+                        notificationAdapter.submitList(notifications)
+                    }
                 }
-            }
         }
     }
 
     private fun markAsRead(notification: NotificationEntity) {
         if (!notification.isRead) {
             lifecycleScope.launch {
-                val db = AppDatabase.getInstance(this@NotificationsActivity)
-                val notificationDao = db.notificationDao()
-                notificationDao.markAsRead(notification.id)
+                try {
+                    notificationRepository.markAsRead(notification.id.toString())
+                } catch (e: Exception) {
+                    android.util.Log.e("Notifications", "❌ Error al marcar como leída", e)
+                }
             }
         }
     }
